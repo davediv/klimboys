@@ -14,6 +14,10 @@
 	let loading = $state(false);
 	let imagePreview = $state<string | null>(null);
 	let editImagePreview = $state<string | null>(null);
+	let uploadingImage = $state(false);
+	let uploadedImageUrl = $state<string | null>(null);
+	let editUploadingImage = $state(false);
+	let editUploadedImageUrl = $state<string | null>(null);
 
 	function openEditModal(product: (typeof data.products)[0]) {
 		selectedProduct = product;
@@ -27,13 +31,16 @@
 		selectedProduct = null;
 		imagePreview = null;
 		editImagePreview = null;
+		uploadedImageUrl = null;
+		editUploadedImageUrl = null;
 	}
 
-	function handleImageChange(event: Event, isEdit = false) {
+	async function handleImageChange(event: Event, isEdit = false) {
 		const input = event.target as HTMLInputElement;
 		const file = input.files?.[0];
 
 		if (file) {
+			// Show preview
 			const reader = new FileReader();
 			reader.onload = (e) => {
 				if (isEdit) {
@@ -43,6 +50,60 @@
 				}
 			};
 			reader.readAsDataURL(file);
+
+			// Upload file immediately
+			try {
+				if (isEdit) {
+					editUploadingImage = true;
+				} else {
+					uploadingImage = true;
+				}
+
+				const formData = new FormData();
+				formData.append('file', file);
+				formData.append('category', 'products');
+
+				const response = await fetch('/api/upload', {
+					method: 'POST',
+					body: formData
+				});
+
+				const result = await response.json();
+
+				if (!response.ok) {
+					notifications.error('Upload Failed', result.error || 'Failed to upload image');
+					// Clear preview on error
+					if (isEdit) {
+						editImagePreview = null;
+					} else {
+						imagePreview = null;
+					}
+					return;
+				}
+
+				// Store the uploaded image key
+				if (isEdit) {
+					editUploadedImageUrl = result.file.key;
+				} else {
+					uploadedImageUrl = result.file.key;
+				}
+
+				notifications.success('Image Uploaded', 'Image uploaded successfully');
+			} catch (error) {
+				notifications.error('Upload Failed', 'Failed to upload image');
+				// Clear preview on error
+				if (isEdit) {
+					editImagePreview = null;
+				} else {
+					imagePreview = null;
+				}
+			} finally {
+				if (isEdit) {
+					editUploadingImage = false;
+				} else {
+					uploadingImage = false;
+				}
+			}
 		}
 	}
 
@@ -238,7 +299,6 @@
 			<form
 				method="POST"
 				action="?/create"
-				enctype="multipart/form-data"
 				use:enhance={() => {
 					loading = true;
 					return async ({ result, update }) => {
@@ -342,15 +402,24 @@
 							</label>
 							<input
 								id="create-image"
-								name="image"
 								type="file"
 								class="file-input file-input-bordered"
 								accept="image/jpeg,image/png,image/webp"
 								onchange={(e) => handleImageChange(e)}
+								disabled={uploadingImage}
 							/>
 							<label class="label">
-								<span class="label-text-alt">JPEG, PNG, or WebP. Max 5MB</span>
+								<span class="label-text-alt">
+									{#if uploadingImage}
+										Uploading image...
+									{:else}
+										JPEG, PNG, or WebP. Max 5MB
+									{/if}
+								</span>
 							</label>
+							{#if uploadedImageUrl}
+								<input type="hidden" name="imageUrl" value={uploadedImageUrl} />
+							{/if}
 						</div>
 
 						{#if imagePreview}
@@ -395,7 +464,6 @@
 				<form
 					method="POST"
 					action="?/update"
-					enctype="multipart/form-data"
 					use:enhance={() => {
 						loading = true;
 						return async ({ result, update }) => {
@@ -511,15 +579,24 @@
 								</label>
 								<input
 									id="edit-image"
-									name="image"
 									type="file"
 									class="file-input file-input-bordered"
 									accept="image/jpeg,image/png,image/webp"
 									onchange={(e) => handleImageChange(e, true)}
+									disabled={editUploadingImage}
 								/>
 								<label class="label">
-									<span class="label-text-alt">Upload new image to replace existing</span>
+									<span class="label-text-alt">
+										{#if editUploadingImage}
+											Uploading image...
+										{:else}
+											Upload new image to replace existing
+										{/if}
+									</span>
 								</label>
+								{#if editUploadedImageUrl}
+									<input type="hidden" name="imageUrl" value={editUploadedImageUrl} />
+								{/if}
 							</div>
 
 							{#if editImagePreview}

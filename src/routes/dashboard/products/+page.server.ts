@@ -70,7 +70,6 @@ export const actions = {
 		}
 
 		const formData = await request.formData();
-		const imageFile = formData.get('image') as File | null;
 
 		const data = {
 			title: formData.get('title') as string,
@@ -90,44 +89,11 @@ export const actions = {
 		}
 
 		try {
-			let imageUrl: string | null = null;
-
-			// Upload image to R2 if provided (skip in dev if R2 not available)
-			if (imageFile && imageFile.size > 0) {
-				const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-				if (!allowedTypes.includes(imageFile.type)) {
-					return fail(400, {
-						message: 'Invalid image type. Please upload JPEG, PNG, or WebP'
-					});
-				}
-
-				// 5MB limit
-				if (imageFile.size > 5 * 1024 * 1024) {
-					return fail(400, {
-						message: 'Image size must be less than 5MB'
-					});
-				}
-
-				const fileExtension = imageFile.name.split('.').pop();
-				const fileName = `products/${nanoid()}.${fileExtension}`;
-
-				// Upload to R2 if available
-				if (platform.env.BUCKET) {
-					await platform.env.BUCKET.put(fileName, await imageFile.arrayBuffer(), {
-						httpMetadata: {
-							contentType: imageFile.type
-						}
-					});
-					imageUrl = fileName;
-				} else if (dev) {
-					// In development without R2, just store the filename
-					console.warn('R2 not available in development, storing filename only');
-					imageUrl = fileName;
-				}
-			}
-
 			const db = createDB(platform.env.DB);
 			const productId = nanoid();
+			
+			// Get image URL from form (uploaded separately)
+			const imageUrl = (formData.get('imageUrl') as string) || null;
 
 			await db.insert(product).values({
 				id: productId,
@@ -160,7 +126,6 @@ export const actions = {
 
 		const formData = await request.formData();
 		const productId = formData.get('productId') as string;
-		const imageFile = formData.get('image') as File | null;
 
 		if (!productId) {
 			return fail(400, { message: 'Product ID required' });
@@ -190,50 +155,24 @@ export const actions = {
 				updatedAt: new Date()
 			};
 
-			// Handle image update if new image provided
-			if (imageFile && imageFile.size > 0) {
-				const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-				if (!allowedTypes.includes(imageFile.type)) {
-					return fail(400, {
-						message: 'Invalid image type. Please upload JPEG, PNG, or WebP'
-					});
-				}
-
-				if (imageFile.size > 5 * 1024 * 1024) {
-					return fail(400, {
-						message: 'Image size must be less than 5MB'
-					});
-				}
-
+			// Handle image update if new image URL provided
+			const newImageUrl = formData.get('imageUrl') as string | null;
+			if (newImageUrl) {
 				// Get old product to delete old image
 				const oldProduct = await db.query.product.findFirst({
 					where: eq(product.id, productId)
 				});
 
-				const fileExtension = imageFile.name.split('.').pop();
-				const fileName = `products/${nanoid()}.${fileExtension}`;
-
-				// Upload new image if R2 is available
-				if (platform.env.BUCKET) {
-					await platform.env.BUCKET.put(fileName, await imageFile.arrayBuffer(), {
-						httpMetadata: {
-							contentType: imageFile.type
-						}
-					});
-
-					// Delete old image if exists
-					if (oldProduct?.imageUrl) {
-						try {
-							await platform.env.BUCKET.delete(oldProduct.imageUrl);
-						} catch (error) {
-							console.error('Failed to delete old image:', error);
-						}
+				// Delete old image if exists and R2 is available
+				if (oldProduct?.imageUrl && platform.env.BUCKET) {
+					try {
+						await platform.env.BUCKET.delete(oldProduct.imageUrl);
+					} catch (error) {
+						console.error('Failed to delete old image:', error);
 					}
-				} else if (dev) {
-					console.warn('R2 not available in development, storing filename only');
 				}
 
-				updateData.imageUrl = fileName;
+				updateData.imageUrl = newImageUrl;
 			}
 
 			await db.update(product).set(updateData).where(eq(product.id, productId));
