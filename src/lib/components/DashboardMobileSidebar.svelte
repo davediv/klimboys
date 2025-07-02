@@ -9,7 +9,8 @@
 		Package,
 		ShoppingCart,
 		ChartBar,
-		BookOpen
+		BookOpen,
+		Tag
 	} from '@lucide/svelte';
 
 	let {
@@ -43,6 +44,13 @@
 			href: '/dashboard/products',
 			description: 'Manage products',
 			roles: ['admin', 'cashier']
+		},
+		{
+			icon: Tag,
+			label: 'Categories',
+			href: '/dashboard/categories',
+			description: 'Product categories',
+			roles: ['admin']
 		},
 		// Admin only sections
 		{
