@@ -140,6 +140,14 @@
 	function handleImageError(event: Event) {
 		const img = event.target as HTMLImageElement;
 		
+		console.error('Image failed to load:', {
+			src: img.src,
+			currentSrc: img.currentSrc,
+			complete: img.complete,
+			naturalWidth: img.naturalWidth,
+			naturalHeight: img.naturalHeight
+		});
+		
 		// Prevent infinite loop - only try placeholder once
 		if (img.dataset.placeholderAttempted === 'true') {
 			return;
@@ -147,9 +155,6 @@
 		
 		// Mark that we've attempted placeholder
 		img.dataset.placeholderAttempted = 'true';
-		
-		// This should rarely happen now that API always returns an image
-		console.warn('Image failed to load (API should have returned placeholder):', img.src);
 		
 		// Use a data URL as ultimate fallback
 		const placeholderDataUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2YzZjRmNiIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Qcm9kdWN0IEltYWdlPC90ZXh0Pgo8L3N2Zz4=';
@@ -168,11 +173,33 @@
 			<h1 class="text-3xl font-bold">Products</h1>
 			<p class="text-base-content/70 mt-1">Manage your milkshake menu</p>
 		</div>
-		{#if data.userRole === 'admin'}
-			<Button variant="primary" icon={Plus} onclick={() => (showCreateModal = true)}>
-				Add Product
-			</Button>
-		{/if}
+		<div class="flex gap-2">
+			{#if data.userRole === 'admin'}
+				<Button 
+					variant="ghost" 
+					onclick={async () => {
+						const testUrl = '/api/images/products/test.jpg';
+						console.log('Testing image API with URL:', testUrl);
+						try {
+							const res = await fetch(testUrl);
+							const text = await res.text();
+							console.log('Test response:', {
+								status: res.status,
+								headers: Object.fromEntries(res.headers.entries()),
+								bodyPreview: text.substring(0, 200)
+							});
+						} catch (err) {
+							console.error('Test failed:', err);
+						}
+					}}
+				>
+					Test API
+				</Button>
+				<Button variant="primary" icon={Plus} onclick={() => (showCreateModal = true)}>
+					Add Product
+				</Button>
+			{/if}
+		</div>
 	</div>
 
 	<!-- Products Grid -->
@@ -182,11 +209,33 @@
 				<!-- Product Image -->
 				<figure class="bg-base-200 relative h-48">
 					{#if product.imageUrl}
+						{@const imgUrl = getImageUrl(product.imageUrl)}
 						<img
-							src={getImageUrl(product.imageUrl)}
+							src={imgUrl}
 							alt={product.title}
 							class="h-full w-full object-cover"
 							onerror={handleImageError}
+							onload={(e) => {
+								console.log('Image loaded successfully:', imgUrl);
+								// Test fetch to see if API is reachable
+								fetch(imgUrl)
+									.then(res => {
+										console.log('Fetch response:', {
+											url: imgUrl,
+											status: res.status,
+											statusText: res.statusText,
+											headers: Object.fromEntries(res.headers.entries()),
+											ok: res.ok
+										});
+										return res.text();
+									})
+									.then(text => {
+										console.log('Response body preview:', text.substring(0, 200));
+									})
+									.catch(err => {
+										console.error('Fetch error:', err);
+									});
+							}}
 						/>
 					{:else}
 						<div class="absolute inset-0 flex items-center justify-center">
