@@ -178,37 +178,37 @@ Klimboys POS Dashboard implementation with 174 total tasks across 4 development 
 
 ### Inventory Management
 
-- [ ] 🟡 Create inventory listing page (admin only)
+- [x] 🟡 Create inventory listing page (admin only)
 
   - **Acceptance Criteria**: Show all items with stock levels
   - **Dependencies**: Inventory schema
   - **Effort**: M
 
-- [ ] 🟡 Implement add/edit inventory items
+- [x] 🟡 Implement add/edit inventory items
 
   - **Acceptance Criteria**: CRUD for inventory
   - **Dependencies**: Inventory listing
   - **Effort**: M
 
-- [ ] 🟡 Create product recipe management
+- [x] 🟡 Create product recipe management
 
   - **Acceptance Criteria**: Link products to inventory items
   - **Dependencies**: Product & inventory schemas
   - **Effort**: L
 
-- [ ] 🟡 Implement automatic stock deduction on transaction
+- [x] 🟡 Implement automatic stock deduction on transaction
 
   - **Acceptance Criteria**: Stock updates based on recipes
   - **Dependencies**: Recipe management
   - **Effort**: L
 
-- [ ] 🟡 Add manual stock adjustment with reason
+- [x] 🟡 Add manual stock adjustment with reason
 
   - **Acceptance Criteria**: Track all adjustments
   - **Dependencies**: Inventory listing
   - **Effort**: M
 
-- [ ] 🟢 Create stock movement history view
+- [x] 🟢 Create stock movement history view
 
   - **Acceptance Criteria**: Audit trail for all changes
   - **Dependencies**: Stock adjustment
