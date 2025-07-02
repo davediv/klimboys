@@ -26,7 +26,7 @@ export const load: PageServerLoad = async ({ locals, platform, url }) => {
 		conditions.push(eq(stockMovement.inventoryId, inventoryId));
 	}
 	if (movementType && ['in', 'out', 'adjustment'].includes(movementType)) {
-		conditions.push(eq(stockMovement.type, movementType));
+		conditions.push(eq(stockMovement.type, movementType as 'in' | 'out' | 'adjustment'));
 	}
 
 	// Get stock movements with related data
