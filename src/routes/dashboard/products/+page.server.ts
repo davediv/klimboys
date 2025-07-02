@@ -94,6 +94,12 @@ export const actions = {
 			
 			// Get image URL from form (uploaded separately)
 			const imageUrl = (formData.get('imageUrl') as string) || null;
+			
+			console.log('Creating product with data:', {
+				productId,
+				...result.data,
+				imageUrl
+			});
 
 			await db.insert(product).values({
 				id: productId,

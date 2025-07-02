@@ -4,6 +4,7 @@
 	import { Plus, Edit2, Trash2, Package, ImageOff, DollarSign } from '@lucide/svelte';
 	import { notifications } from '$lib/stores/notifications';
 	import { jakartaTime } from '$lib/utils/datetime';
+	import { dev } from '$app/environment';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -87,6 +88,13 @@
 				} else {
 					uploadedImageUrl = result.file.key;
 				}
+				
+				console.log('Image uploaded successfully:', {
+					key: result.file.key,
+					url: result.file.url,
+					uploadedImageUrl,
+					editUploadedImageUrl
+				});
 
 				notifications.success('Image Uploaded', 'Image uploaded successfully');
 			} catch (error) {
@@ -172,8 +180,15 @@
 				<!-- Product Image -->
 				<figure class="bg-base-200 relative h-48">
 					{#if product.imageUrl}
+						{@const imageUrl = getImageUrl(product.imageUrl)}
+						{#if dev}
+							<!-- Debug info in dev mode -->
+							<div class="absolute top-0 left-0 bg-black/50 text-white text-xs p-1 z-10">
+								{product.imageUrl}
+							</div>
+						{/if}
 						<img
-							src={getImageUrl(product.imageUrl)}
+							src={imageUrl}
 							alt={product.title}
 							class="h-full w-full object-cover"
 							onerror={handleImageError}
@@ -305,8 +320,8 @@
 						loading = false;
 						if (result.type === 'success') {
 							notifications.success('Product created', 'The new product has been added');
-							closeModals();
 							await update();
+							closeModals();
 						}
 					};
 				}}
@@ -470,8 +485,8 @@
 							loading = false;
 							if (result.type === 'success') {
 								notifications.success('Product updated', 'The product has been updated');
-								closeModals();
 								await update();
+								closeModals();
 							}
 						};
 					}}
