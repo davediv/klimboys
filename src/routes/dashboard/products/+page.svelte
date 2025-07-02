@@ -10,12 +10,12 @@
 
 	let showCreateModal = $state(false);
 	let showEditModal = $state(false);
-	let selectedProduct = $state<typeof data.products[0] | null>(null);
+	let selectedProduct = $state<(typeof data.products)[0] | null>(null);
 	let loading = $state(false);
 	let imagePreview = $state<string | null>(null);
 	let editImagePreview = $state<string | null>(null);
 
-	function openEditModal(product: typeof data.products[0]) {
+	function openEditModal(product: (typeof data.products)[0]) {
 		selectedProduct = product;
 		editImagePreview = null;
 		showEditModal = true;
@@ -32,7 +32,7 @@
 	function handleImageChange(event: Event, isEdit = false) {
 		const input = event.target as HTMLInputElement;
 		const file = input.files?.[0];
-		
+
 		if (file) {
 			const reader = new FileReader();
 			reader.onload = (e) => {
@@ -56,7 +56,7 @@
 	}
 
 	function calculateMargin(cost: number, price: number) {
-		return ((price - cost) / price * 100).toFixed(1);
+		return (((price - cost) / price) * 100).toFixed(1);
 	}
 
 	// Placeholder for R2 image URL construction
@@ -73,47 +73,43 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+	<div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
 		<div>
 			<h1 class="text-3xl font-bold">Products</h1>
 			<p class="text-base-content/70 mt-1">Manage your milkshake menu</p>
 		</div>
 		{#if data.userRole === 'admin'}
-			<Button
-				variant="primary"
-				icon={Plus}
-				onclick={() => (showCreateModal = true)}
-			>
+			<Button variant="primary" icon={Plus} onclick={() => (showCreateModal = true)}>
 				Add Product
 			</Button>
 		{/if}
 	</div>
 
 	<!-- Products Grid -->
-	<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+	<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 		{#each data.products as product}
 			<div class="card bg-base-100 shadow-xl">
 				<!-- Product Image -->
-				<figure class="relative h-48 bg-base-200">
+				<figure class="bg-base-200 relative h-48">
 					{#if product.imageUrl}
 						<img
 							src={getImageUrl(product.imageUrl)}
 							alt={product.title}
-							class="w-full h-full object-cover"
+							class="h-full w-full object-cover"
 							onerror={(e) => {
 								e.currentTarget.style.display = 'none';
 								e.currentTarget.nextElementSibling?.classList.remove('hidden');
 							}}
 						/>
-						<div class="hidden absolute inset-0 flex items-center justify-center">
-							<ImageOff class="w-12 h-12 text-base-content/30" />
+						<div class="absolute inset-0 flex hidden items-center justify-center">
+							<ImageOff class="text-base-content/30 h-12 w-12" />
 						</div>
 					{:else}
 						<div class="absolute inset-0 flex items-center justify-center">
-							<Package class="w-12 h-12 text-base-content/30" />
+							<Package class="text-base-content/30 h-12 w-12" />
 						</div>
 					{/if}
-					
+
 					<!-- Availability Badge -->
 					<div class="absolute top-2 right-2">
 						<span class="badge {product.isAvailable ? 'badge-success' : 'badge-error'}">
@@ -130,30 +126,30 @@
 							<div class="badge badge-secondary badge-sm">{product.category.name}</div>
 						{/if}
 					</h2>
-					
+
 					{#if product.description}
-						<p class="text-sm text-base-content/70 line-clamp-2">{product.description}</p>
+						<p class="text-base-content/70 line-clamp-2 text-sm">{product.description}</p>
 					{/if}
 
-					<div class="flex items-center gap-2 text-sm text-base-content/70">
+					<div class="text-base-content/70 flex items-center gap-2 text-sm">
 						<span>{product.size}ml</span>
 					</div>
 
 					<!-- Pricing -->
-					<div class="mt-auto pt-4 space-y-2">
-						<div class="flex justify-between items-center">
-							<span class="text-sm text-base-content/70">Price</span>
+					<div class="mt-auto space-y-2 pt-4">
+						<div class="flex items-center justify-between">
+							<span class="text-base-content/70 text-sm">Price</span>
 							<span class="font-semibold">{formatCurrency(product.sellingPrice)}</span>
 						</div>
-						
+
 						{#if data.userRole === 'admin' && product.productCost !== undefined}
-							<div class="flex justify-between items-center">
-								<span class="text-sm text-base-content/70">Cost</span>
+							<div class="flex items-center justify-between">
+								<span class="text-base-content/70 text-sm">Cost</span>
 								<span class="text-sm">{formatCurrency(product.productCost)}</span>
 							</div>
-							<div class="flex justify-between items-center">
-								<span class="text-sm text-base-content/70">Margin</span>
-								<span class="text-sm font-medium text-success">
+							<div class="flex items-center justify-between">
+								<span class="text-base-content/70 text-sm">Margin</span>
+								<span class="text-success text-sm font-medium">
 									{calculateMargin(product.productCost, product.sellingPrice)}%
 								</span>
 							</div>
@@ -162,7 +158,7 @@
 
 					<!-- Actions -->
 					{#if data.userRole === 'admin'}
-						<div class="card-actions justify-end mt-4">
+						<div class="card-actions mt-4 justify-end">
 							<Button
 								size="sm"
 								variant="ghost"
@@ -222,7 +218,7 @@
 {#if data.userRole === 'admin'}
 	<dialog class="modal" class:modal-open={showCreateModal}>
 		<div class="modal-box max-w-2xl">
-			<h3 class="font-bold text-lg mb-4">Add New Product</h3>
+			<h3 class="mb-4 text-lg font-bold">Add New Product</h3>
 			<form
 				method="POST"
 				action="?/create"
@@ -239,7 +235,7 @@
 					};
 				}}
 			>
-				<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+				<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 					<!-- Left Column -->
 					<div class="space-y-4">
 						<div class="form-control">
@@ -271,11 +267,7 @@
 							<label class="label" for="create-category">
 								<span class="label-text">Category</span>
 							</label>
-							<select
-								id="create-category"
-								name="categoryId"
-								class="select select-bordered"
-							>
+							<select id="create-category" name="categoryId" class="select select-bordered">
 								<option value="">No category</option>
 								{#each data.categories as category}
 									<option value={category.id}>{category.name}</option>
@@ -347,7 +339,7 @@
 
 						{#if imagePreview}
 							<div class="mt-2">
-								<img src={imagePreview} alt="Preview" class="w-full h-32 object-cover rounded-lg" />
+								<img src={imagePreview} alt="Preview" class="h-32 w-full rounded-lg object-cover" />
 							</div>
 						{/if}
 
@@ -367,19 +359,8 @@
 				</div>
 
 				<div class="modal-action">
-					<Button
-						type="button"
-						variant="ghost"
-						onclick={closeModals}
-					>
-						Cancel
-					</Button>
-					<Button
-						type="submit"
-						variant="primary"
-						{loading}
-						loadingText="Creating..."
-					>
+					<Button type="button" variant="ghost" onclick={closeModals}>Cancel</Button>
+					<Button type="submit" variant="primary" {loading} loadingText="Creating...">
 						Create Product
 					</Button>
 				</div>
@@ -393,7 +374,7 @@
 	<!-- Edit Product Modal -->
 	<dialog class="modal" class:modal-open={showEditModal}>
 		<div class="modal-box max-w-2xl">
-			<h3 class="font-bold text-lg mb-4">Edit Product</h3>
+			<h3 class="mb-4 text-lg font-bold">Edit Product</h3>
 			{#if selectedProduct}
 				<form
 					method="POST"
@@ -412,8 +393,8 @@
 					}}
 				>
 					<input type="hidden" name="productId" value={selectedProduct.id} />
-					
-					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+					<div class="grid grid-cols-1 gap-4 md:grid-cols-2">
 						<!-- Left Column -->
 						<div class="space-y-4">
 							<div class="form-control">
@@ -527,11 +508,19 @@
 
 							{#if editImagePreview}
 								<div class="mt-2">
-									<img src={editImagePreview} alt="New Preview" class="w-full h-32 object-cover rounded-lg" />
+									<img
+										src={editImagePreview}
+										alt="New Preview"
+										class="h-32 w-full rounded-lg object-cover"
+									/>
 								</div>
 							{:else if selectedProduct.imageUrl}
 								<div class="mt-2">
-									<img src={getImageUrl(selectedProduct.imageUrl)} alt="Current" class="w-full h-32 object-cover rounded-lg" />
+									<img
+										src={getImageUrl(selectedProduct.imageUrl)}
+										alt="Current"
+										class="h-32 w-full rounded-lg object-cover"
+									/>
 								</div>
 							{/if}
 
@@ -551,19 +540,8 @@
 					</div>
 
 					<div class="modal-action">
-						<Button
-							type="button"
-							variant="ghost"
-							onclick={closeModals}
-						>
-							Cancel
-						</Button>
-						<Button
-							type="submit"
-							variant="primary"
-							{loading}
-							loadingText="Updating..."
-						>
+						<Button type="button" variant="ghost" onclick={closeModals}>Cancel</Button>
+						<Button type="submit" variant="primary" {loading} loadingText="Updating...">
 							Update Product
 						</Button>
 					</div>

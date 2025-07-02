@@ -75,7 +75,7 @@ export const actions = {
 
 		try {
 			// Create user using Better Auth
-			const { data: authData, error } = await locals.auth.api.signUpEmail({
+			const authResult = await locals.auth.api.signUpEmail({
 				body: {
 					email: result.data.email,
 					password: result.data.password,
@@ -83,9 +83,9 @@ export const actions = {
 				}
 			});
 
-			if (error || !authData) {
+			if (!authResult || !authResult.user) {
 				return fail(400, {
-					message: error?.message || 'Failed to create user'
+					message: 'Failed to create user'
 				});
 			}
 
@@ -97,7 +97,7 @@ export const actions = {
 					.set({
 						role: result.data.role
 					})
-					.where(eq(user.id, authData.user.id));
+					.where(eq(user.id, authResult.user.id));
 			}
 
 			return { success: true };

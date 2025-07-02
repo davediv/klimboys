@@ -25,7 +25,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 	}
 
 	const db = createDB(platform.env.DB);
-	
+
 	// Get all products with category information
 	const products = await db.query.product.findMany({
 		with: {
@@ -40,7 +40,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 	});
 
 	// Filter sensitive data based on role
-	const filteredProducts = products.map(p => {
+	const filteredProducts = products.map((p) => {
 		if (locals.session.user.role === 'cashier') {
 			// Remove cost information for cashiers
 			return filterDataByRole(p, locals.session.user.role, ['productCost']);
@@ -58,7 +58,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 export const actions = {
 	create: async ({ request, locals, platform }) => {
 		requireAuth(locals.session);
-		
+
 		// Only admins can create products
 		if (locals.session.user.role !== 'admin') {
 			return fail(403, { message: 'Only admins can create products' });
@@ -70,14 +70,14 @@ export const actions = {
 
 		const formData = await request.formData();
 		const imageFile = formData.get('image') as File | null;
-		
+
 		const data = {
 			title: formData.get('title') as string,
-			description: formData.get('description') as string || undefined,
+			description: (formData.get('description') as string) || undefined,
 			size: Number(formData.get('size')),
 			productCost: Number(formData.get('productCost')),
 			sellingPrice: Number(formData.get('sellingPrice')),
-			categoryId: formData.get('categoryId') as string || undefined,
+			categoryId: (formData.get('categoryId') as string) || undefined,
 			isAvailable: formData.get('isAvailable') === 'true'
 		};
 
@@ -143,7 +143,7 @@ export const actions = {
 
 	update: async ({ request, locals, platform }) => {
 		requireAuth(locals.session);
-		
+
 		// Only admins can update products
 		if (locals.session.user.role !== 'admin') {
 			return fail(403, { message: 'Only admins can update products' });
@@ -156,18 +156,18 @@ export const actions = {
 		const formData = await request.formData();
 		const productId = formData.get('productId') as string;
 		const imageFile = formData.get('image') as File | null;
-		
+
 		if (!productId) {
 			return fail(400, { message: 'Product ID required' });
 		}
 
 		const data = {
 			title: formData.get('title') as string,
-			description: formData.get('description') as string || undefined,
+			description: (formData.get('description') as string) || undefined,
 			size: Number(formData.get('size')),
 			productCost: Number(formData.get('productCost')),
 			sellingPrice: Number(formData.get('sellingPrice')),
-			categoryId: formData.get('categoryId') as string || undefined,
+			categoryId: (formData.get('categoryId') as string) || undefined,
 			isAvailable: formData.get('isAvailable') === 'true'
 		};
 
@@ -240,7 +240,7 @@ export const actions = {
 
 	delete: async ({ request, locals, platform }) => {
 		requireAuth(locals.session);
-		
+
 		// Only admins can delete products
 		if (locals.session.user.role !== 'admin') {
 			return fail(403, { message: 'Only admins can delete products' });
@@ -259,7 +259,7 @@ export const actions = {
 
 		try {
 			const db = createDB(platform.env.DB);
-			
+
 			// Get product to delete image
 			const productToDelete = await db.query.product.findFirst({
 				where: eq(product.id, productId)

@@ -6,7 +6,7 @@
 	import { goto } from '$app/navigation';
 	import type { ActionData } from './$types';
 
-	export let form: ActionData;
+	let { form }: { form: ActionData | null } = $props();
 
 	let loading = $state(false);
 </script>
