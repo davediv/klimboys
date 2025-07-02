@@ -10,7 +10,7 @@
 		Clock,
 		ExternalLink,
 		ChevronRight
-	} from '@lucide-svelte';
+	} from '@lucide/svelte';
 	import { jakartaTime } from '$lib/utils/datetime';
 	import type { PageData } from './$types';
 
