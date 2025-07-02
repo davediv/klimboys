@@ -1,5 +1,14 @@
 import { createDB } from '$lib/server/db';
-import { product, category, transaction, transactionItem, customer } from '$lib/server/db/schema';
+import {
+	product,
+	category,
+	transaction,
+	transactionItem,
+	customer,
+	inventory,
+	stockMovement,
+	productRecipe
+} from '$lib/server/db/schema';
 import { requireAuth, filterDataByRole } from '$lib/server/auth/rbac';
 import type { PageServerLoad, Actions } from './$types';
 import { fail, redirect } from '@sveltejs/kit';
@@ -167,7 +176,51 @@ export const actions = {
 				});
 			}
 
-			// TODO: Update inventory based on product recipes
+			// Update inventory based on product recipes
+			for (const item of result.data.items) {
+				// Get product recipes
+				const recipes = await db.query.productRecipe.findMany({
+					where: eq(productRecipe.productId, item.productId),
+					with: {
+						inventory: true
+					}
+				});
+
+				// Deduct inventory for each recipe item
+				for (const recipe of recipes) {
+					const totalQuantityNeeded = recipe.quantity * item.quantity;
+
+					// Update inventory stock
+					const currentInventory = await db.query.inventory.findFirst({
+						where: eq(inventory.id, recipe.inventoryId)
+					});
+
+					if (currentInventory) {
+						const newStock = currentInventory.currentStock - totalQuantityNeeded;
+
+						// Update inventory
+						await db
+							.update(inventory)
+							.set({
+								currentStock: Math.max(0, newStock), // Prevent negative stock
+								updatedAt: new Date()
+							})
+							.where(eq(inventory.id, recipe.inventoryId));
+
+						// Create stock movement record
+						await db.insert(stockMovement).values({
+							id: nanoid(),
+							inventoryId: recipe.inventoryId,
+							type: 'out',
+							quantity: totalQuantityNeeded,
+							reason: `Transaction #${transactionNumber}`,
+							transactionId,
+							createdBy: locals.session.user.id,
+							createdAt: new Date()
+						});
+					}
+				}
+			}
 
 			return redirect(303, '/dashboard/transactions');
 		} catch (error) {
