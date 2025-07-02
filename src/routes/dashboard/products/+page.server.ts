@@ -6,6 +6,7 @@ import { fail } from '@sveltejs/kit';
 import { z } from 'zod';
 import { eq, desc } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
+import { dev } from '$app/environment';
 
 const productSchema = z.object({
 	title: z.string().min(2, 'Product name must be at least 2 characters'),
@@ -64,8 +65,8 @@ export const actions = {
 			return fail(403, { message: 'Only admins can create products' });
 		}
 
-		if (!platform?.env.DB || !platform?.env.BUCKET) {
-			return fail(500, { message: 'Services not available' });
+		if (!platform?.env.DB) {
+			return fail(500, { message: 'Database not available' });
 		}
 
 		const formData = await request.formData();
@@ -91,7 +92,7 @@ export const actions = {
 		try {
 			let imageUrl: string | null = null;
 
-			// Upload image to R2 if provided
+			// Upload image to R2 if provided (skip in dev if R2 not available)
 			if (imageFile && imageFile.size > 0) {
 				const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
 				if (!allowedTypes.includes(imageFile.type)) {
@@ -110,15 +111,19 @@ export const actions = {
 				const fileExtension = imageFile.name.split('.').pop();
 				const fileName = `products/${nanoid()}.${fileExtension}`;
 
-				// Upload to R2
-				await platform.env.BUCKET.put(fileName, await imageFile.arrayBuffer(), {
-					httpMetadata: {
-						contentType: imageFile.type
-					}
-				});
-
-				// Construct the public URL (you'll need to configure this based on your R2 setup)
-				imageUrl = fileName; // Store just the key, construct URL when displaying
+				// Upload to R2 if available
+				if (platform.env.BUCKET) {
+					await platform.env.BUCKET.put(fileName, await imageFile.arrayBuffer(), {
+						httpMetadata: {
+							contentType: imageFile.type
+						}
+					});
+					imageUrl = fileName;
+				} else if (dev) {
+					// In development without R2, just store the filename
+					console.warn('R2 not available in development, storing filename only');
+					imageUrl = fileName;
+				}
 			}
 
 			const db = createDB(platform.env.DB);
@@ -149,8 +154,8 @@ export const actions = {
 			return fail(403, { message: 'Only admins can update products' });
 		}
 
-		if (!platform?.env.DB || !platform?.env.BUCKET) {
-			return fail(500, { message: 'Services not available' });
+		if (!platform?.env.DB) {
+			return fail(500, { message: 'Database not available' });
 		}
 
 		const formData = await request.formData();
@@ -208,20 +213,24 @@ export const actions = {
 				const fileExtension = imageFile.name.split('.').pop();
 				const fileName = `products/${nanoid()}.${fileExtension}`;
 
-				// Upload new image
-				await platform.env.BUCKET.put(fileName, await imageFile.arrayBuffer(), {
-					httpMetadata: {
-						contentType: imageFile.type
-					}
-				});
+				// Upload new image if R2 is available
+				if (platform.env.BUCKET) {
+					await platform.env.BUCKET.put(fileName, await imageFile.arrayBuffer(), {
+						httpMetadata: {
+							contentType: imageFile.type
+						}
+					});
 
-				// Delete old image if exists
-				if (oldProduct?.imageUrl) {
-					try {
-						await platform.env.BUCKET.delete(oldProduct.imageUrl);
-					} catch (error) {
-						console.error('Failed to delete old image:', error);
+					// Delete old image if exists
+					if (oldProduct?.imageUrl) {
+						try {
+							await platform.env.BUCKET.delete(oldProduct.imageUrl);
+						} catch (error) {
+							console.error('Failed to delete old image:', error);
+						}
 					}
+				} else if (dev) {
+					console.warn('R2 not available in development, storing filename only');
 				}
 
 				updateData.imageUrl = fileName;
@@ -246,8 +255,8 @@ export const actions = {
 			return fail(403, { message: 'Only admins can delete products' });
 		}
 
-		if (!platform?.env.DB || !platform?.env.BUCKET) {
-			return fail(500, { message: 'Services not available' });
+		if (!platform?.env.DB) {
+			return fail(500, { message: 'Database not available' });
 		}
 
 		const formData = await request.formData();
@@ -272,8 +281,8 @@ export const actions = {
 			// Delete product
 			await db.delete(product).where(eq(product.id, productId));
 
-			// Delete image from R2 if exists
-			if (productToDelete.imageUrl) {
+			// Delete image from R2 if exists and R2 is available
+			if (productToDelete.imageUrl && platform.env.BUCKET) {
 				try {
 					await platform.env.BUCKET.delete(productToDelete.imageUrl);
 				} catch (error) {
