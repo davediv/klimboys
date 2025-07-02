@@ -131,7 +131,9 @@
 	// Get image URL - handles both production and development
 	function getImageUrl(imageKey: string | null) {
 		if (!imageKey) return null;
-		return `/api/images/${imageKey}`;
+		const url = `/api/images/${imageKey}`;
+		console.log('Generated image URL:', url, 'from key:', imageKey);
+		return url;
 	}
 	
 	// Handle image error by showing placeholder (fallback)
@@ -180,22 +182,12 @@
 				<!-- Product Image -->
 				<figure class="bg-base-200 relative h-48">
 					{#if product.imageUrl}
-						{@const imageUrl = getImageUrl(product.imageUrl)}
-						{#if dev}
-							<!-- Debug info in dev mode -->
-							<div class="absolute top-0 left-0 bg-black/50 text-white text-xs p-1 z-10">
-								{product.imageUrl}
-							</div>
-						{/if}
 						<img
-							src={imageUrl}
+							src={getImageUrl(product.imageUrl)}
 							alt={product.title}
 							class="h-full w-full object-cover"
 							onerror={handleImageError}
 						/>
-						<div class="absolute inset-0 flex hidden items-center justify-center">
-							<ImageOff class="text-base-content/30 h-12 w-12" />
-						</div>
 					{:else}
 						<div class="absolute inset-0 flex items-center justify-center">
 							<Package class="text-base-content/30 h-12 w-12" />
