@@ -38,10 +38,10 @@ function generateFileKey(category: string, filename: string): string {
 
 export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	// Check authentication
-	const session = requireAuth(locals.session);
+	requireAuth(locals.session);
 	
 	// Only admins can upload files
-	if (session.user.role !== 'admin') {
+	if (!locals.session || locals.session.user.role !== 'admin') {
 		return json({ error: 'Only admins can upload files' }, { status: 403 });
 	}
 
@@ -104,7 +104,7 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 
 		// Set metadata
 		const metadata = {
-			uploadedBy: session.user.id,
+			uploadedBy: locals.session!.user.id,
 			uploadedAt: new Date().toISOString(),
 			originalName: file.name,
 			contentType: file.type,

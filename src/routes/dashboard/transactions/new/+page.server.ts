@@ -62,8 +62,8 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 
 	// Filter sensitive data for cashiers
 	const filteredProducts = products.map((p) => {
-		if (locals.session.user.role === 'cashier') {
-			return filterDataByRole(p, locals.session.user.role, ['productCost']);
+		if (locals.session!.user.role === 'cashier') {
+			return filterDataByRole(p, locals.session!.user.role, ['productCost']);
 		}
 		return p;
 	});
