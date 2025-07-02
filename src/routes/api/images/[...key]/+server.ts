@@ -1,14 +1,31 @@
 import type { RequestHandler } from './$types';
-import { error } from '@sveltejs/kit';
+import { error, json } from '@sveltejs/kit';
+import { dev } from '$app/environment';
 
 export const GET: RequestHandler = async ({ params, platform }) => {
-	if (!platform?.env.BUCKET) {
-		throw error(500, 'Storage service not available');
-	}
-
 	const key = params.key;
 	if (!key) {
 		throw error(400, 'Invalid image key');
+	}
+
+	// In development, redirect to a placeholder image
+	if (dev && !platform?.env.BUCKET) {
+		console.warn('R2 bucket not available in development. Using placeholder image.');
+		
+		// Redirect to a placeholder image service
+		const placeholderUrl = `https://via.placeholder.com/400x300/f3f4f6/9ca3af?text=${encodeURIComponent('Product Image')}`;
+		
+		return new Response(null, {
+			status: 302,
+			headers: {
+				'Location': placeholderUrl,
+				'Cache-Control': 'public, max-age=3600'
+			}
+		});
+	}
+
+	if (!platform?.env.BUCKET) {
+		throw error(500, 'Storage service not available');
 	}
 
 	try {

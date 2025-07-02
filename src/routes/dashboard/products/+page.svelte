@@ -59,11 +59,16 @@
 		return (((price - cost) / price) * 100).toFixed(1);
 	}
 
-	// Placeholder for R2 image URL construction
+	// Get image URL - handles both production and development
 	function getImageUrl(imageKey: string | null) {
 		if (!imageKey) return null;
-		// TODO: Replace with your R2 public URL
 		return `/api/images/${imageKey}`;
+	}
+	
+	// Handle image error by showing placeholder
+	function handleImageError(event: Event) {
+		const img = event.target as HTMLImageElement;
+		img.src = 'https://via.placeholder.com/400x300?text=Product+Image';
 	}
 </script>
 
@@ -96,10 +101,7 @@
 							src={getImageUrl(product.imageUrl)}
 							alt={product.title}
 							class="h-full w-full object-cover"
-							onerror={(e) => {
-								e.currentTarget.style.display = 'none';
-								e.currentTarget.nextElementSibling?.classList.remove('hidden');
-							}}
+							onerror={handleImageError}
 						/>
 						<div class="absolute inset-0 flex hidden items-center justify-center">
 							<ImageOff class="text-base-content/30 h-12 w-12" />
@@ -520,6 +522,7 @@
 										src={getImageUrl(selectedProduct.imageUrl)}
 										alt="Current"
 										class="h-32 w-full rounded-lg object-cover"
+										onerror={handleImageError}
 									/>
 								</div>
 							{/if}

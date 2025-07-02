@@ -71,6 +71,12 @@
 			maximumFractionDigits: 0
 		}).format(amount);
 	}
+	
+	// Handle image error by showing placeholder
+	function handleImageError(event: Event) {
+		const img = event.target as HTMLImageElement;
+		img.src = 'https://via.placeholder.com/400x300?text=Product+Image';
+	}
 
 	function addToCart(product: (typeof data.products)[0]) {
 		if (!product.id || product.sellingPrice === undefined) return;
@@ -154,6 +160,7 @@
 								src={`/api/images/${product.imageUrl}`}
 								alt={product.title}
 								class="h-full w-full object-cover"
+								onerror={handleImageError}
 							/>
 						</figure>
 					{:else}
