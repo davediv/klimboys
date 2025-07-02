@@ -8,17 +8,22 @@ export const GET: RequestHandler = async ({ params, platform }) => {
 		throw error(400, 'Invalid image key');
 	}
 
-	// In development, redirect to a placeholder image
+	// In development, serve a placeholder image directly
 	if (dev && !platform?.env.BUCKET) {
-		console.warn('R2 bucket not available in development. Using placeholder image.');
+		console.warn('R2 bucket not available in development. Serving placeholder for key:', key);
 		
-		// Redirect to a placeholder image service
-		const placeholderUrl = `https://via.placeholder.com/400x300/f3f4f6/9ca3af?text=${encodeURIComponent('Product Image')}`;
+		// Create an SVG placeholder image
+		const svg = `
+			<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+				<rect width="400" height="300" fill="#f3f4f6"/>
+				<text x="50%" y="50%" font-family="Arial" font-size="18" fill="#9ca3af" text-anchor="middle" dy=".3em">Product Image</text>
+			</svg>
+		`;
 		
-		return new Response(null, {
-			status: 302,
+		return new Response(svg.trim(), {
+			status: 200,
 			headers: {
-				'Location': placeholderUrl,
+				'Content-Type': 'image/svg+xml',
 				'Cache-Control': 'public, max-age=3600'
 			}
 		});
