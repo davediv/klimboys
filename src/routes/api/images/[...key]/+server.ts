@@ -2,14 +2,22 @@ import type { RequestHandler } from './$types';
 import { error } from '@sveltejs/kit';
 import { dev } from '$app/environment';
 
-export const GET: RequestHandler = async ({ params, platform }) => {
+export const GET: RequestHandler = async ({ params, platform, url }) => {
 	try {
 		const key = params.key;
+		console.log('Image API called:', {
+			key,
+			fullUrl: url.toString(),
+			params: JSON.stringify(params),
+			dev,
+			hasPlatform: !!platform,
+			hasEnv: !!platform?.env,
+			hasBucket: !!platform?.env?.BUCKET
+		});
+		
 		if (!key) {
 			throw error(400, 'Invalid image key');
 		}
-
-		console.log('Image API called for key:', key, { dev, hasPlatform: !!platform, hasEnv: !!platform?.env, hasBucket: !!platform?.env?.BUCKET });
 
 		// In development or when R2 is not available, serve a placeholder
 		if (dev || !platform?.env?.BUCKET) {
