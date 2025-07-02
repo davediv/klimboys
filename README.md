@@ -4,17 +4,16 @@ An interactive web-based dashboard for Klimboys milk shake store to manage produ
 
 ## Tech Stack
 
-- Svelte 5
-- Sveltekit
-- TypeScript
-- TailwindCSS v4
-- DaisyUI v5
-- Cloudflare D1
-- Drizzle ORM
-- Better Auth
-- Lucide Svelte
-- Cloudflare R2
-- Cloudflare Pages (deploy)
+- Frontend: Svelte 5, SvelteKit, TypeScript, TailwindCSS v4, DaisyUI v5
+- Backend: SvelteKit (API routes)
+- Database: Cloudflare D1
+- ORM: Drizzle ORM
+- Authentication: Better Auth
+- File Storage: Cloudflare R2
+- Charts: Chart.js
+- Icons: Lucide Svelte
+- Deployment: Cloudflare Pages
+- Notifications: Telegram Bot API
 
 ## PRD
 
