@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 	}
 
 	const db = createDB(platform.env.DB);
-	
+
 	// Get all categories
 	const categories = await db.query.category.findMany({
 		orderBy: [desc(category.createdAt)]
@@ -42,7 +42,7 @@ export const actions = {
 		const formData = await request.formData();
 		const data = {
 			name: formData.get('name') as string,
-			description: formData.get('description') as string || undefined
+			description: (formData.get('description') as string) || undefined
 		};
 
 		const result = categorySchema.safeParse(data);
@@ -81,14 +81,14 @@ export const actions = {
 
 		const formData = await request.formData();
 		const categoryId = formData.get('categoryId') as string;
-		
+
 		if (!categoryId) {
 			return fail(400, { message: 'Category ID required' });
 		}
 
 		const data = {
 			name: formData.get('name') as string,
-			description: formData.get('description') as string || undefined
+			description: (formData.get('description') as string) || undefined
 		};
 
 		const result = categorySchema.safeParse(data);
@@ -100,11 +100,14 @@ export const actions = {
 
 		try {
 			const db = createDB(platform.env.DB);
-			
-			await db.update(category).set({
-				...result.data,
-				updatedAt: new Date()
-			}).where(eq(category.id, categoryId));
+
+			await db
+				.update(category)
+				.set({
+					...result.data,
+					updatedAt: new Date()
+				})
+				.where(eq(category.id, categoryId));
 
 			return { success: true };
 		} catch (error) {
@@ -131,15 +134,15 @@ export const actions = {
 
 		try {
 			const db = createDB(platform.env.DB);
-			
+
 			// Check if category has products
 			const productsInCategory = await db.query.product.findFirst({
 				where: (products, { eq }) => eq(products.categoryId, categoryId)
 			});
 
 			if (productsInCategory) {
-				return fail(400, { 
-					message: 'Cannot delete category with products. Please reassign or delete products first.' 
+				return fail(400, {
+					message: 'Cannot delete category with products. Please reassign or delete products first.'
 				});
 			}
 

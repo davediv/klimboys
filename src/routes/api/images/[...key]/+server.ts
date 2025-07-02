@@ -14,7 +14,7 @@ export const GET: RequestHandler = async ({ params, platform }) => {
 	try {
 		// Get the object from R2
 		const object = await platform.env.BUCKET.get(key);
-		
+
 		if (!object) {
 			throw error(404, 'Image not found');
 		}

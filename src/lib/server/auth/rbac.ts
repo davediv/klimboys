@@ -1,5 +1,4 @@
 import { error, redirect } from '@sveltejs/kit';
-import type { User } from '../db/schema';
 
 export type Role = 'admin' | 'cashier';
 

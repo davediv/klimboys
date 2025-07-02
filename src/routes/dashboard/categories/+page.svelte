@@ -10,10 +10,10 @@
 
 	let showCreateModal = $state(false);
 	let showEditModal = $state(false);
-	let selectedCategory = $state<typeof data.categories[0] | null>(null);
+	let selectedCategory = $state<(typeof data.categories)[0] | null>(null);
 	let loading = $state(false);
 
-	function openEditModal(category: typeof data.categories[0]) {
+	function openEditModal(category: (typeof data.categories)[0]) {
 		selectedCategory = category;
 		showEditModal = true;
 	}
@@ -31,16 +31,12 @@
 
 <div class="space-y-6">
 	<!-- Header -->
-	<div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+	<div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
 		<div>
 			<h1 class="text-3xl font-bold">Categories</h1>
 			<p class="text-base-content/70 mt-1">Organize your products into categories</p>
 		</div>
-		<Button
-			variant="primary"
-			icon={Plus}
-			onclick={() => (showCreateModal = true)}
-		>
+		<Button variant="primary" icon={Plus} onclick={() => (showCreateModal = true)}>
 			Add Category
 		</Button>
 	</div>
@@ -62,12 +58,12 @@
 						<tr>
 							<td>
 								<div class="flex items-center gap-2">
-									<Tag class="w-4 h-4 text-base-content/50" />
+									<Tag class="text-base-content/50 h-4 w-4" />
 									<span class="font-medium">{category.name}</span>
 								</div>
 							</td>
 							<td>
-								<span class="text-sm text-base-content/70">{category.description || '-'}</span>
+								<span class="text-base-content/70 text-sm">{category.description || '-'}</span>
 							</td>
 							<td>
 								<span class="text-sm">{jakartaTime.dateTime(category.createdAt)}</span>
@@ -87,7 +83,10 @@
 										use:enhance={() => {
 											return async ({ result, update }) => {
 												if (result.type === 'success') {
-													notifications.success('Category deleted', 'The category has been removed');
+													notifications.success(
+														'Category deleted',
+														'The category has been removed'
+													);
 													await update();
 												} else if (result.type === 'failure' && result.data?.message) {
 													notifications.error('Delete failed', result.data.message);
@@ -128,7 +127,7 @@
 <!-- Create Category Modal -->
 <dialog class="modal" class:modal-open={showCreateModal}>
 	<div class="modal-box">
-		<h3 class="font-bold text-lg mb-4">Create New Category</h3>
+		<h3 class="mb-4 text-lg font-bold">Create New Category</h3>
 		<form
 			method="POST"
 			action="?/create"
@@ -149,13 +148,7 @@
 					<label class="label" for="create-name">
 						<span class="label-text">Category Name</span>
 					</label>
-					<input
-						id="create-name"
-						name="name"
-						type="text"
-						class="input input-bordered"
-						required
-					/>
+					<input id="create-name" name="name" type="text" class="input input-bordered" required />
 				</div>
 
 				<div class="form-control">
@@ -172,19 +165,8 @@
 			</div>
 
 			<div class="modal-action">
-				<Button
-					type="button"
-					variant="ghost"
-					onclick={closeModals}
-				>
-					Cancel
-				</Button>
-				<Button
-					type="submit"
-					variant="primary"
-					{loading}
-					loadingText="Creating..."
-				>
+				<Button type="button" variant="ghost" onclick={closeModals}>Cancel</Button>
+				<Button type="submit" variant="primary" {loading} loadingText="Creating...">
 					Create Category
 				</Button>
 			</div>
@@ -198,7 +180,7 @@
 <!-- Edit Category Modal -->
 <dialog class="modal" class:modal-open={showEditModal}>
 	<div class="modal-box">
-		<h3 class="font-bold text-lg mb-4">Edit Category</h3>
+		<h3 class="mb-4 text-lg font-bold">Edit Category</h3>
 		{#if selectedCategory}
 			<form
 				method="POST"
@@ -216,7 +198,7 @@
 				}}
 			>
 				<input type="hidden" name="categoryId" value={selectedCategory.id} />
-				
+
 				<div class="space-y-4">
 					<div class="form-control">
 						<label class="label" for="edit-name">
@@ -247,19 +229,8 @@
 				</div>
 
 				<div class="modal-action">
-					<Button
-						type="button"
-						variant="ghost"
-						onclick={closeModals}
-					>
-						Cancel
-					</Button>
-					<Button
-						type="submit"
-						variant="primary"
-						{loading}
-						loadingText="Updating..."
-					>
+					<Button type="button" variant="ghost" onclick={closeModals}>Cancel</Button>
+					<Button type="submit" variant="primary" {loading} loadingText="Updating...">
 						Update Category
 					</Button>
 				</div>
