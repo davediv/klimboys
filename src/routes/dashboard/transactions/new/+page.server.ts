@@ -154,7 +154,7 @@ export const actions = {
 				const prod = await db.query.product.findFirst({
 					where: eq(product.id, item.productId)
 				});
-				
+
 				await db.insert(transactionItem).values({
 					id: nanoid(),
 					transactionId,

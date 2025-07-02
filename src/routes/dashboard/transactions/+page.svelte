@@ -4,7 +4,7 @@
 	import { jakartaTime } from '$lib/utils/datetime';
 	import type { PageData } from './$types';
 
-	export let data: PageData;
+	let { data }: { data: PageData } = $props();
 
 	const channelIcons: Record<string, string> = {
 		store: '🏪',
@@ -84,7 +84,9 @@
 								<div class="flex items-center gap-2">
 									<Calendar class="text-base-content/50 h-4 w-4" />
 									<div>
-										<div class="text-sm font-medium">{jakartaTime.dayDate(transaction.createdAt)}</div>
+										<div class="text-sm font-medium">
+											{jakartaTime.dayDate(transaction.createdAt)}
+										</div>
 										<div class="text-base-content/70 text-xs">
 											{jakartaTime.time(transaction.createdAt)}
 										</div>
