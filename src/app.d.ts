@@ -1,6 +1,7 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
 import type { Auth } from '$lib/server/auth';
+import type { AuthSession } from '$lib/server/auth/rbac';
 
 declare global {
 	namespace App {
@@ -14,7 +15,10 @@ declare global {
 		}
 		interface Locals {
 			auth: Auth;
-			session: any;
+			session: AuthSession | null;
+		}
+		interface PageData {
+			session: AuthSession | null;
 		}
 	}
 }

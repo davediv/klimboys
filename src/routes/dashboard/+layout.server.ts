@@ -1,10 +1,9 @@
-import { redirect } from '@sveltejs/kit';
+import { requireAuth } from '$lib/server/auth/rbac';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals }) => {
-	if (!locals.session) {
-		throw redirect(302, '/login');
-	}
+	// Require authentication for all dashboard routes
+	requireAuth(locals.session);
 
 	return {
 		session: locals.session
