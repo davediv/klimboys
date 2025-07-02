@@ -198,7 +198,16 @@ export const transaction = sqliteTable(
 			enum: ['grabfood', 'gofood', 'shopeefood', 'ubereats', 'store']
 		}).notNull(),
 		paymentMethod: text('paymentMethod', {
-			enum: ['cash', 'qris', 'debit_card', 'credit_card', 'grabfood', 'gofood', 'shopeefood', 'ubereats']
+			enum: [
+				'cash',
+				'qris',
+				'debit_card',
+				'credit_card',
+				'grabfood',
+				'gofood',
+				'shopeefood',
+				'ubereats'
+			]
 		}).notNull(),
 		totalAmount: real('totalAmount').notNull(),
 		totalCost: real('totalCost').notNull(), // Hidden from cashier

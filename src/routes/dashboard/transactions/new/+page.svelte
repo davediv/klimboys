@@ -74,7 +74,7 @@
 
 	function addToCart(product: (typeof data.products)[0]) {
 		if (!product.id || product.sellingPrice === undefined) return;
-		
+
 		const existingItem = cart.find((item) => item.productId === product.id);
 
 		if (existingItem) {

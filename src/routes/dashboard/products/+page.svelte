@@ -6,7 +6,7 @@
 	import { jakartaTime } from '$lib/utils/datetime';
 	import type { PageData } from './$types';
 
-	export let data: PageData;
+	let { data }: { data: PageData } = $props();
 
 	let showCreateModal = $state(false);
 	let showEditModal = $state(false);
