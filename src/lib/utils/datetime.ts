@@ -232,6 +232,31 @@ export function formatRelativeTime(date: Date | string | number): string {
 }
 
 /**
+ * Format month and year only
+ * Example: "Jun 2025"
+ */
+export function formatMonthYear(date?: Date | string | number): string {
+	const jakartaDate = date ? new Date(date) : new Date();
+
+	const options: Intl.DateTimeFormatOptions = {
+		timeZone: JAKARTA_TIMEZONE,
+		month: 'short',
+		year: 'numeric'
+	};
+
+	const formatter = new Intl.DateTimeFormat('en-US', options);
+	const parts = formatter.formatToParts(jakartaDate);
+
+	const year = parts.find((p) => p.type === 'year')?.value || '';
+
+	// Get Indonesian month name
+	const monthIndex = new Date(jakartaDate).getMonth();
+	const indonesianMonth = INDONESIAN_MONTHS_SHORT[monthIndex];
+
+	return `${indonesianMonth} ${year}`;
+}
+
+/**
  * Utility object for easy access to all formatters
  */
 export const jakartaTime = {
@@ -245,6 +270,7 @@ export const jakartaTime = {
 	dateTime: formatDateTime, // "25 Jun 2025, 10:30 PM"
 	time: formatTime, // "10:30 PM"
 	relative: formatRelativeTime, // "2 hours ago"
+	monthYear: formatMonthYear, // "Jun 2025"
 
 	// Checkers
 	isToday,
