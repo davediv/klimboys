@@ -604,4 +604,3 @@
 		</div>
 	</div>
 </div>
-</script>
