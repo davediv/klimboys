@@ -41,7 +41,7 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	requireAuth(locals.session);
 	
 	// Only admins can upload files
-	if (!locals.session || locals.session.user.role !== 'admin') {
+	if (!locals.session || locals.session?.user?.role !== 'admin') {
 		return json({ error: 'Only admins can upload files' }, { status: 403 });
 	}
 

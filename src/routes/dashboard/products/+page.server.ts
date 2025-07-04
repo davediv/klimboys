@@ -42,9 +42,9 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 
 	// Filter sensitive data based on role
 	const filteredProducts = products.map((p) => {
-		if (locals.session!.user.role === 'cashier') {
+		if (locals.session?.user?.role === 'cashier') {
 			// Remove cost information for cashiers
-			return filterDataByRole(p, locals.session!.user.role, ['productCost']);
+			return filterDataByRole(p, locals.session.user.role, ['productCost']);
 		}
 		return p;
 	});
@@ -52,7 +52,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 	return {
 		products: filteredProducts,
 		categories,
-		userRole: locals.session.user.role
+		userRole: locals.session?.user?.role || 'cashier'
 	};
 };
 
@@ -61,7 +61,7 @@ export const actions = {
 		requireAuth(locals.session);
 
 		// Only admins can create products
-		if (locals.session.user.role !== 'admin') {
+		if (locals.session?.user?.role !== 'admin') {
 			return fail(403, { message: 'Only admins can create products' });
 		}
 
@@ -141,7 +141,7 @@ export const actions = {
 		requireAuth(locals.session);
 
 		// Only admins can update products
-		if (locals.session.user.role !== 'admin') {
+		if (locals.session?.user?.role !== 'admin') {
 			return fail(403, { message: 'Only admins can update products' });
 		}
 
@@ -241,7 +241,7 @@ export const actions = {
 		requireAuth(locals.session);
 
 		// Only admins can delete products
-		if (locals.session.user.role !== 'admin') {
+		if (locals.session?.user?.role !== 'admin') {
 			return fail(403, { message: 'Only admins can delete products' });
 		}
 

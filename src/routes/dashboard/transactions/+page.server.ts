@@ -33,7 +33,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 			}
 		},
 		where:
-			locals.session.user.role === 'cashier'
+			locals.session?.user?.role === 'cashier'
 				? eq(transaction.cashierId, locals.session.user.id)
 				: undefined
 	});

@@ -90,7 +90,7 @@
 		}
 	].filter((item) => {
 		// Filter menu items based on user role
-		if (!session) return false;
+		if (!session?.user?.role) return false;
 		return item.roles.includes(session.user.role);
 	});
 </script>
