@@ -13,8 +13,8 @@
 		height?: string;
 	} = $props();
 
-	let canvas = $state<HTMLCanvasElement>();
-	let chart = $state<Chart | null>(null);
+	let canvas: HTMLCanvasElement;
+	let chart: Chart | null = null;
 
 	function formatCurrency(amount: number) {
 		return new Intl.NumberFormat('id-ID', {
@@ -25,15 +25,24 @@
 	}
 
 	function createChart() {
-		if (!canvas || !data.length) return;
+		if (!canvas || !data.length) {
+			console.log('Chart creation skipped:', { canvas: !!canvas, dataLength: data.length });
+			return;
+		}
 
 		// Destroy existing chart if any
 		if (chart) {
 			chart.destroy();
+			chart = null;
 		}
 
 		const ctx = canvas.getContext('2d');
-		if (!ctx) return;
+		if (!ctx) {
+			console.error('Failed to get canvas context');
+			return;
+		}
+
+		console.log('Creating chart with data:', data);
 
 		// Prepare data
 		const labels = data.map(d => jakartaTime.dayDate(d.date));
@@ -146,16 +155,18 @@
 		});
 	}
 
-	// Effect for chart creation/update
+	// Effect for chart lifecycle
 	$effect(() => {
-		if (canvas && data.length > 0) {
-			createChart();
-		}
-	});
+		// Wait for next tick to ensure canvas is mounted
+		const timer = setTimeout(() => {
+			if (canvas && data.length > 0) {
+				createChart();
+			}
+		}, 0);
 
-	// Effect for cleanup on unmount
-	$effect(() => {
+		// Cleanup
 		return () => {
+			clearTimeout(timer);
 			if (chart) {
 				chart.destroy();
 				chart = null;
@@ -164,6 +175,14 @@
 	});
 </script>
 
-<div class="bg-base-100 rounded-box p-6 shadow" style="height: {height};">
-	<canvas bind:this={canvas}></canvas>
+<div class="bg-base-100 rounded-box p-6 shadow">
+	{#if data.length === 0}
+		<div class="flex items-center justify-center" style="height: {height};">
+			<p class="text-base-content/50">No sales data available for the selected period.</p>
+		</div>
+	{:else}
+		<div style="position: relative; height: {height};">
+			<canvas bind:this={canvas}></canvas>
+		</div>
+	{/if}
 </div>

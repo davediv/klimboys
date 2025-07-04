@@ -154,9 +154,7 @@
 	</div>
 
 	<!-- Daily Sales Chart -->
-	<div class="bg-base-100 rounded-box p-6 shadow">
-		<DailySalesChart data={data.dailySalesData} height="400px" />
-	</div>
+	<DailySalesChart data={data.dailySalesData} height="400px" />
 
 	<!-- Content Grid -->
 	<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
