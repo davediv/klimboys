@@ -105,9 +105,11 @@
 										method="POST"
 										action="?/delete"
 										use:enhance={() => {
-											return async ({ result }) => {
+											return async ({ result, update }) => {
 												if (result.type === 'success') {
 													notifications.success('User deleted', 'The user has been deactivated');
+													// Update the page data without a full reload
+													await update();
 												}
 											};
 										}}
@@ -151,11 +153,13 @@
 			action="?/create"
 			use:enhance={() => {
 				loading = true;
-				return async ({ result }) => {
+				return async ({ result, update }) => {
 					loading = false;
 					if (result.type === 'success') {
 						notifications.success('User created', 'The new user can now log in');
 						closeModals();
+						// Update the page data without a full reload
+						await update();
 					}
 				};
 			}}
@@ -232,11 +236,13 @@
 				action="?/update"
 				use:enhance={() => {
 					loading = true;
-					return async ({ result }) => {
+					return async ({ result, update }) => {
 						loading = false;
 						if (result.type === 'success') {
 							notifications.success('User updated', 'The user details have been updated');
 							closeModals();
+							// Update the page data without a full reload
+							await update();
 						}
 					};
 				}}
