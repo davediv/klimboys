@@ -277,7 +277,13 @@ export const actions = {
 			});
 
 			return redirect(303, '/dashboard/transactions');
-		} catch (error) {
+		} catch (error: any) {
+			// Check if this is a SvelteKit redirect (not an actual error)
+			if (error && typeof error === 'object' && 'status' in error && 'location' in error) {
+				// This is a redirect, not an error - re-throw it
+				throw error;
+			}
+			
 			console.error('Create transaction error:', error);
 			// If we already created the transaction but failed on items, we should clean up
 			if (transactionCreated) {
