@@ -89,6 +89,8 @@ export async function logActivity(
 	action: string,
 	details?: Omit<ActivityLog, 'userId' | 'action' | 'timestamp'>
 ): Promise<void> {
+	console.log('[RBAC] logActivity called with:', { userId, action });
+	
 	// Import dynamically to avoid circular dependencies
 	const { logActivityToDatabase } = await import('./activity-log');
 	const { createDB } = await import('../db');
@@ -96,9 +98,11 @@ export async function logActivity(
 	// Get database from global context (will be set in hooks)
 	const db = globalThis.__db;
 	if (!db) {
-		console.warn('Database not available for activity logging');
+		console.warn('[RBAC] Database not available for activity logging');
+		console.warn('[RBAC] globalThis.__db is:', globalThis.__db);
 		return;
 	}
 	
+	console.log('[RBAC] Database instance found, proceeding with activity logging');
 	await logActivityToDatabase(db, userId, action, details);
 }
