@@ -264,7 +264,7 @@ Klimboys POS Dashboard implementation with 174 total tasks across 4 development 
   - **Dependencies**: Dashboard setup
   - **Effort**: M
 
-- [ ] 🟡 Add best selling products widget
+- [x] 🟡 Add best selling products widget
 
   - **Acceptance Criteria**: Top 5 products displayed
   - **Dependencies**: Transaction data

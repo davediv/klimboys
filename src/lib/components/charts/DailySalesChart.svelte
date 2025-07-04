@@ -146,13 +146,15 @@
 		});
 	}
 
+	// Effect for chart creation/update
 	$effect(() => {
-		// Create chart when canvas is ready or data changes
 		if (canvas && data.length > 0) {
 			createChart();
 		}
+	});
 
-		// Cleanup on unmount
+	// Effect for cleanup on unmount
+	$effect(() => {
 		return () => {
 			if (chart) {
 				chart.destroy();
