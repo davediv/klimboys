@@ -13,6 +13,7 @@
 	} from '@lucide/svelte';
 	import { jakartaTime } from '$lib/utils/datetime';
 	import type { PageData } from './$types';
+	import DailySalesChart from '$lib/components/charts/DailySalesChart.svelte';
 
 	const session = useSession();
 	let { data }: { data: PageData } = $props();
@@ -150,6 +151,11 @@
 				</div>
 			</div>
 		</div>
+	</div>
+
+	<!-- Daily Sales Chart -->
+	<div class="bg-base-100 rounded-box p-6 shadow">
+		<DailySalesChart data={data.dailySalesData} height="400px" />
 	</div>
 
 	<!-- Content Grid -->

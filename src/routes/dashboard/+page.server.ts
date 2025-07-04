@@ -92,6 +92,39 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		.orderBy(desc(sql`sum(${transactionItem.quantity})`))
 		.limit(5);
 
+	// Get daily sales data for the last 7 days
+	const sevenDaysAgo = new Date();
+	sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6); // 6 days ago + today = 7 days
+	sevenDaysAgo.setHours(0, 0, 0, 0);
+
+	const dailySalesData = await db
+		.select({
+			date: sql<string>`date(${transaction.createdAt} / 1000, 'unixepoch')`,
+			revenue: sql<number>`coalesce(sum(${transaction.totalAmount}), 0)`,
+			transactions: sql<number>`count(*)`
+		})
+		.from(transaction)
+		.where(gte(transaction.createdAt, sevenDaysAgo))
+		.groupBy(sql`date(${transaction.createdAt} / 1000, 'unixepoch')`)
+		.orderBy(sql`date(${transaction.createdAt} / 1000, 'unixepoch')`);
+
+	// Fill in missing dates with zero values
+	const salesByDate = new Map(dailySalesData.map(d => [d.date, d]));
+	const completeData = [];
+	
+	for (let i = 0; i < 7; i++) {
+		const date = new Date(sevenDaysAgo);
+		date.setDate(date.getDate() + i);
+		const dateStr = date.toISOString().split('T')[0];
+		
+		const dayData = salesByDate.get(dateStr);
+		completeData.push({
+			date: dateStr,
+			revenue: dayData?.revenue || 0,
+			transactions: dayData?.transactions || 0
+		});
+	}
+
 	return {
 		stats: {
 			todayTransactions: todayTransactions[0]?.count || 0,
@@ -102,6 +135,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		},
 		lowStockItems,
 		recentTransactions,
-		bestSellingToday
+		bestSellingToday,
+		dailySalesData: completeData
 	};
 };
