@@ -8,6 +8,8 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 	requireAdmin(locals.session);
 
 	const db = createDB(platform!.env.DB);
+	
+	try {
 
 	// Get date ranges
 	const now = new Date();
@@ -18,6 +20,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 	monthAgo.setMonth(monthAgo.getMonth() - 1);
 
 	// Get cashier performance summary
+	console.log('[Cashier Performance] Fetching cashier summary...');
 	const cashierSummary = await db
 		.select({
 			cashierId: transaction.cashierId,
@@ -40,6 +43,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		.orderBy(desc(sql`sum(${transaction.totalAmount})`));
 
 	// Get today's performance by cashier
+	console.log('[Cashier Performance] Fetching today performance...');
 	const todayPerformance = await db
 		.select({
 			cashierId: transaction.cashierId,
@@ -58,14 +62,14 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		.groupBy(transaction.cashierId, user.name)
 		.orderBy(desc(sql`sum(${transaction.totalAmount})`));
 
-	// Get weekly trend by cashier
-	const weeklyTrend = await db
+	// Get weekly trend by cashier - simplified without date grouping
+	console.log('[Cashier Performance] Fetching weekly trend...');
+	const weeklyTrendRaw = await db
 		.select({
 			cashierId: transaction.cashierId,
 			cashierName: user.name,
 			createdAt: transaction.createdAt,
-			revenue: sql<number>`coalesce(sum(${transaction.totalAmount}), 0)`,
-			transactions: sql<number>`count(*)`
+			amount: transaction.totalAmount
 		})
 		.from(transaction)
 		.innerJoin(user, eq(transaction.cashierId, user.id))
@@ -75,10 +79,30 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 				gte(transaction.createdAt, weekAgo)
 			)
 		)
-		.groupBy(transaction.cashierId, user.name)
 		.orderBy(transaction.createdAt);
+	
+	// Group by cashier and date in JavaScript
+	const weeklyTrend = Object.values(
+		weeklyTrendRaw.reduce((acc, row) => {
+			const date = new Date(row.createdAt).toISOString().split('T')[0];
+			const key = `${row.cashierId}-${date}`;
+			if (!acc[key]) {
+				acc[key] = {
+					cashierId: row.cashierId,
+					cashierName: row.cashierName,
+					createdAt: row.createdAt,
+					revenue: 0,
+					transactions: 0
+				};
+			}
+			acc[key].revenue += row.amount;
+			acc[key].transactions += 1;
+			return acc;
+		}, {} as Record<string, any>)
+	);
 
 	// Get channel preference by cashier
+	console.log('[Cashier Performance] Fetching channel preference...');
 	const channelPreference = await db
 		.select({
 			cashierId: transaction.cashierId,
@@ -98,14 +122,14 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		.groupBy(transaction.cashierId, user.name, transaction.channel)
 		.orderBy(desc(sql`count(*)`));
 
-	// Get hourly performance pattern by cashier
-	const hourlyPattern = await db
+	// Get hourly performance pattern by cashier - simplified
+	console.log('[Cashier Performance] Fetching hourly pattern...');
+	const hourlyPatternRaw = await db
 		.select({
 			cashierId: transaction.cashierId,
 			cashierName: user.name,
 			createdAt: transaction.createdAt,
-			transactions: sql<number>`count(*)`,
-			avgRevenue: sql<number>`coalesce(avg(${transaction.totalAmount}), 0)`
+			amount: transaction.totalAmount
 		})
 		.from(transaction)
 		.innerJoin(user, eq(transaction.cashierId, user.id))
@@ -115,10 +139,33 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 				gte(transaction.createdAt, weekAgo)
 			)
 		)
-		.groupBy(transaction.cashierId, user.name, transaction.createdAt)
 		.orderBy(transaction.createdAt);
+	
+	// Group by cashier and hour in JavaScript
+	const hourlyPattern = Object.values(
+		hourlyPatternRaw.reduce((acc, row) => {
+			const hour = new Date(row.createdAt).getHours();
+			const key = `${row.cashierId}-${hour}`;
+			if (!acc[key]) {
+				acc[key] = {
+					cashierId: row.cashierId,
+					cashierName: row.cashierName,
+					createdAt: row.createdAt,
+					hour,
+					transactions: 0,
+					totalRevenue: 0,
+					avgRevenue: 0
+				};
+			}
+			acc[key].transactions += 1;
+			acc[key].totalRevenue += row.amount;
+			acc[key].avgRevenue = acc[key].totalRevenue / acc[key].transactions;
+			return acc;
+		}, {} as Record<string, any>)
+	);
 
 	// Get top selling products by cashier (last 7 days)
+	console.log('[Cashier Performance] Fetching top products by cashier...');
 	const topProductsByCashier = await db
 		.select({
 			cashierId: transaction.cashierId,
@@ -158,12 +205,6 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 			.findIndex(c => c.cashierId === cashier.cashierId) + 1
 	}));
 
-	// Process hourly pattern to extract hours
-	const processedHourlyPattern = hourlyPattern.map(row => ({
-		...row,
-		hour: new Date(row.createdAt).getHours()
-	}));
-
 	// Process weekly trend to extract dates
 	const processedWeeklyTrend = weeklyTrend.map(row => ({
 		...row,
@@ -175,7 +216,11 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		todayPerformance,
 		weeklyTrend: processedWeeklyTrend,
 		channelPreference,
-		hourlyPattern: processedHourlyPattern,
+		hourlyPattern,
 		topProductsByCashier
 	};
+	} catch (error) {
+		console.error('[Cashier Performance] Error in load function:', error);
+		throw error;
+	}
 };
