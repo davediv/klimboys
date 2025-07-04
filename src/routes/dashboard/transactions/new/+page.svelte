@@ -256,10 +256,12 @@
 					action="?/create"
 					use:enhance={() => {
 						loading = true;
-						return async ({ result }) => {
+						return async ({ result, update }) => {
 							loading = false;
 							if (result.type === 'redirect') {
 								notifications.success('Transaction created', 'The transaction has been recorded');
+								// Apply the redirect
+								await update();
 							} else if (result.type === 'failure' && result.data?.message) {
 								notifications.error('Transaction failed', String(result.data.message));
 							}
