@@ -1,5 +1,5 @@
 import { createDB } from '$lib/server/db';
-import { product, category } from '$lib/server/db/schema';
+import { product, category, inventory } from '$lib/server/db/schema';
 import { requireAuth, filterDataByRole } from '$lib/server/auth/rbac';
 import type { PageServerLoad, Actions } from './$types';
 import { fail } from '@sveltejs/kit';
@@ -109,6 +109,25 @@ export const actions = {
 				updatedAt: new Date()
 			});
 
+			// Automatically create inventory item for the product
+			// Using the product itself as an inventory item (for finished products)
+			const inventoryId = nanoid();
+			await db.insert(inventory).values({
+				id: inventoryId,
+				name: result.data.title,
+				unit: 'pcs', // Products are counted in pieces
+				currentStock: 0, // Start with 0 stock
+				minimumStock: 10, // Default minimum stock
+				createdAt: new Date(),
+				updatedAt: new Date()
+			});
+
+			console.log('Created inventory item for product:', {
+				productId,
+				inventoryId,
+				productName: result.data.title
+			});
+
 			return { success: true };
 		} catch (error) {
 			console.error('Create product error:', error);
@@ -181,7 +200,33 @@ export const actions = {
 				updateData.imageUrl = newImageUrl;
 			}
 
+			// Get the old product to check if title changed
+			const oldProduct = await db.query.product.findFirst({
+				where: eq(product.id, productId)
+			});
+
 			await db.update(product).set(updateData).where(eq(product.id, productId));
+
+			// If product title changed, update the related inventory item name
+			if (oldProduct && oldProduct.title !== result.data.title) {
+				const relatedInventory = await db.query.inventory.findFirst({
+					where: eq(inventory.name, oldProduct.title)
+				});
+
+				if (relatedInventory) {
+					await db.update(inventory)
+						.set({ 
+							name: result.data.title,
+							updatedAt: new Date()
+						})
+						.where(eq(inventory.id, relatedInventory.id));
+					
+					console.log('Updated inventory item name:', {
+						oldName: oldProduct.title,
+						newName: result.data.title
+					});
+				}
+			}
 
 			return { success: true };
 		} catch (error) {
@@ -223,8 +268,19 @@ export const actions = {
 				return fail(404, { message: 'Product not found' });
 			}
 
+			// First check if there's an inventory item with the same name
+			const relatedInventory = await db.query.inventory.findFirst({
+				where: eq(inventory.name, productToDelete.title)
+			});
+
 			// Delete product
 			await db.delete(product).where(eq(product.id, productId));
+
+			// Delete related inventory item if it exists and has no stock
+			if (relatedInventory && relatedInventory.currentStock === 0) {
+				await db.delete(inventory).where(eq(inventory.id, relatedInventory.id));
+				console.log('Deleted related inventory item:', relatedInventory.id);
+			}
 
 			// Delete image from R2 if exists and R2 is available
 			if (productToDelete.imageUrl && platform.env.BUCKET) {
