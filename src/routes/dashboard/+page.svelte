@@ -274,6 +274,57 @@
 				</div>
 			</div>
 
+			<!-- Peak Hours Widget -->
+			<div class="bg-base-100 rounded-box mt-6 shadow">
+				<div class="border-b p-4">
+					<h3 class="text-lg font-bold flex items-center gap-2">
+						<Clock class="h-5 w-5" />
+						Today's Peak Hours
+					</h3>
+				</div>
+				<div class="p-4">
+					{#if data.todayPeakHours.length > 0}
+						<div class="space-y-3">
+							{#each data.todayPeakHours as peak, index}
+								<div class="flex items-center justify-between">
+									<div class="flex items-center gap-3">
+										<div class="badge badge-lg badge-primary font-bold">{index + 1}</div>
+										<div>
+											<p class="font-medium">{peak.hour}:00 - {peak.hour + 1}:00</p>
+											<p class="text-base-content/70 text-sm">
+												{peak.transactions} transactions
+											</p>
+										</div>
+									</div>
+									<div class="text-right">
+										<p class="font-semibold">{formatCurrency(peak.revenue)}</p>
+									</div>
+								</div>
+							{/each}
+						</div>
+						<div class="divider"></div>
+						<div class="flex items-center justify-between">
+							<div class="text-sm">
+								<p class="font-medium">Current Hour ({data.currentHour}:00)</p>
+								<p class="text-base-content/70">
+									{data.stats.currentHourTransactions} transactions
+								</p>
+							</div>
+							<div class="text-right">
+								<p class="font-semibold">{formatCurrency(data.stats.currentHourRevenue)}</p>
+							</div>
+						</div>
+						<div class="mt-4">
+							<Button size="sm" variant="ghost" href="/dashboard/analytics/peak-hours" icon={ChevronRight}>
+								View Full Analysis
+							</Button>
+						</div>
+					{:else}
+						<div class="text-base-content/50 py-4 text-center">No transactions yet today.</div>
+					{/if}
+				</div>
+			</div>
+
 			<!-- Critical Low Stock Items -->
 			{#if data.lowStockItems.length > 0}
 				<div class="bg-base-100 rounded-box mt-6 shadow">

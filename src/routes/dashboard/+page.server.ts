@@ -150,19 +150,54 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		.groupBy(transaction.channel)
 		.orderBy(desc(sql`sum(${transaction.totalAmount})`));
 
+	// Get today's peak hours
+	const todayPeakHours = await db
+		.select({
+			hour: sql<number>`cast(strftime('%H', ${transaction.createdAt} / 1000, 'unixepoch') as integer)`,
+			transactions: sql<number>`count(*)`,
+			revenue: sql<number>`coalesce(sum(${transaction.totalAmount}), 0)`
+		})
+		.from(transaction)
+		.where(and(gte(transaction.createdAt, startOfDay), lte(transaction.createdAt, endOfDay)))
+		.groupBy(sql`strftime('%H', ${transaction.createdAt} / 1000, 'unixepoch')`)
+		.orderBy(desc(sql`count(*)`))
+		.limit(3);
+
+	// Get current hour stats
+	const currentHour = new Date().getHours();
+	const currentHourStart = new Date(now);
+	currentHourStart.setHours(currentHour, 0, 0, 0);
+	const currentHourEnd = new Date(now);
+	currentHourEnd.setHours(currentHour, 59, 59, 999);
+
+	const currentHourStats = await db
+		.select({
+			transactions: sql<number>`count(*)`,
+			revenue: sql<number>`coalesce(sum(${transaction.totalAmount}), 0)`
+		})
+		.from(transaction)
+		.where(and(
+			gte(transaction.createdAt, currentHourStart),
+			lte(transaction.createdAt, currentHourEnd)
+		));
+
 	return {
 		stats: {
 			todayTransactions: todayTransactions[0]?.count || 0,
 			todayRevenue: todayRevenue[0]?.total || 0,
 			monthRevenue: monthRevenue[0]?.total || 0,
 			lowStockCount: lowStockItems.length,
-			outOfStockCount: outOfStockCount[0]?.count || 0
+			outOfStockCount: outOfStockCount[0]?.count || 0,
+			currentHourTransactions: currentHourStats[0]?.transactions || 0,
+			currentHourRevenue: currentHourStats[0]?.revenue || 0
 		},
 		lowStockItems,
 		recentTransactions,
 		bestSellingToday,
 		dailySalesData: completeData,
 		channelPerformance,
-		todayChannelPerformance
+		todayChannelPerformance,
+		todayPeakHours,
+		currentHour
 	};
 };

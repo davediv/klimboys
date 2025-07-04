@@ -260,6 +260,11 @@
 				Analyzing data from {jakartaTime.dayDate(data.dateRange.start)} to {jakartaTime.dayDate(data.dateRange.end)}
 			</p>
 		</div>
+		<div class="flex gap-2">
+			<Button variant="primary" href="/dashboard/analytics/peak-hours" icon={Clock}>
+				Peak Hours Analysis
+			</Button>
+		</div>
 	</div>
 
 	<!-- Summary Cards -->
