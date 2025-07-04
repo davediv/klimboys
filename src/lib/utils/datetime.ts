@@ -71,11 +71,11 @@ export function formatFullDateTime(date?: Date | string | number): string {
 	const dayPeriod = parts.find((p) => p.type === 'dayPeriod')?.value || '';
 
 	// Get Indonesian day name
-	const dayIndex = new Date(jakartaDate).getDay();
+	const dayIndex = jakartaDate.getDay();
 	const indonesianDay = INDONESIAN_DAYS[dayIndex];
 
 	// Get Indonesian month name
-	const monthIndex = new Date(jakartaDate).getMonth();
+	const monthIndex = jakartaDate.getMonth();
 	const indonesianMonth = INDONESIAN_MONTHS_SHORT[monthIndex];
 
 	return `${indonesianDay}, ${day} ${indonesianMonth} ${year}, ${hour}:${minute} ${dayPeriod}`;
@@ -103,10 +103,10 @@ export function formatDayDate(date?: Date | string | number): string {
 	const year = parts.find((p) => p.type === 'year')?.value || '';
 
 	// Get Indonesian day and month names
-	const dayIndex = new Date(jakartaDate).getDay();
+	const dayIndex = jakartaDate.getDay();
 	const indonesianDay = INDONESIAN_DAYS[dayIndex];
 
-	const monthIndex = new Date(jakartaDate).getMonth();
+	const monthIndex = jakartaDate.getMonth();
 	const indonesianMonth = INDONESIAN_MONTHS_SHORT[monthIndex];
 
 	return `${indonesianDay}, ${day} ${indonesianMonth} ${year}`;
@@ -139,7 +139,7 @@ export function formatDateTime(date?: Date | string | number): string {
 	const dayPeriod = parts.find((p) => p.type === 'dayPeriod')?.value || '';
 
 	// Get Indonesian month name
-	const monthIndex = new Date(jakartaDate).getMonth();
+	const monthIndex = jakartaDate.getMonth();
 	const indonesianMonth = INDONESIAN_MONTHS_SHORT[monthIndex];
 
 	return `${day} ${indonesianMonth} ${year}, ${hour}:${minute} ${dayPeriod}`;
@@ -202,7 +202,7 @@ export function isTomorrow(date: Date | string | number): boolean {
 export function formatRelativeTime(date: Date | string | number): string {
 	const jakartaDate = toJakartaTime(date);
 	const now = getCurrentJakartaTime();
-	const diffMs = jakartaDate.getTime() - now.getTime();
+	const diffMs = (jakartaDate instanceof Date ? jakartaDate : new Date(jakartaDate)).getTime() - now.getTime();
 	const diffSecs = Math.floor(diffMs / 1000);
 	const diffMins = Math.floor(diffSecs / 60);
 	const diffHours = Math.floor(diffMins / 60);
@@ -250,7 +250,7 @@ export function formatMonthYear(date?: Date | string | number): string {
 	const year = parts.find((p) => p.type === 'year')?.value || '';
 
 	// Get Indonesian month name
-	const monthIndex = new Date(jakartaDate).getMonth();
+	const monthIndex = jakartaDate.getMonth();
 	const indonesianMonth = INDONESIAN_MONTHS_SHORT[monthIndex];
 
 	return `${indonesianMonth} ${year}`;
