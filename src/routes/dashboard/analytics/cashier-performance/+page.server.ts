@@ -154,9 +154,11 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		)
 		.limit(50); // Limit to top 50 to get ~10 per cashier
 
-	// Calculate performance rankings
+	// Calculate performance rankings and ensure dates are properly formatted
 	const performanceRankings = cashierSummary.map((cashier, index) => ({
 		...cashier,
+		// Convert timestamp to Date object if it exists
+		lastTransactionDate: cashier.lastTransactionDate ? new Date(cashier.lastTransactionDate) : null,
 		revenueRank: index + 1,
 		transactionRank: [...cashierSummary]
 			.sort((a, b) => b.totalTransactions - a.totalTransactions)
