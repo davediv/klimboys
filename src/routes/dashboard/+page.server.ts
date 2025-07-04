@@ -99,14 +99,14 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 
 	const dailySalesData = await db
 		.select({
-			date: sql<string>`date(${transaction.createdAt} / 1000, 'unixepoch')`,
+			date: sql<string>`strftime('%Y-%m-%d', ${transaction.createdAt} / 1000, 'unixepoch')`,
 			revenue: sql<number>`coalesce(sum(${transaction.totalAmount}), 0)`,
 			transactions: sql<number>`count(*)`
 		})
 		.from(transaction)
 		.where(gte(transaction.createdAt, sevenDaysAgo))
-		.groupBy(sql`date(${transaction.createdAt} / 1000, 'unixepoch')`)
-		.orderBy(sql`date(${transaction.createdAt} / 1000, 'unixepoch')`);
+		.groupBy(sql`strftime('%Y-%m-%d', ${transaction.createdAt} / 1000, 'unixepoch')`)
+		.orderBy(sql`strftime('%Y-%m-%d', ${transaction.createdAt} / 1000, 'unixepoch')`);
 
 	// Fill in missing dates with zero values
 	const salesByDate = new Map(dailySalesData.map(d => [d.date, d]));
