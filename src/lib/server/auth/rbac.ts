@@ -9,11 +9,14 @@ export interface AuthSession {
 		name: string;
 		role: Role;
 		image?: string | null;
+		isActive?: boolean;
 	};
 	session: {
 		id: string;
 		expiresAt: Date;
 		userId: string;
+		updatedAt?: Date;
+		createdAt?: Date;
 	};
 }
 
@@ -86,6 +89,16 @@ export async function logActivity(
 	action: string,
 	details?: Omit<ActivityLog, 'userId' | 'action' | 'timestamp'>
 ): Promise<void> {
-	// This will be implemented when we add the activity log table
-	console.log('Activity:', { userId, action, ...details, timestamp: new Date() });
+	// Import dynamically to avoid circular dependencies
+	const { logActivityToDatabase } = await import('./activity-log');
+	const { createDB } = await import('../db');
+	
+	// Get database from global context (will be set in hooks)
+	const db = globalThis.__db;
+	if (!db) {
+		console.warn('Database not available for activity logging');
+		return;
+	}
+	
+	await logActivityToDatabase(db, userId, action, details);
 }
