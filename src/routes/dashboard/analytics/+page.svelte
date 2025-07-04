@@ -1,6 +1,6 @@
 <script lang="ts">
 	import Button from '$lib/components/Button.svelte';
-	import { BarChart3, TrendingUp, Package, Clock, CreditCard, ArrowLeft } from '@lucide/svelte';
+	import { BarChart3, TrendingUp, Package, Clock, CreditCard, ArrowLeft, Users } from '@lucide/svelte';
 	import { jakartaTime } from '$lib/utils/datetime';
 	import type { PageData } from './$types';
 	import type { TransactionChannel, PaymentMethod } from '$lib/server/db/schema';
@@ -260,9 +260,12 @@
 				Analyzing data from {jakartaTime.dayDate(data.dateRange.start)} to {jakartaTime.dayDate(data.dateRange.end)}
 			</p>
 		</div>
-		<div class="flex gap-2">
+		<div class="flex flex-wrap gap-2">
 			<Button variant="primary" href="/dashboard/analytics/peak-hours" icon={Clock}>
-				Peak Hours Analysis
+				Peak Hours
+			</Button>
+			<Button variant="primary" href="/dashboard/analytics/cashier-performance" icon={Users}>
+				Cashier Performance
 			</Button>
 		</div>
 	</div>

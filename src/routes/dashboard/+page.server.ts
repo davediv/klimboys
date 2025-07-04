@@ -1,5 +1,5 @@
 import { createDB } from '$lib/server/db';
-import { transaction, inventory, product, transactionItem } from '$lib/server/db/schema';
+import { transaction, inventory, product, transactionItem, user } from '$lib/server/db/schema';
 import { requireAuth } from '$lib/server/auth/rbac';
 import type { PageServerLoad } from './$types';
 import { eq, and, gte, lte, sql, desc } from 'drizzle-orm';
@@ -181,6 +181,28 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 			lte(transaction.createdAt, currentHourEnd)
 		));
 
+	// Get top cashier performance for today (admin only)
+	let topCashiersToday = [];
+	if (locals.session.user.role === 'admin') {
+		topCashiersToday = await db
+			.select({
+				cashierId: transaction.cashierId,
+				cashierName: user.name,
+				revenue: sql<number>`coalesce(sum(${transaction.totalAmount}), 0)`,
+				transactions: sql<number>`count(*)`
+			})
+			.from(transaction)
+			.innerJoin(user, eq(transaction.cashierId, user.id))
+			.where(and(
+				eq(transaction.status, 'completed'),
+				gte(transaction.createdAt, startOfDay),
+				lte(transaction.createdAt, endOfDay)
+			))
+			.groupBy(transaction.cashierId, user.name)
+			.orderBy(desc(sql`sum(${transaction.totalAmount})`))
+			.limit(3);
+	}
+
 	return {
 		stats: {
 			todayTransactions: todayTransactions[0]?.count || 0,
@@ -198,6 +220,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		channelPerformance,
 		todayChannelPerformance,
 		todayPeakHours,
-		currentHour
+		currentHour,
+		topCashiersToday
 	};
 };
