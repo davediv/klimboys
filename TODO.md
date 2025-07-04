@@ -270,7 +270,7 @@ Klimboys POS Dashboard implementation with 174 total tasks across 4 development 
   - **Dependencies**: Transaction data
   - **Effort**: M
 
-- [ ] 🟢 Create channel performance metrics
+- [x] 🟢 Create channel performance metrics
 
   - **Acceptance Criteria**: Sales by channel breakdown
   - **Dependencies**: Transaction data
