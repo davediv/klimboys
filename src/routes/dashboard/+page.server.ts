@@ -125,6 +125,31 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		});
 	}
 
+	// Get channel performance metrics for this month
+	const channelPerformance = await db
+		.select({
+			channel: transaction.channel,
+			revenue: sql<number>`coalesce(sum(${transaction.totalAmount}), 0)`,
+			transactions: sql<number>`count(*)`,
+			avgOrderValue: sql<number>`coalesce(avg(${transaction.totalAmount}), 0)`
+		})
+		.from(transaction)
+		.where(and(gte(transaction.createdAt, startOfMonth), lte(transaction.createdAt, endOfMonth)))
+		.groupBy(transaction.channel)
+		.orderBy(desc(sql`sum(${transaction.totalAmount})`));
+
+	// Get channel performance for today
+	const todayChannelPerformance = await db
+		.select({
+			channel: transaction.channel,
+			revenue: sql<number>`coalesce(sum(${transaction.totalAmount}), 0)`,
+			transactions: sql<number>`count(*)`
+		})
+		.from(transaction)
+		.where(and(gte(transaction.createdAt, startOfDay), lte(transaction.createdAt, endOfDay)))
+		.groupBy(transaction.channel)
+		.orderBy(desc(sql`sum(${transaction.totalAmount})`));
+
 	return {
 		stats: {
 			todayTransactions: todayTransactions[0]?.count || 0,
@@ -136,6 +161,8 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		lowStockItems,
 		recentTransactions,
 		bestSellingToday,
-		dailySalesData: completeData
+		dailySalesData: completeData,
+		channelPerformance,
+		todayChannelPerformance
 	};
 };

@@ -14,6 +14,8 @@
 	import { jakartaTime } from '$lib/utils/datetime';
 	import type { PageData } from './$types';
 	import DailySalesChart from '$lib/components/charts/DailySalesChart.svelte';
+	import ChannelPerformanceChart from '$lib/components/charts/ChannelPerformanceChart.svelte';
+	import ChannelComparisonChart from '$lib/components/charts/ChannelComparisonChart.svelte';
 
 	const session = useSession();
 	let { data }: { data: PageData } = $props();
@@ -155,6 +157,30 @@
 
 	<!-- Daily Sales Chart -->
 	<DailySalesChart data={data.dailySalesData} height="400px" />
+
+	<!-- Channel Performance Section -->
+	<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+		<!-- Channel Revenue Distribution -->
+		<ChannelPerformanceChart 
+			data={data.channelPerformance} 
+			type="revenue" 
+			height="350px" 
+		/>
+		
+		<!-- Channel Transaction Distribution -->
+		<ChannelPerformanceChart 
+			data={data.channelPerformance} 
+			type="transactions" 
+			height="350px" 
+		/>
+	</div>
+
+	<!-- Channel Comparison Chart -->
+	<ChannelComparisonChart 
+		monthData={data.channelPerformance} 
+		todayData={data.todayChannelPerformance} 
+		height="400px" 
+	/>
 
 	<!-- Content Grid -->
 	<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
