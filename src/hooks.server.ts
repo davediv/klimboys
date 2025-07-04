@@ -12,6 +12,7 @@ import { eq } from 'drizzle-orm';
 // Store database instance globally for activity logging
 declare global {
 	var __db: ReturnType<typeof createDB> | undefined;
+	var __d1: D1Database | undefined;
 	var __tablesChecked: boolean | undefined;
 }
 
@@ -20,14 +21,14 @@ export const handle: Handle = async ({ event, resolve }) => {
 	if (event.platform?.env.DB) {
 		const db = createDB(event.platform.env.DB);
 		globalThis.__db = db;
+		globalThis.__d1 = event.platform.env.DB;
 		
 		// Debug: Check available tables (only run once)
 		if (!globalThis.__tablesChecked) {
 			globalThis.__tablesChecked = true;
 			try {
-				// Access the underlying D1 database
-				// @ts-ignore - accessing internal property
-				const d1 = db._.session.client;
+				// Use the D1 database directly from platform
+				const d1 = event.platform.env.DB;
 				const tables = await d1.prepare(
 					`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`
 				).all();
