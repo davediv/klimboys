@@ -1,5 +1,7 @@
 import { createDB } from '../db';
 import type { ActivityLog } from './rbac';
+import { sql } from 'drizzle-orm';
+import { getD1Database } from '../db/raw';
 
 // Activity log table schema (to be added to main schema)
 export const activityLogSchema = `
@@ -71,28 +73,63 @@ export async function logActivityToDatabase(
 	details?: Omit<ActivityLog, 'userId' | 'action' | 'timestamp'>
 ): Promise<void> {
 	try {
+		// Get the underlying D1 database instance
+		const d1 = getD1Database(db);
+		
+		// Debug: Check if table exists
+		console.log('[Activity Log] Checking if activity_log table exists...');
+		
+		try {
+			const tableCheck = await d1.prepare(
+				`SELECT name FROM sqlite_master WHERE type='table' AND name='activity_log'`
+			).all();
+			console.log('[Activity Log] Table check result:', tableCheck.results);
+			
+			// If table doesn't exist, create it
+			if (!tableCheck.results || tableCheck.results.length === 0) {
+				console.log('[Activity Log] Table does not exist, creating it...');
+				await d1.prepare(activityLogSchema).run();
+				console.log('[Activity Log] Table created successfully');
+			}
+		} catch (checkError) {
+			console.error('[Activity Log] Error checking/creating table:', checkError);
+		}
+		
 		const id = crypto.randomUUID();
 		const timestamp = new Date().getTime();
 		
-		await db.run(
+		console.log('[Activity Log] Attempting to insert activity:', {
+			userId,
+			action,
+			entityType: details?.entityType,
+			timestamp: new Date(timestamp).toISOString()
+		});
+		
+		await d1.prepare(
 			`INSERT INTO activity_log (
 				id, user_id, action, entity_type, entity_id, 
 				metadata, ip_address, user_agent, created_at
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			[
-				id,
-				userId,
-				action,
-				details?.entityType || null,
-				details?.entityId || null,
-				details?.metadata ? JSON.stringify(details.metadata) : null,
-				details?.ipAddress || null,
-				details?.userAgent || null,
-				timestamp
-			]
-		);
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		).bind(
+			id,
+			userId,
+			action,
+			details?.entityType || null,
+			details?.entityId || null,
+			details?.metadata ? JSON.stringify(details.metadata) : null,
+			details?.ipAddress || null,
+			details?.userAgent || null,
+			timestamp
+		).run();
+		
+		console.log('[Activity Log] Successfully logged activity');
 	} catch (error) {
-		console.error('Failed to log activity:', error);
+		console.error('[Activity Log] Failed to log activity:', error);
+		console.error('[Activity Log] Error details:', {
+			errorType: error?.constructor?.name,
+			message: error?.message,
+			stack: error?.stack
+		});
 		// Don't throw - logging failures shouldn't break the app
 	}
 }
@@ -165,9 +202,11 @@ export async function getActivityLogs(
 		}
 	}
 	
-	const results = await db.all(query, params);
+	const d1 = getD1Database(db);
+	const stmt = d1.prepare(query);
+	const results = await stmt.bind(...params).all();
 	
-	return results.map(row => ({
+	return (results.results || []).map((row: any) => ({
 		userId: row.user_id,
 		userName: row.user_name,
 		userEmail: row.user_email,
@@ -186,25 +225,25 @@ export async function getUserLastActivity(
 	db: ReturnType<typeof createDB>,
 	userId: string
 ): Promise<ActivityLog | null> {
-	const result = await db.get(
+	const d1 = getD1Database(db);
+	const result = await d1.prepare(
 		`SELECT * FROM activity_log 
 		WHERE user_id = ? 
 		ORDER BY created_at DESC 
-		LIMIT 1`,
-		[userId]
-	);
+		LIMIT 1`
+	).bind(userId).first();
 	
 	if (!result) return null;
 	
 	return {
-		userId: result.user_id,
-		action: result.action,
-		entityType: result.entity_type,
-		entityId: result.entity_id,
-		metadata: result.metadata ? JSON.parse(result.metadata) : undefined,
-		ipAddress: result.ip_address,
-		userAgent: result.user_agent,
-		timestamp: new Date(result.created_at)
+		userId: result.user_id as string,
+		action: result.action as string,
+		entityType: result.entity_type as string | undefined,
+		entityId: result.entity_id as string | undefined,
+		metadata: result.metadata ? JSON.parse(result.metadata as string) : undefined,
+		ipAddress: result.ip_address as string | undefined,
+		userAgent: result.user_agent as string | undefined,
+		timestamp: new Date(result.created_at as number)
 	};
 }
 
@@ -216,12 +255,12 @@ export async function cleanupOldActivityLogs(
 	const cutoffDate = new Date();
 	cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
 	
-	const result = await db.run(
-		'DELETE FROM activity_log WHERE created_at < ?',
-		[cutoffDate.getTime()]
-	);
+	const d1 = getD1Database(db);
+	const result = await d1.prepare(
+		'DELETE FROM activity_log WHERE created_at < ?'
+	).bind(cutoffDate.getTime()).run();
 	
-	return result.changes || 0;
+	return result.meta?.changes || 0;
 }
 
 // Get suspicious activities
