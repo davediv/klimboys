@@ -78,7 +78,6 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 
 		// In development without R2, return mock response
 		if (dev && !platform?.env?.BUCKET) {
-			console.warn('R2 not available in development, returning mock upload response');
 			
 			return json({
 				success: true,

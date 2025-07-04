@@ -89,14 +89,11 @@
 					uploadedImageUrl = result.file.key;
 				}
 				
-				console.log('Image uploaded successfully:', {
-					key: result.file.key,
-					url: result.file.url,
-					uploadedImageUrl,
-					editUploadedImageUrl
-				});
-
-				notifications.success('Image Uploaded', 'Image uploaded successfully');
+				if (dev) {
+					notifications.info('Image Uploaded', 'Image saved. Placeholder shown in development mode.');
+				} else {
+					notifications.success('Image Uploaded', 'Image uploaded successfully');
+				}
 			} catch (error) {
 				notifications.error('Upload Failed', 'Failed to upload image');
 				// Clear preview on error
@@ -131,9 +128,7 @@
 	// Get image URL - handles both production and development
 	function getImageUrl(imageKey: string | null) {
 		if (!imageKey) return null;
-		const url = `/api/images/${imageKey}`;
-		console.log('Generated image URL:', url, 'from key:', imageKey);
-		return url;
+		return `/api/images/${imageKey}`;
 	}
 	
 	// Handle image error by showing placeholder (fallback)
@@ -172,6 +167,14 @@
 		<div>
 			<h1 class="text-3xl font-bold">Products</h1>
 			<p class="text-base-content/70 mt-1">Manage your milkshake menu</p>
+			{#if dev}
+				<div class="alert alert-info mt-2 max-w-lg">
+					<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+					</svg>
+					<span class="text-sm">Development Mode: Product images will show as placeholders. Deploy to production to see actual images.</span>
+				</div>
+			{/if}
 		</div>
 		<div class="flex gap-2">
 			{#if data.userRole === 'admin'}
@@ -215,27 +218,6 @@
 							alt={product.title}
 							class="h-full w-full object-cover"
 							onerror={handleImageError}
-							onload={(e) => {
-								console.log('Image loaded successfully:', imgUrl);
-								// Test fetch to see if API is reachable
-								fetch(imgUrl)
-									.then(res => {
-										console.log('Fetch response:', {
-											url: imgUrl,
-											status: res.status,
-											statusText: res.statusText,
-											headers: Object.fromEntries(res.headers.entries()),
-											ok: res.ok
-										});
-										return res.text();
-									})
-									.then(text => {
-										console.log('Response body preview:', text.substring(0, 200));
-									})
-									.catch(err => {
-										console.error('Fetch error:', err);
-									});
-							}}
 						/>
 					{:else}
 						<div class="absolute inset-0 flex items-center justify-center">
