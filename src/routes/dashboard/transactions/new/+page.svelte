@@ -284,26 +284,42 @@
 						</label>
 						<div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
 							{#each channels as ch}
-								<label class="cursor-pointer">
-									<input
-										type="radio"
-										name="channel"
-										value={ch.value}
-										bind:group={channel}
-										class="sr-only"
-									/>
-									<div
-										class="btn btn-sm {channel === ch.value ? 'btn-primary' : 'btn-ghost'} w-full"
-									>
-										{#if ch.icon}
-											{@const Icon = ch.icon}
+								{#if ch.icon}
+									{@const Icon = ch.icon}
+									<label class="cursor-pointer">
+										<input
+											type="radio"
+											name="channel"
+											value={ch.value}
+											bind:group={channel}
+											class="sr-only"
+										/>
+										<div
+											class="btn btn-sm {channel === ch.value ? 'btn-primary' : 'btn-ghost'} w-full"
+										>
 											<Icon class="h-4 w-4" />
-										{:else if ch.emoji}
-											<span>{ch.emoji}</span>
-										{/if}
-										{ch.label}
-									</div>
-								</label>
+											{ch.label}
+										</div>
+									</label>
+								{:else}
+									<label class="cursor-pointer">
+										<input
+											type="radio"
+											name="channel"
+											value={ch.value}
+											bind:group={channel}
+											class="sr-only"
+										/>
+										<div
+											class="btn btn-sm {channel === ch.value ? 'btn-primary' : 'btn-ghost'} w-full"
+										>
+											{#if ch.emoji}
+												<span>{ch.emoji}</span>
+											{/if}
+											{ch.label}
+										</div>
+									</label>
+								{/if}
 							{/each}
 						</div>
 					</div>
@@ -316,6 +332,7 @@
 							</label>
 							<div class="grid grid-cols-2 gap-2">
 								{#each paymentMethods as pm}
+									{@const Icon = pm.icon}
 									<label class="cursor-pointer">
 										<input
 											type="radio"
@@ -329,7 +346,6 @@
 												? 'btn-primary'
 												: 'btn-ghost'} w-full"
 										>
-											{@const Icon = pm.icon}
 											<Icon class="h-4 w-4" />
 											{pm.label}
 										</div>
