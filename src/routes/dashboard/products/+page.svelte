@@ -342,7 +342,7 @@
 					return async ({ result, update }) => {
 						loading = false;
 						if (result.type === 'success') {
-							notifications.success('Product created', 'The new product has been added');
+							notifications.success('Product created', 'Product and inventory item have been added');
 							await update();
 							closeModals();
 						}

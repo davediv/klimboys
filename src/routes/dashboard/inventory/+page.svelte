@@ -74,6 +74,12 @@
 		<div>
 			<h1 class="text-3xl font-bold">Inventory Management</h1>
 			<p class="text-base-content/70 mt-1">Track and manage ingredient stock levels</p>
+			<div class="alert mt-2 max-w-2xl">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info shrink-0 w-6 h-6">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+				</svg>
+				<span class="text-sm">Products are automatically added as inventory items when created. Raw materials should be added manually.</span>
+			</div>
 		</div>
 		<div class="flex gap-2">
 			<Button variant="ghost" href="/dashboard/products/recipes" icon={FlaskConical}>
@@ -141,7 +147,14 @@
 							<td>
 								<div class="flex items-center gap-2">
 									<Package class="text-base-content/50 h-4 w-4" />
-									<span class="font-medium">{item.name}</span>
+									<div>
+										<span class="font-medium">{item.name}</span>
+										{#if item.unit === 'pcs'}
+											<span class="badge badge-primary badge-xs ml-2">Product</span>
+										{:else}
+											<span class="badge badge-secondary badge-xs ml-2">Material</span>
+										{/if}
+									</div>
 								</div>
 							</td>
 							<td>
