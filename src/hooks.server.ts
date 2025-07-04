@@ -59,7 +59,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 				} as AuthSession;
 
 				// Update last login timestamp (only once per hour to reduce DB writes)
-				const lastUpdate = new Date(user.updatedAt);
+				const lastUpdate = user.updatedAt instanceof Date ? user.updatedAt : new Date(user.updatedAt);
 				const hoursSinceUpdate = (Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60);
 				
 				if (hoursSinceUpdate > 1) {

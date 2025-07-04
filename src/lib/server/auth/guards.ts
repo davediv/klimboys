@@ -208,7 +208,8 @@ export function filterFieldsByRole<T extends Record<string, any>>(
 // Session timeout check
 export function checkSessionTimeout(session: AuthSession, maxIdleMinutes: number = 30): boolean {
 	const now = new Date();
-	const lastActivity = new Date(session.session.updatedAt || session.session.createdAt);
+	const activityTime = session.session.updatedAt || session.session.createdAt;
+	const lastActivity = activityTime instanceof Date ? activityTime : new Date(activityTime);
 	const idleMinutes = (now.getTime() - lastActivity.getTime()) / (1000 * 60);
 	
 	return idleMinutes > maxIdleMinutes;
