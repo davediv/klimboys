@@ -74,7 +74,13 @@ export async function logActivityToDatabase(
 ): Promise<void> {
 	try {
 		// Get the underlying D1 database instance
-		const d1 = getD1Database(db);
+		let d1: D1Database;
+		try {
+			d1 = getD1Database(db);
+		} catch (err) {
+			console.error('[Activity Log] Failed to get D1 database instance:', err);
+			return;
+		}
 		
 		// Debug: Check if table exists
 		console.log('[Activity Log] Checking if activity_log table exists...');
@@ -126,9 +132,9 @@ export async function logActivityToDatabase(
 	} catch (error) {
 		console.error('[Activity Log] Failed to log activity:', error);
 		console.error('[Activity Log] Error details:', {
-			errorType: error?.constructor?.name,
-			message: error?.message,
-			stack: error?.stack
+			errorType: (error as any)?.constructor?.name,
+			message: (error as any)?.message,
+			stack: (error as any)?.stack
 		});
 		// Don't throw - logging failures shouldn't break the app
 	}
@@ -139,7 +145,7 @@ export async function getActivityLogs(
 	db: ReturnType<typeof createDB>,
 	filters?: {
 		userId?: string;
-		action?: string;
+		action?: string | string[];
 		entityType?: string;
 		entityId?: string;
 		startDate?: Date;
@@ -166,8 +172,14 @@ export async function getActivityLogs(
 	}
 	
 	if (filters?.action) {
-		query += ' AND al.action = ?';
-		params.push(filters.action);
+		if (Array.isArray(filters.action)) {
+			const placeholders = filters.action.map(() => '?').join(',');
+			query += ` AND al.action IN (${placeholders})`;
+			params.push(...filters.action);
+		} else {
+			query += ' AND al.action = ?';
+			params.push(filters.action);
+		}
 	}
 	
 	if (filters?.entityType) {
@@ -180,12 +192,12 @@ export async function getActivityLogs(
 		params.push(filters.entityId);
 	}
 	
-	if (filters?.startDate) {
+	if (filters?.startDate && filters.startDate instanceof Date && !isNaN(filters.startDate.getTime())) {
 		query += ' AND al.created_at >= ?';
 		params.push(filters.startDate.getTime());
 	}
 	
-	if (filters?.endDate) {
+	if (filters?.endDate && filters.endDate instanceof Date && !isNaN(filters.endDate.getTime())) {
 		query += ' AND al.created_at <= ?';
 		params.push(filters.endDate.getTime());
 	}
@@ -216,7 +228,7 @@ export async function getActivityLogs(
 		metadata: row.metadata ? JSON.parse(row.metadata) : undefined,
 		ipAddress: row.ip_address,
 		userAgent: row.user_agent,
-		timestamp: new Date(row.created_at)
+		timestamp: row.created_at ? new Date(row.created_at) : new Date()
 	}));
 }
 
@@ -243,7 +255,7 @@ export async function getUserLastActivity(
 		metadata: result.metadata ? JSON.parse(result.metadata as string) : undefined,
 		ipAddress: result.ip_address as string | undefined,
 		userAgent: result.user_agent as string | undefined,
-		timestamp: new Date(result.created_at as number)
+		timestamp: result.created_at ? new Date(result.created_at as number) : new Date()
 	};
 }
 
@@ -279,7 +291,7 @@ export async function getSuspiciousActivities(
 	];
 	
 	return getActivityLogs(db, {
-		action: suspiciousActions.join(','),
+		action: suspiciousActions,
 		startDate: cutoffTime
 	});
 }

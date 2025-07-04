@@ -33,7 +33,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		.where(
 			and(
 				eq(transaction.status, 'completed'),
-				gte(transaction.createdAt, monthAgo.getTime())
+				gte(transaction.createdAt, monthAgo)
 			)
 		)
 		.groupBy(transaction.cashierId, user.name, user.email)
@@ -52,7 +52,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		.where(
 			and(
 				eq(transaction.status, 'completed'),
-				gte(transaction.createdAt, today.getTime())
+				gte(transaction.createdAt, today)
 			)
 		)
 		.groupBy(transaction.cashierId, user.name)
@@ -63,7 +63,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		.select({
 			cashierId: transaction.cashierId,
 			cashierName: user.name,
-			date: sql<string>`date(${transaction.createdAt} / 1000, 'unixepoch')`,
+			createdAt: transaction.createdAt,
 			revenue: sql<number>`coalesce(sum(${transaction.totalAmount}), 0)`,
 			transactions: sql<number>`count(*)`
 		})
@@ -72,11 +72,11 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		.where(
 			and(
 				eq(transaction.status, 'completed'),
-				gte(transaction.createdAt, weekAgo.getTime())
+				gte(transaction.createdAt, weekAgo)
 			)
 		)
-		.groupBy(transaction.cashierId, user.name, sql`date(${transaction.createdAt} / 1000, 'unixepoch')`)
-		.orderBy(sql`date(${transaction.createdAt} / 1000, 'unixepoch')`);
+		.groupBy(transaction.cashierId, user.name)
+		.orderBy(transaction.createdAt);
 
 	// Get channel preference by cashier
 	const channelPreference = await db
@@ -92,18 +92,18 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		.where(
 			and(
 				eq(transaction.status, 'completed'),
-				gte(transaction.createdAt, monthAgo.getTime())
+				gte(transaction.createdAt, monthAgo)
 			)
 		)
 		.groupBy(transaction.cashierId, user.name, transaction.channel)
-		.orderBy(transaction.cashierId, desc(sql`count(*)`));
+		.orderBy(desc(sql`count(*)`));
 
 	// Get hourly performance pattern by cashier
 	const hourlyPattern = await db
 		.select({
 			cashierId: transaction.cashierId,
 			cashierName: user.name,
-			hour: sql<number>`cast(strftime('%H', ${transaction.createdAt} / 1000, 'unixepoch') as integer)`,
+			createdAt: transaction.createdAt,
 			transactions: sql<number>`count(*)`,
 			avgRevenue: sql<number>`coalesce(avg(${transaction.totalAmount}), 0)`
 		})
@@ -112,18 +112,11 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		.where(
 			and(
 				eq(transaction.status, 'completed'),
-				gte(transaction.createdAt, weekAgo.getTime())
+				gte(transaction.createdAt, weekAgo)
 			)
 		)
-		.groupBy(
-			transaction.cashierId,
-			user.name,
-			sql`cast(strftime('%H', ${transaction.createdAt} / 1000, 'unixepoch') as integer)`
-		)
-		.orderBy(
-			transaction.cashierId,
-			sql`cast(strftime('%H', ${transaction.createdAt} / 1000, 'unixepoch') as integer)`
-		);
+		.groupBy(transaction.cashierId, user.name, transaction.createdAt)
+		.orderBy(transaction.createdAt);
 
 	// Get top selling products by cashier (last 7 days)
 	const topProductsByCashier = await db
@@ -139,7 +132,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		.where(
 			and(
 				eq(transaction.status, 'completed'),
-				gte(transaction.createdAt, weekAgo.getTime()),
+				gte(transaction.createdAt, weekAgo),
 				sql`json_array_length(${transaction.items}) > 0`
 			)
 		)
@@ -148,10 +141,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 			user.name,
 			sql`json_extract(${transaction.items}, '$[0].title')`
 		)
-		.orderBy(
-			transaction.cashierId,
-			desc(sql`count(*)`)
-		)
+		.orderBy(desc(sql`count(*)`))
 		.limit(50); // Limit to top 50 to get ~10 per cashier
 
 	// Calculate performance rankings and ensure dates are properly formatted
@@ -168,12 +158,24 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 			.findIndex(c => c.cashierId === cashier.cashierId) + 1
 	}));
 
+	// Process hourly pattern to extract hours
+	const processedHourlyPattern = hourlyPattern.map(row => ({
+		...row,
+		hour: new Date(row.createdAt).getHours()
+	}));
+
+	// Process weekly trend to extract dates
+	const processedWeeklyTrend = weeklyTrend.map(row => ({
+		...row,
+		date: new Date(row.createdAt).toISOString().split('T')[0]
+	}));
+
 	return {
 		cashierSummary: performanceRankings,
 		todayPerformance,
-		weeklyTrend,
+		weeklyTrend: processedWeeklyTrend,
 		channelPreference,
-		hourlyPattern,
+		hourlyPattern: processedHourlyPattern,
 		topProductsByCashier
 	};
 };
