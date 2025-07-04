@@ -282,7 +282,7 @@ Klimboys POS Dashboard implementation with 174 total tasks across 4 development 
   - **Dependencies**: Transaction timestamps
   - **Effort**: M
 
-- [ ] 🟢 Add cashier performance dashboard
+- [x] 🟢 Add cashier performance dashboard
   - **Acceptance Criteria**: Individual sales metrics
   - **Dependencies**: User-transaction relation
   - **Effort**: M

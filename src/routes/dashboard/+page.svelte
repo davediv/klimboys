@@ -9,7 +9,8 @@
 		Package,
 		Clock,
 		ExternalLink,
-		ChevronRight
+		ChevronRight,
+		Award
 	} from '@lucide/svelte';
 	import { jakartaTime } from '$lib/utils/datetime';
 	import type { PageData } from './$types';
@@ -324,6 +325,49 @@
 					{/if}
 				</div>
 			</div>
+
+			<!-- Top Cashiers Today (Admin Only) -->
+			{#if $session?.user.role === 'admin' && data.topCashiersToday.length > 0}
+				<div class="bg-base-100 rounded-box mt-6 shadow">
+					<div class="border-b p-4">
+						<h3 class="text-lg font-bold">Top Cashiers Today</h3>
+					</div>
+					<div class="divide-y p-4">
+						{#each data.topCashiersToday as cashier, index}
+							<div class="py-3 first:pt-0 last:pb-0">
+								<div class="flex items-center justify-between">
+									<div class="flex items-center gap-3">
+										{#if index === 0}
+											<Award class="text-warning h-5 w-5" />
+										{:else}
+											<span class="text-base-content/50 w-5 text-center font-medium">
+												#{index + 1}
+											</span>
+										{/if}
+										<div>
+											<p class="font-medium">{cashier.cashierName}</p>
+											<p class="text-base-content/70 text-sm">
+												{cashier.transactions} transactions
+											</p>
+										</div>
+									</div>
+									<div class="text-right">
+										<p class="font-semibold">{formatCurrency(cashier.revenue)}</p>
+										<p class="text-base-content/50 text-xs">
+											Avg: {formatCurrency(cashier.revenue / cashier.transactions)}
+										</p>
+									</div>
+								</div>
+							</div>
+						{/each}
+						<div class="mt-4">
+							<Button size="sm" variant="ghost" href="/dashboard/analytics/cashier-performance" icon={ChevronRight}>
+								View All Performance
+							</Button>
+						</div>
+					</div>
+				</div>
+			{/if}
 
 			<!-- Critical Low Stock Items -->
 			{#if data.lowStockItems.length > 0}
