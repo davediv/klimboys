@@ -2,18 +2,9 @@ import type { RequestHandler } from './$types';
 import { error } from '@sveltejs/kit';
 import { dev } from '$app/environment';
 
-export const GET: RequestHandler = async ({ params, platform, url }) => {
+export const GET: RequestHandler = async ({ params, platform }) => {
 	try {
 		const key = params.key;
-		console.log('Image API called:', {
-			key,
-			fullUrl: url.toString(),
-			params: JSON.stringify(params),
-			dev,
-			hasPlatform: !!platform,
-			hasEnv: !!platform?.env,
-			hasBucket: !!platform?.env?.BUCKET
-		});
 		
 		if (!key) {
 			throw error(400, 'Invalid image key');
@@ -21,13 +12,25 @@ export const GET: RequestHandler = async ({ params, platform, url }) => {
 
 		// In development or when R2 is not available, serve a placeholder
 		if (dev || !platform?.env?.BUCKET) {
-			console.warn('R2 bucket not available. Serving placeholder for key:', key);
 			
-			// Create an SVG placeholder image
+			// Create a more visually appealing SVG placeholder
 			const svg = `
 				<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
-					<rect width="400" height="300" fill="#f3f4f6"/>
-					<text x="50%" y="50%" font-family="Arial" font-size="18" fill="#9ca3af" text-anchor="middle" dy=".3em">Product Image</text>
+					<!-- Background -->
+					<rect width="400" height="300" fill="#e5e7eb"/>
+					
+					<!-- Product icon -->
+					<g transform="translate(200, 150)">
+						<!-- Box shape -->
+						<path d="M-40 -30 L-40 20 L40 20 L40 -30 Z" fill="#9ca3af"/>
+						<path d="M-40 -30 L0 -50 L40 -30 Z" fill="#d1d5db"/>
+						<path d="M40 -30 L40 20 L60 0 L60 -50 L40 -30 Z" fill="#6b7280"/>
+						<path d="M0 -50 L60 -50 L40 -30 Z" fill="#e5e7eb"/>
+						
+						<!-- Text below icon -->
+						<text x="0" y="45" font-family="Arial" font-size="16" fill="#6b7280" text-anchor="middle">Product Image</text>
+						<text x="0" y="65" font-family="Arial" font-size="12" fill="#9ca3af" text-anchor="middle">(Development Mode)</text>
+					</g>
 				</svg>
 			`;
 			
@@ -45,7 +48,6 @@ export const GET: RequestHandler = async ({ params, platform, url }) => {
 			const object = await platform.env.BUCKET.get(key);
 
 			if (!object) {
-				console.warn('Image not found in R2:', key);
 				// Return placeholder instead of 404
 				const svg = `
 					<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
