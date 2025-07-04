@@ -414,4 +414,3 @@
 		</div>
 	</div>
 </div>
-</script>

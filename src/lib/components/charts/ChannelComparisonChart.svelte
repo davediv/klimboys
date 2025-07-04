@@ -230,4 +230,3 @@
 		</div>
 	{/if}
 </div>
-</script>
