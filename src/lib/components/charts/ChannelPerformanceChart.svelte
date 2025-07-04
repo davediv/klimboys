@@ -201,4 +201,3 @@
 		</div>
 	{/if}
 </div>
-</script>
