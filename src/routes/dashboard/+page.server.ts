@@ -183,7 +183,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 
 	// Get top cashier performance for today (admin only)
 	let topCashiersToday = [];
-	if (locals.session.user.role === 'admin') {
+	if (locals.session?.user?.role === 'admin') {
 		topCashiersToday = await db
 			.select({
 				cashierId: transaction.cashierId,

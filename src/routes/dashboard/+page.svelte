@@ -327,7 +327,7 @@
 			</div>
 
 			<!-- Top Cashiers Today (Admin Only) -->
-			{#if $session?.user.role === 'admin' && data.topCashiersToday.length > 0}
+			{#if $session?.user?.role === 'admin' && data.topCashiersToday.length > 0}
 				<div class="bg-base-100 rounded-box mt-6 shadow">
 					<div class="border-b p-4">
 						<h3 class="text-lg font-bold">Top Cashiers Today</h3>
