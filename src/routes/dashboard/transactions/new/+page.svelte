@@ -296,7 +296,8 @@
 										class="btn btn-sm {channel === ch.value ? 'btn-primary' : 'btn-ghost'} w-full"
 									>
 										{#if ch.icon}
-											<svelte:component this={ch.icon} class="h-4 w-4" />
+											{@const Icon = ch.icon}
+											<Icon class="h-4 w-4" />
 										{:else if ch.emoji}
 											<span>{ch.emoji}</span>
 										{/if}
@@ -328,7 +329,8 @@
 												? 'btn-primary'
 												: 'btn-ghost'} w-full"
 										>
-											<svelte:component this={pm.icon} class="h-4 w-4" />
+											{@const Icon = pm.icon}
+											<Icon class="h-4 w-4" />
 											{pm.label}
 										</div>
 									</label>
