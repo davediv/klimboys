@@ -404,7 +404,9 @@
 								</td>
 								<td>
 									<span class="text-sm">
-										{jakartaTime.relative(cashier.lastTransactionDate)}
+										{cashier.lastTransactionDate 
+											? jakartaTime.relative(cashier.lastTransactionDate)
+											: 'Never'}
 									</span>
 								</td>
 								<td>
