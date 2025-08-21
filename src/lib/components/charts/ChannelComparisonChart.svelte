@@ -59,21 +59,21 @@
 
 		// Get all unique channels
 		const allChannels = new Set<TransactionChannel>();
-		monthData.forEach(d => allChannels.add(d.channel));
-		todayData.forEach(d => allChannels.add(d.channel));
-		
+		monthData.forEach((d) => allChannels.add(d.channel));
+		todayData.forEach((d) => allChannels.add(d.channel));
+
 		const channels = Array.from(allChannels).sort();
-		const labels = channels.map(c => channelNames[c]);
+		const labels = channels.map((c) => channelNames[c]);
 
 		// Create maps for easy lookup
-		const monthMap = new Map(monthData.map(d => [d.channel, d]));
-		const todayMap = new Map(todayData.map(d => [d.channel, d]));
+		const monthMap = new Map(monthData.map((d) => [d.channel, d]));
+		const todayMap = new Map(todayData.map((d) => [d.channel, d]));
 
 		// Prepare data arrays
-		const monthRevenue = channels.map(c => monthMap.get(c)?.revenue || 0);
-		const todayRevenue = channels.map(c => todayMap.get(c)?.revenue || 0);
-		const monthTransactions = channels.map(c => monthMap.get(c)?.transactions || 0);
-		const todayTransactions = channels.map(c => todayMap.get(c)?.transactions || 0);
+		const monthRevenue = channels.map((c) => monthMap.get(c)?.revenue || 0);
+		const todayRevenue = channels.map((c) => todayMap.get(c)?.revenue || 0);
+		const monthTransactions = channels.map((c) => monthMap.get(c)?.transactions || 0);
+		const todayTransactions = channels.map((c) => todayMap.get(c)?.transactions || 0);
 
 		chart = new Chart(ctx, {
 			type: 'bar',
@@ -151,7 +151,7 @@
 					},
 					tooltip: {
 						callbacks: {
-							label: function(context) {
+							label: function (context) {
 								if (context.dataset.yAxisID === 'y-revenue') {
 									return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
 								}
@@ -175,7 +175,7 @@
 							color: 'rgba(0, 0, 0, 0.05)'
 						},
 						ticks: {
-							callback: function(value) {
+							callback: function (value) {
 								return formatCurrency(value as number);
 							}
 						},

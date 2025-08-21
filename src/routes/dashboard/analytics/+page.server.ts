@@ -12,7 +12,7 @@ export const load: PageServerLoad = async ({ locals, platform, url }) => {
 	}
 
 	const db = createDB(platform.env.DB);
-	
+
 	// Get date range from query params or default to last 30 days
 	const endDate = new Date();
 	const startDate = new Date();
@@ -81,10 +81,7 @@ export const load: PageServerLoad = async ({ locals, platform, url }) => {
 		})
 		.from(transaction)
 		.where(and(gte(transaction.createdAt, startDate), lte(transaction.createdAt, endDate)))
-		.groupBy(
-			sql`strftime('%H', ${transaction.createdAt} / 1000, 'unixepoch')`,
-			transaction.channel
-		)
+		.groupBy(sql`strftime('%H', ${transaction.createdAt} / 1000, 'unixepoch')`, transaction.channel)
 		.orderBy(sql`cast(strftime('%H', ${transaction.createdAt} / 1000, 'unixepoch') as integer)`);
 
 	// Payment method distribution by channel

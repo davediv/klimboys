@@ -32,33 +32,33 @@ export enum ActivityType {
 	LOGIN_FAILED = 'login_failed',
 	PASSWORD_RESET = 'password_reset',
 	PASSWORD_CHANGED = 'password_changed',
-	
+
 	// User Management
 	USER_CREATED = 'user_created',
 	USER_UPDATED = 'user_updated',
 	USER_DELETED = 'user_deleted',
 	USER_ACTIVATED = 'user_activated',
 	USER_DEACTIVATED = 'user_deactivated',
-	
+
 	// Product Management
 	PRODUCT_CREATED = 'product_created',
 	PRODUCT_UPDATED = 'product_updated',
 	PRODUCT_DELETED = 'product_deleted',
-	
+
 	// Transaction Management
 	TRANSACTION_CREATED = 'transaction_created',
 	TRANSACTION_VOIDED = 'transaction_voided',
-	
+
 	// Inventory Management
 	INVENTORY_ADJUSTED = 'inventory_adjusted',
 	STOCK_ADDED = 'stock_added',
 	STOCK_REMOVED = 'stock_removed',
-	
+
 	// System Actions
 	SETTINGS_UPDATED = 'settings_updated',
 	DATA_EXPORTED = 'data_exported',
 	BACKUP_CREATED = 'backup_created',
-	
+
 	// Security Actions
 	SUSPICIOUS_ACTIVITY = 'suspicious_activity',
 	PERMISSION_DENIED = 'permission_denied',
@@ -81,16 +81,16 @@ export async function logActivityToDatabase(
 			console.error('[Activity Log] Failed to get D1 database instance:', err);
 			return;
 		}
-		
+
 		// Debug: Check if table exists
 		console.log('[Activity Log] Checking if activity_log table exists...');
-		
+
 		try {
-			const tableCheck = await d1.prepare(
-				`SELECT name FROM sqlite_master WHERE type='table' AND name='activity_log'`
-			).all();
+			const tableCheck = await d1
+				.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name='activity_log'`)
+				.all();
 			console.log('[Activity Log] Table check result:', tableCheck.results);
-			
+
 			// If table doesn't exist, create it
 			if (!tableCheck.results || tableCheck.results.length === 0) {
 				console.log('[Activity Log] Table does not exist, creating it...');
@@ -100,34 +100,37 @@ export async function logActivityToDatabase(
 		} catch (checkError) {
 			console.error('[Activity Log] Error checking/creating table:', checkError);
 		}
-		
+
 		const id = crypto.randomUUID();
 		const timestamp = new Date().getTime();
-		
+
 		console.log('[Activity Log] Attempting to insert activity:', {
 			userId,
 			action,
 			entityType: details?.entityType,
 			timestamp: new Date(timestamp).toISOString()
 		});
-		
-		await d1.prepare(
-			`INSERT INTO activity_log (
+
+		await d1
+			.prepare(
+				`INSERT INTO activity_log (
 				id, user_id, action, entity_type, entity_id, 
 				metadata, ip_address, user_agent, created_at
 			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-		).bind(
-			id,
-			userId,
-			action,
-			details?.entityType || null,
-			details?.entityId || null,
-			details?.metadata ? JSON.stringify(details.metadata) : null,
-			details?.ipAddress || null,
-			details?.userAgent || null,
-			timestamp
-		).run();
-		
+			)
+			.bind(
+				id,
+				userId,
+				action,
+				details?.entityType || null,
+				details?.entityId || null,
+				details?.metadata ? JSON.stringify(details.metadata) : null,
+				details?.ipAddress || null,
+				details?.userAgent || null,
+				timestamp
+			)
+			.run();
+
 		console.log('[Activity Log] Successfully logged activity');
 	} catch (error) {
 		console.error('[Activity Log] Failed to log activity:', error);
@@ -163,14 +166,14 @@ export async function getActivityLogs(
 		INNER JOIN user u ON al.user_id = u.id
 		WHERE 1=1
 	`;
-	
+
 	const params: any[] = [];
-	
+
 	if (filters?.userId) {
 		query += ' AND al.user_id = ?';
 		params.push(filters.userId);
 	}
-	
+
 	if (filters?.action) {
 		if (Array.isArray(filters.action)) {
 			const placeholders = filters.action.map(() => '?').join(',');
@@ -181,43 +184,47 @@ export async function getActivityLogs(
 			params.push(filters.action);
 		}
 	}
-	
+
 	if (filters?.entityType) {
 		query += ' AND al.entity_type = ?';
 		params.push(filters.entityType);
 	}
-	
+
 	if (filters?.entityId) {
 		query += ' AND al.entity_id = ?';
 		params.push(filters.entityId);
 	}
-	
-	if (filters?.startDate && filters.startDate instanceof Date && !isNaN(filters.startDate.getTime())) {
+
+	if (
+		filters?.startDate &&
+		filters.startDate instanceof Date &&
+		!isNaN(filters.startDate.getTime())
+	) {
 		query += ' AND al.created_at >= ?';
 		params.push(filters.startDate.getTime());
 	}
-	
+
 	if (filters?.endDate && filters.endDate instanceof Date && !isNaN(filters.endDate.getTime())) {
 		query += ' AND al.created_at <= ?';
 		params.push(filters.endDate.getTime());
 	}
-	
+
 	query += ' ORDER BY al.created_at DESC';
-	
+
 	if (filters?.limit) {
 		query += ' LIMIT ?';
 		params.push(filters.limit);
-		
+
 		if (filters?.offset) {
 			query += ' OFFSET ?';
 			params.push(filters.offset);
 		}
 	}
-	
+
 	const d1 = getD1Database(db);
 	const stmt = d1.prepare(query);
 	const results = await stmt.bind(...params).all();
-	
+
 	return (results.results || []).map((row: any) => ({
 		userId: row.user_id,
 		userName: row.user_name,
@@ -238,15 +245,18 @@ export async function getUserLastActivity(
 	userId: string
 ): Promise<ActivityLog | null> {
 	const d1 = getD1Database(db);
-	const result = await d1.prepare(
-		`SELECT * FROM activity_log 
+	const result = await d1
+		.prepare(
+			`SELECT * FROM activity_log 
 		WHERE user_id = ? 
 		ORDER BY created_at DESC 
 		LIMIT 1`
-	).bind(userId).first();
-	
+		)
+		.bind(userId)
+		.first();
+
 	if (!result) return null;
-	
+
 	return {
 		userId: result.user_id as string,
 		action: result.action as string,
@@ -266,12 +276,13 @@ export async function cleanupOldActivityLogs(
 ): Promise<number> {
 	const cutoffDate = new Date();
 	cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
-	
+
 	const d1 = getD1Database(db);
-	const result = await d1.prepare(
-		'DELETE FROM activity_log WHERE created_at < ?'
-	).bind(cutoffDate.getTime()).run();
-	
+	const result = await d1
+		.prepare('DELETE FROM activity_log WHERE created_at < ?')
+		.bind(cutoffDate.getTime())
+		.run();
+
 	return result.meta?.changes || 0;
 }
 
@@ -282,14 +293,14 @@ export async function getSuspiciousActivities(
 ): Promise<ActivityLog[]> {
 	const cutoffTime = new Date();
 	cutoffTime.setHours(cutoffTime.getHours() - hours);
-	
+
 	const suspiciousActions = [
 		ActivityType.LOGIN_FAILED,
 		ActivityType.PERMISSION_DENIED,
 		ActivityType.RATE_LIMIT_EXCEEDED,
 		ActivityType.SUSPICIOUS_ACTIVITY
 	];
-	
+
 	return getActivityLogs(db, {
 		action: suspiciousActions,
 		startDate: cutoffTime

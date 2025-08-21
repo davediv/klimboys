@@ -3,7 +3,11 @@ import { createDB } from '$lib/server/db';
 import type { Handle } from '@sveltejs/kit';
 import type { AuthSession } from '$lib/server/auth/rbac';
 import { guardRoute, getSecurityHeaders } from '$lib/server/auth/guards';
-import { checkRateLimit, getRateLimitStatus, addRateLimitHeaders } from '$lib/server/auth/rate-limit';
+import {
+	checkRateLimit,
+	getRateLimitStatus,
+	addRateLimitHeaders
+} from '$lib/server/auth/rate-limit';
 import { ActivityType } from '$lib/server/auth/activity-log';
 import { logActivity } from '$lib/server/auth/rbac';
 import { user as users } from '$lib/server/db/schema';
@@ -22,22 +26,25 @@ export const handle: Handle = async ({ event, resolve }) => {
 		const db = createDB(event.platform.env.DB);
 		globalThis.__db = db;
 		globalThis.__d1 = event.platform.env.DB;
-		
+
 		// Debug: Check available tables (only run once)
 		if (!globalThis.__tablesChecked) {
 			globalThis.__tablesChecked = true;
 			try {
 				// Use the D1 database directly from platform
 				const d1 = event.platform.env.DB;
-				const tables = await d1.prepare(
-					`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`
-				).all();
-				console.log('[Hooks] Available database tables:', tables.results?.map((t: any) => t.name) || []);
+				const tables = await d1
+					.prepare(`SELECT name FROM sqlite_master WHERE type='table' ORDER BY name`)
+					.all();
+				console.log(
+					'[Hooks] Available database tables:',
+					tables.results?.map((t: any) => t.name) || []
+				);
 			} catch (err) {
 				console.error('[Hooks] Error checking tables:', err);
 			}
 		}
-		
+
 		const auth = createAuth(event.platform.env.DB);
 		event.locals.auth = auth;
 
@@ -77,9 +84,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 				} as AuthSession;
 
 				// Update last login timestamp (only once per hour to reduce DB writes)
-				const lastUpdate = user.updatedAt instanceof Date ? user.updatedAt : new Date(user.updatedAt);
+				const lastUpdate =
+					user.updatedAt instanceof Date ? user.updatedAt : new Date(user.updatedAt);
 				const hoursSinceUpdate = (Date.now() - lastUpdate.getTime()) / (1000 * 60 * 60);
-				
+
 				if (hoursSinceUpdate > 1) {
 					await db
 						.update(users)
@@ -92,7 +100,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 			} else {
 				// User not found or inactive
 				event.locals.session = null;
-				
+
 				// Log suspicious activity if user is deactivated
 				if (user && !user.isActive) {
 					await logActivity(user.id, ActivityType.SUSPICIOUS_ACTIVITY, {
@@ -113,7 +121,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	// Apply rate limiting to sensitive endpoints
 	const path = event.url.pathname;
-	
+
 	try {
 		if (path === '/login' || path === '/api/auth/signin') {
 			await checkRateLimit(event.request, 'login');
@@ -174,22 +182,22 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 	// Add security headers
 	const securityHeaders = getSecurityHeaders();
-	
+
 	// Resolve the request
 	let response = await resolve(event);
-	
+
 	// Add security headers to response
 	const headers = new Headers(response.headers);
 	for (const [key, value] of Object.entries(securityHeaders)) {
 		headers.set(key, value);
 	}
-	
+
 	// Add rate limit headers
 	const rateLimitStatus = getRateLimitStatus(event.request, getRateLimitConfig(path));
 	if (rateLimitStatus) {
 		response = addRateLimitHeaders(response, rateLimitStatus);
 	}
-	
+
 	// Create new response with updated headers
 	return new Response(response.body, {
 		status: response.status,
@@ -203,7 +211,7 @@ function getClientIP(event: any): string {
 	const forwarded = event.request.headers.get('x-forwarded-for');
 	const realIp = event.request.headers.get('x-real-ip');
 	const cfConnectingIp = event.request.headers.get('cf-connecting-ip');
-	
+
 	return cfConnectingIp || realIp || forwarded?.split(',')[0] || event.getClientAddress();
 }
 
@@ -216,8 +224,8 @@ function shouldLogAccess(path: string): boolean {
 		'/dashboard/settings',
 		'/api/upload'
 	];
-	
-	return sensitiveRoutes.some(route => path.startsWith(route));
+
+	return sensitiveRoutes.some((route) => path.startsWith(route));
 }
 
 // Helper function to get rate limit config for path

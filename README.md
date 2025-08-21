@@ -14,7 +14,3 @@ An interactive web-based dashboard for Klimboys milk shake store to manage produ
 - Icons: Lucide Svelte
 - Deployment: Cloudflare Pages
 - Notifications: Telegram Bot API
-
-## PRD
-
-@PRD.md

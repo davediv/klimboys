@@ -88,9 +88,12 @@
 				} else {
 					uploadedImageUrl = result.file.key;
 				}
-				
+
 				if (dev) {
-					notifications.info('Image Uploaded', 'Image saved. Placeholder shown in development mode.');
+					notifications.info(
+						'Image Uploaded',
+						'Image saved. Placeholder shown in development mode.'
+					);
 				} else {
 					notifications.success('Image Uploaded', 'Image uploaded successfully');
 				}
@@ -130,11 +133,11 @@
 		if (!imageKey) return null;
 		return `/api/images/${imageKey}`;
 	}
-	
+
 	// Handle image error by showing placeholder (fallback)
 	function handleImageError(event: Event) {
 		const img = event.target as HTMLImageElement;
-		
+
 		console.error('Image failed to load:', {
 			src: img.src,
 			currentSrc: img.currentSrc,
@@ -142,17 +145,18 @@
 			naturalWidth: img.naturalWidth,
 			naturalHeight: img.naturalHeight
 		});
-		
+
 		// Prevent infinite loop - only try placeholder once
 		if (img.dataset.placeholderAttempted === 'true') {
 			return;
 		}
-		
+
 		// Mark that we've attempted placeholder
 		img.dataset.placeholderAttempted = 'true';
-		
+
 		// Use a data URL as ultimate fallback
-		const placeholderDataUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2YzZjRmNiIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Qcm9kdWN0IEltYWdlPC90ZXh0Pgo8L3N2Zz4=';
+		const placeholderDataUrl =
+			'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgZmlsbD0iI2YzZjRmNiIvPgogIDx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5Qcm9kdWN0IEltYWdlPC90ZXh0Pgo8L3N2Zz4=';
 		img.src = placeholderDataUrl;
 	}
 </script>
@@ -169,17 +173,30 @@
 			<p class="text-base-content/70 mt-1">Manage your milkshake menu</p>
 			{#if dev}
 				<div class="alert alert-info mt-2 max-w-lg">
-					<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-current shrink-0 w-6 h-6">
-						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+						class="h-6 w-6 shrink-0 stroke-current"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+						></path>
 					</svg>
-					<span class="text-sm">Development Mode: Product images will show as placeholders. Deploy to production to see actual images.</span>
+					<span class="text-sm"
+						>Development Mode: Product images will show as placeholders. Deploy to production to see
+						actual images.</span
+					>
 				</div>
 			{/if}
 		</div>
 		<div class="flex gap-2">
 			{#if data.userRole === 'admin'}
-				<Button 
-					variant="ghost" 
+				<Button
+					variant="ghost"
 					onclick={async () => {
 						const testUrl = '/api/images/products/test.jpg';
 						console.log('Testing image API with URL:', testUrl);
@@ -342,7 +359,10 @@
 					return async ({ result, update }) => {
 						loading = false;
 						if (result.type === 'success') {
-							notifications.success('Product created', 'Product and inventory item have been added');
+							notifications.success(
+								'Product created',
+								'Product and inventory item have been added'
+							);
 							await update();
 							closeModals();
 						}

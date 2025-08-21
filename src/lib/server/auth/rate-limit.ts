@@ -47,9 +47,7 @@ export async function checkRateLimit(
 	}
 
 	// Generate key
-	const key = limitConfig.keyGenerator
-		? limitConfig.keyGenerator(request)
-		: getDefaultKey(request);
+	const key = limitConfig.keyGenerator ? limitConfig.keyGenerator(request) : getDefaultKey(request);
 
 	// Get current state
 	const now = Date.now();
@@ -88,10 +86,10 @@ function getDefaultKey(request: Request): string {
 	const forwarded = request.headers.get('x-forwarded-for');
 	const realIp = request.headers.get('x-real-ip');
 	const cfConnectingIp = request.headers.get('cf-connecting-ip');
-	
+
 	const ip = cfConnectingIp || realIp || forwarded?.split(',')[0] || 'unknown';
 	const endpoint = new URL(request.url).pathname;
-	
+
 	return `${ip}:${endpoint}`;
 }
 
@@ -118,9 +116,7 @@ export function getRateLimitStatus(
 	const limitConfig = typeof config === 'string' ? rateLimitConfigs[config] : config;
 	if (!limitConfig) return null;
 
-	const key = limitConfig.keyGenerator
-		? limitConfig.keyGenerator(request)
-		: getDefaultKey(request);
+	const key = limitConfig.keyGenerator ? limitConfig.keyGenerator(request) : getDefaultKey(request);
 
 	const state = rateLimitStore.get(key);
 	if (!state) {

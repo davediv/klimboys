@@ -39,7 +39,7 @@ function generateFileKey(category: string, filename: string): string {
 export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	// Check authentication
 	requireAuth(locals.session);
-	
+
 	// Only admins can upload files
 	if (!locals.session || locals.session?.user?.role !== 'admin') {
 		return json({ error: 'Only admins can upload files' }, { status: 403 });
@@ -48,7 +48,7 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 	try {
 		const formData = await request.formData();
 		const file = formData.get('file') as File | null;
-		const category = formData.get('category') as string || 'products';
+		const category = (formData.get('category') as string) || 'products';
 
 		// Validate file presence
 		if (!file) {
@@ -57,20 +57,26 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 
 		// Validate file size
 		if (file.size > MAX_FILE_SIZE) {
-			return json({
-				error: 'File too large',
-				maxSize: '5MB',
-				fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`
-			}, { status: 400 });
+			return json(
+				{
+					error: 'File too large',
+					maxSize: '5MB',
+					fileSize: `${(file.size / 1024 / 1024).toFixed(2)}MB`
+				},
+				{ status: 400 }
+			);
 		}
 
 		// Validate file type
 		if (!isValidFileType(file.type, file.name)) {
-			return json({
-				error: 'Invalid file type. Only JPEG, PNG, and WebP images are allowed.',
-				allowedTypes: Object.keys(ALLOWED_FILE_TYPES),
-				receivedType: file.type
-			}, { status: 400 });
+			return json(
+				{
+					error: 'Invalid file type. Only JPEG, PNG, and WebP images are allowed.',
+					allowedTypes: Object.keys(ALLOWED_FILE_TYPES),
+					receivedType: file.type
+				},
+				{ status: 400 }
+			);
 		}
 
 		// Generate unique key
@@ -78,19 +84,21 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 
 		// In development without R2, return mock response
 		if (dev && !platform?.env?.BUCKET) {
-			
-			return json({
-				success: true,
-				message: 'File uploaded successfully (dev mode)',
-				file: {
-					key,
-					url: `/api/images/${key}`,
-					originalName: file.name,
-					size: file.size,
-					type: file.type,
-					uploadedAt: new Date().toISOString()
-				}
-			}, { status: 201 });
+			return json(
+				{
+					success: true,
+					message: 'File uploaded successfully (dev mode)',
+					file: {
+						key,
+						url: `/api/images/${key}`,
+						originalName: file.name,
+						size: file.size,
+						type: file.type,
+						uploadedAt: new Date().toISOString()
+					}
+				},
+				{ status: 201 }
+			);
 		}
 
 		// Check R2 availability
@@ -120,19 +128,21 @@ export const POST: RequestHandler = async ({ request, platform, locals }) => {
 		});
 
 		// Return success response
-		return json({
-			success: true,
-			message: 'File uploaded successfully',
-			file: {
-				key,
-				url: `/api/images/${key}`,
-				originalName: file.name,
-				size: file.size,
-				type: file.type,
-				uploadedAt: metadata.uploadedAt
-			}
-		}, { status: 201 });
-
+		return json(
+			{
+				success: true,
+				message: 'File uploaded successfully',
+				file: {
+					key,
+					url: `/api/images/${key}`,
+					originalName: file.name,
+					size: file.size,
+					type: file.type,
+					uploadedAt: metadata.uploadedAt
+				}
+			},
+			{ status: 201 }
+		);
 	} catch (error) {
 		console.error('Error uploading file:', error);
 		return json({ error: 'Failed to upload file' }, { status: 500 });

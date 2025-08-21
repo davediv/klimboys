@@ -91,10 +91,10 @@ export const actions = {
 		try {
 			const db = createDB(platform.env.DB);
 			const productId = nanoid();
-			
+
 			// Get image URL from form (uploaded separately)
 			const imageUrl = (formData.get('imageUrl') as string) || null;
-			
+
 			console.log('Creating product with data:', {
 				productId,
 				...result.data,
@@ -214,13 +214,14 @@ export const actions = {
 				});
 
 				if (relatedInventory) {
-					await db.update(inventory)
-						.set({ 
+					await db
+						.update(inventory)
+						.set({
 							name: result.data.title,
 							updatedAt: new Date()
 						})
 						.where(eq(inventory.id, relatedInventory.id));
-					
+
 					console.log('Updated inventory item name:', {
 						oldName: oldProduct.title,
 						newName: result.data.title

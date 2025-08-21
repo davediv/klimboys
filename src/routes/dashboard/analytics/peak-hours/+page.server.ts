@@ -13,16 +13,16 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 
 	const db = createDB(platform.env.DB);
 	const now = new Date();
-	
+
 	// Date ranges
 	const thirtyDaysAgo = new Date();
 	thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 29);
 	thirtyDaysAgo.setHours(0, 0, 0, 0);
-	
+
 	const sevenDaysAgo = new Date();
 	sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
 	sevenDaysAgo.setHours(0, 0, 0, 0);
-	
+
 	const endDate = new Date();
 	endDate.setHours(23, 59, 59, 999);
 
@@ -72,10 +72,7 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		})
 		.from(transaction)
 		.where(and(gte(transaction.createdAt, thirtyDaysAgo), lte(transaction.createdAt, endDate)))
-		.groupBy(
-			transaction.channel,
-			sql`strftime('%H', ${transaction.createdAt} / 1000, 'unixepoch')`
-		)
+		.groupBy(transaction.channel, sql`strftime('%H', ${transaction.createdAt} / 1000, 'unixepoch')`)
 		.orderBy(transaction.channel, desc(sql`count(*)`));
 
 	// Get weekly pattern (last 7 days hour by hour)
@@ -98,16 +95,19 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		);
 
 	// Calculate peak hours (top 5 busiest hours)
-	const peakHours = hourlySummary.slice(0, 5).map(h => ({
+	const peakHours = hourlySummary.slice(0, 5).map((h) => ({
 		...h,
 		isPeak: true
 	}));
 
 	// Calculate quiet hours (bottom 5)
-	const quietHours = hourlySummary.slice(-5).reverse().map(h => ({
-		...h,
-		isPeak: false
-	}));
+	const quietHours = hourlySummary
+		.slice(-5)
+		.reverse()
+		.map((h) => ({
+			...h,
+			isPeak: false
+		}));
 
 	// Day of week analysis
 	const dayOfWeekAnalysis = await db

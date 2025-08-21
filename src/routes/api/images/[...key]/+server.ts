@@ -5,14 +5,13 @@ import { dev } from '$app/environment';
 export const GET: RequestHandler = async ({ params, platform }) => {
 	try {
 		const key = params.key;
-		
+
 		if (!key) {
 			throw error(400, 'Invalid image key');
 		}
 
 		// In development or when R2 is not available, serve a placeholder
 		if (dev || !platform?.env?.BUCKET) {
-			
 			// Create a more visually appealing SVG placeholder
 			const svg = `
 				<svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
@@ -33,7 +32,7 @@ export const GET: RequestHandler = async ({ params, platform }) => {
 					</g>
 				</svg>
 			`;
-			
+
 			return new Response(svg.trim(), {
 				status: 200,
 				headers: {
@@ -55,7 +54,7 @@ export const GET: RequestHandler = async ({ params, platform }) => {
 						<text x="50%" y="50%" font-family="Arial" font-size="18" fill="#9ca3af" text-anchor="middle" dy=".3em">Image Not Found</text>
 					</svg>
 				`;
-				
+
 				return new Response(svg.trim(), {
 					status: 200,
 					headers: {
@@ -81,7 +80,7 @@ export const GET: RequestHandler = async ({ params, platform }) => {
 					<text x="50%" y="50%" font-family="Arial" font-size="18" fill="#9ca3af" text-anchor="middle" dy=".3em">Product Image</text>
 				</svg>
 			`;
-			
+
 			return new Response(svg.trim(), {
 				status: 200,
 				headers: {
@@ -99,7 +98,7 @@ export const GET: RequestHandler = async ({ params, platform }) => {
 				<text x="50%" y="50%" font-family="Arial" font-size="18" fill="#9ca3af" text-anchor="middle" dy=".3em">Product Image</text>
 			</svg>
 		`;
-		
+
 		return new Response(svg.trim(), {
 			status: 200,
 			headers: {

@@ -1,7 +1,15 @@
 <script lang="ts">
 	import Button from '$lib/components/Button.svelte';
 	import CashierPerformanceChart from '$lib/components/charts/CashierPerformanceChart.svelte';
-	import { ArrowLeft, TrendingUp, TrendingDown, Award, Clock, ShoppingBag, DollarSign } from '@lucide/svelte';
+	import {
+		ArrowLeft,
+		TrendingUp,
+		TrendingDown,
+		Award,
+		Clock,
+		ShoppingBag,
+		DollarSign
+	} from '@lucide/svelte';
 	import { jakartaTime } from '$lib/utils/datetime';
 	import type { PageData } from './$types';
 	import { Chart, registerables } from 'chart.js';
@@ -20,9 +28,7 @@
 
 	// Calculate performance metrics
 	const topPerformer = $derived(data.cashierSummary[0] || null);
-	const totalRevenue = $derived(
-		data.cashierSummary.reduce((sum, c) => sum + c.totalRevenue, 0)
-	);
+	const totalRevenue = $derived(data.cashierSummary.reduce((sum, c) => sum + c.totalRevenue, 0));
 	const totalTransactions = $derived(
 		data.cashierSummary.reduce((sum, c) => sum + c.totalTransactions, 0)
 	);
@@ -43,7 +49,7 @@
 		const dateMap = new Map<string, Map<string, number>>();
 		const cashiers = new Set<string>();
 
-		data.weeklyTrend.forEach(item => {
+		data.weeklyTrend.forEach((item) => {
 			if (!dateMap.has(item.date)) {
 				dateMap.set(item.date, new Map());
 			}
@@ -56,7 +62,7 @@
 
 		const datasets = cashierArray.map((cashier, index) => ({
 			label: cashier,
-			data: sortedDates.map(date => dateMap.get(date)?.get(cashier) || 0),
+			data: sortedDates.map((date) => dateMap.get(date)?.get(cashier) || 0),
 			borderColor: `hsl(${index * 60}, 70%, 50%)`,
 			backgroundColor: `hsla(${index * 60}, 70%, 50%, 0.1)`,
 			borderWidth: 2,
@@ -66,7 +72,7 @@
 		weeklyChart = new Chart(ctx, {
 			type: 'line',
 			data: {
-				labels: sortedDates.map(date => {
+				labels: sortedDates.map((date) => {
 					const d = new Date(date);
 					return jakartaTime.days[d.getDay()].substring(0, 3);
 				}),
@@ -86,7 +92,7 @@
 					},
 					tooltip: {
 						callbacks: {
-							label: function(context) {
+							label: function (context) {
 								return `${context.dataset.label}: IDR ${context.parsed.y.toLocaleString('id-ID')}`;
 							}
 						}
@@ -96,7 +102,7 @@
 					y: {
 						beginAtZero: true,
 						ticks: {
-							callback: function(value) {
+							callback: function (value) {
 								return 'IDR ' + (value as number).toLocaleString('id-ID');
 							}
 						}
@@ -119,9 +125,9 @@
 		if (!ctx) return;
 
 		// Group by cashier
-		const cashierMap = new Map<string, { hours: number[], transactions: number[] }>();
+		const cashierMap = new Map<string, { hours: number[]; transactions: number[] }>();
 
-		data.hourlyPattern.forEach(item => {
+		data.hourlyPattern.forEach((item) => {
 			if (!cashierMap.has(item.cashierName)) {
 				cashierMap.set(item.cashierName, { hours: [], transactions: [] });
 			}
@@ -132,7 +138,7 @@
 
 		const hours = Array.from({ length: 24 }, (_, i) => i);
 		const datasets = Array.from(cashierMap.entries()).map(([cashier, data], index) => {
-			const hourlyData = hours.map(hour => {
+			const hourlyData = hours.map((hour) => {
 				const idx = data.hours.indexOf(hour);
 				return idx >= 0 ? data.transactions[idx] : 0;
 			});
@@ -150,7 +156,7 @@
 		hourlyChart = new Chart(ctx, {
 			type: 'line',
 			data: {
-				labels: hours.map(h => `${h}:00`),
+				labels: hours.map((h) => `${h}:00`),
 				datasets
 			},
 			options: {
@@ -194,7 +200,7 @@
 		// Group by cashier and aggregate channels
 		const cashierChannels = new Map<string, Map<string, number>>();
 
-		data.channelPreference.forEach(item => {
+		data.channelPreference.forEach((item) => {
 			if (!cashierChannels.has(item.cashierName)) {
 				cashierChannels.set(item.cashierName, new Map());
 			}
@@ -204,7 +210,7 @@
 		const channels = ['store', 'grabfood', 'gofood', 'shopeefood', 'ubereats'];
 		const datasets = Array.from(cashierChannels.entries()).map(([cashier, channelData], index) => ({
 			label: cashier,
-			data: channels.map(channel => channelData.get(channel) || 0),
+			data: channels.map((channel) => channelData.get(channel) || 0),
 			backgroundColor: `hsla(${index * 60}, 70%, 50%, 0.8)`,
 			borderColor: `hsl(${index * 60}, 70%, 50%)`,
 			borderWidth: 1
@@ -213,7 +219,7 @@
 		channelChart = new Chart(ctx, {
 			type: 'bar',
 			data: {
-				labels: channels.map(c => c.charAt(0).toUpperCase() + c.slice(1)),
+				labels: channels.map((c) => c.charAt(0).toUpperCase() + c.slice(1)),
 				datasets
 			},
 			options: {
@@ -276,9 +282,7 @@
 	<div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
 		<div>
 			<div class="flex items-center gap-4">
-				<Button href="/dashboard" variant="ghost" size="sm" icon={ArrowLeft}>
-					Back
-				</Button>
+				<Button href="/dashboard" variant="ghost" size="sm" icon={ArrowLeft}>Back</Button>
 			</div>
 			<h1 class="mt-2 text-3xl font-bold">Cashier Performance</h1>
 			<p class="text-base-content/70 mt-1">Track and analyze individual cashier metrics</p>
@@ -295,7 +299,7 @@
 						{topPerformer ? topPerformer.cashierName : 'N/A'}
 					</p>
 					{#if topPerformer}
-						<p class="text-sm text-success">
+						<p class="text-success text-sm">
 							IDR {topPerformer.totalRevenue.toLocaleString('id-ID')}
 						</p>
 					{/if}
@@ -404,7 +408,7 @@
 								</td>
 								<td>
 									<span class="text-sm">
-										{cashier.lastTransactionDate 
+										{cashier.lastTransactionDate
 											? jakartaTime.relative(cashier.lastTransactionDate)
 											: 'Never'}
 									</span>
@@ -436,11 +440,7 @@
 
 	<!-- Today's Performance -->
 	<div class="grid gap-6 lg:grid-cols-2">
-		<CashierPerformanceChart
-			data={data.todayPerformance}
-			type="bar"
-			title="Today's Performance"
-		/>
+		<CashierPerformanceChart data={data.todayPerformance} type="bar" title="Today's Performance" />
 
 		<CashierPerformanceChart
 			data={data.cashierSummary.slice(0, 6)}
@@ -459,7 +459,7 @@
 					<canvas bind:this={weeklyTrendCanvas}></canvas>
 				</div>
 			{:else}
-				<div class="flex h-48 items-center justify-center text-base-content/50">
+				<div class="text-base-content/50 flex h-48 items-center justify-center">
 					No weekly trend data available
 				</div>
 			{/if}
@@ -473,7 +473,7 @@
 					<canvas bind:this={hourlyPatternCanvas}></canvas>
 				</div>
 			{:else}
-				<div class="flex h-48 items-center justify-center text-base-content/50">
+				<div class="text-base-content/50 flex h-48 items-center justify-center">
 					No hourly pattern data available
 				</div>
 			{/if}
@@ -487,7 +487,7 @@
 					<canvas bind:this={channelDistCanvas}></canvas>
 				</div>
 			{:else}
-				<div class="flex h-48 items-center justify-center text-base-content/50">
+				<div class="text-base-content/50 flex h-48 items-center justify-center">
 					No channel preference data available
 				</div>
 			{/if}
@@ -508,10 +508,10 @@
 			<h3 class="mb-4 text-lg font-semibold">Top Selling Products by Cashier</h3>
 			<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 				{#each data.cashierSummary as cashier}
-					{@const cashierProducts = data.topProductsByCashier.filter(
-						p => p.cashierId === cashier.cashierId
-					).slice(0, 5)}
-					<div class="rounded-box border border-base-300 p-4">
+					{@const cashierProducts = data.topProductsByCashier
+						.filter((p) => p.cashierId === cashier.cashierId)
+						.slice(0, 5)}
+					<div class="rounded-box border-base-300 border p-4">
 						<h4 class="mb-2 font-medium">{cashier.cashierName}</h4>
 						{#if cashierProducts.length > 0}
 							<ul class="space-y-1 text-sm">

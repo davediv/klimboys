@@ -1,6 +1,14 @@
 <script lang="ts">
 	import Button from '$lib/components/Button.svelte';
-	import { Clock, TrendingUp, TrendingDown, AlertCircle, Users, ArrowLeft, Calendar } from '@lucide/svelte';
+	import {
+		Clock,
+		TrendingUp,
+		TrendingDown,
+		AlertCircle,
+		Users,
+		ArrowLeft,
+		Calendar
+	} from '@lucide/svelte';
 	import { jakartaTime } from '$lib/utils/datetime';
 	import type { PageData } from './$types';
 	import { Chart, registerables } from 'chart.js';
@@ -57,16 +65,18 @@
 	// Calculate insights
 	const peakHourInsights = $derived(() => {
 		if (!data.peakHours.length) return null;
-		
+
 		const topPeak = data.peakHours[0];
-		const avgPeakTransactions = data.peakHours.reduce((sum, h) => sum + h.avgTransactions, 0) / data.peakHours.length;
-		const avgPeakRevenue = data.peakHours.reduce((sum, h) => sum + h.avgRevenue, 0) / data.peakHours.length;
-		
+		const avgPeakTransactions =
+			data.peakHours.reduce((sum, h) => sum + h.avgTransactions, 0) / data.peakHours.length;
+		const avgPeakRevenue =
+			data.peakHours.reduce((sum, h) => sum + h.avgRevenue, 0) / data.peakHours.length;
+
 		return {
 			primaryPeak: topPeak,
 			avgPeakTransactions: Math.round(avgPeakTransactions),
 			avgPeakRevenue,
-			peakHours: data.peakHours.map(h => h.hour)
+			peakHours: data.peakHours.map((h) => h.hour)
 		};
 	});
 
@@ -83,11 +93,13 @@
 		if (!ctx) return;
 
 		// Create a 7x24 matrix for the heatmap
-		const matrix: number[][] = Array(7).fill(null).map(() => Array(24).fill(0));
-		const maxValue = Math.max(...data.hourlyDistribution.map(d => d.transactions));
+		const matrix: number[][] = Array(7)
+			.fill(null)
+			.map(() => Array(24).fill(0));
+		const maxValue = Math.max(...data.hourlyDistribution.map((d) => d.transactions));
 
 		// Fill the matrix
-		data.hourlyDistribution.forEach(item => {
+		data.hourlyDistribution.forEach((item) => {
 			matrix[item.dayOfWeek][item.hour] = item.transactions;
 		});
 
@@ -102,17 +114,19 @@
 		heatmapChart = new Chart(ctx, {
 			type: 'scatter',
 			data: {
-				datasets: [{
-					label: 'Transactions',
-					data: chartData,
-					backgroundColor: (context) => {
-						const value = context.raw as { v: number };
-						const intensity = value.v / maxValue;
-						return `rgba(59, 130, 246, ${0.1 + intensity * 0.9})`; // Blue with varying opacity
-					},
-					pointRadius: 20,
-					pointHoverRadius: 22
-				}]
+				datasets: [
+					{
+						label: 'Transactions',
+						data: chartData,
+						backgroundColor: (context) => {
+							const value = context.raw as { v: number };
+							const intensity = value.v / maxValue;
+							return `rgba(59, 130, 246, ${0.1 + intensity * 0.9})`; // Blue with varying opacity
+						},
+						pointRadius: 20,
+						pointHoverRadius: 22
+					}
+				]
 			},
 			options: {
 				responsive: true,
@@ -185,7 +199,7 @@
 
 		// Group by date and create datasets
 		const dateMap = new Map<string, Map<number, number>>();
-		data.weeklyPattern.forEach(item => {
+		data.weeklyPattern.forEach((item) => {
 			if (!dateMap.has(item.date)) {
 				dateMap.set(item.date, new Map());
 			}
@@ -197,8 +211,8 @@
 
 		const datasets = dates.map((date, index) => {
 			const dayData = dateMap.get(date)!;
-			const data = hours.map(hour => dayData.get(hour) || 0);
-			
+			const data = hours.map((hour) => dayData.get(hour) || 0);
+
 			return {
 				label: jakartaTime.dayDate(date),
 				data,
@@ -212,7 +226,7 @@
 		trendChart = new Chart(ctx, {
 			type: 'line',
 			data: {
-				labels: hours.map(h => formatHour(h)),
+				labels: hours.map((h) => formatHour(h)),
 				datasets
 			},
 			options: {
@@ -263,9 +277,12 @@
 		if (!ctx) return;
 
 		// Get top 3 peak hours for each channel
-		const channelPeaks = new Map<TransactionChannel, Array<{ hour: number; transactions: number }>>();
-		
-		data.peakHoursByChannel.forEach(item => {
+		const channelPeaks = new Map<
+			TransactionChannel,
+			Array<{ hour: number; transactions: number }>
+		>();
+
+		data.peakHoursByChannel.forEach((item) => {
 			if (!channelPeaks.has(item.channel)) {
 				channelPeaks.set(item.channel, []);
 			}
@@ -276,9 +293,9 @@
 		});
 
 		const channels = Array.from(channelPeaks.keys());
-		const datasets = [0, 1, 2].map(peakIndex => ({
+		const datasets = [0, 1, 2].map((peakIndex) => ({
 			label: `Peak ${peakIndex + 1}`,
-			data: channels.map(channel => {
+			data: channels.map((channel) => {
 				const peaks = channelPeaks.get(channel);
 				return peaks && peaks[peakIndex] ? peaks[peakIndex].transactions : 0;
 			}),
@@ -288,7 +305,7 @@
 		channelChart = new Chart(ctx, {
 			type: 'bar',
 			data: {
-				labels: channels.map(c => channelNames[c]),
+				labels: channels.map((c) => channelNames[c]),
 				datasets
 			},
 			options: {
@@ -395,7 +412,9 @@
 			</div>
 			<h1 class="mt-2 text-3xl font-bold">Peak Hours Analysis</h1>
 			<p class="text-base-content/70 mt-1">
-				Analyzing traffic patterns from {jakartaTime.dayDate(data.dateRange.start)} to {jakartaTime.dayDate(data.dateRange.end)}
+				Analyzing traffic patterns from {jakartaTime.dayDate(data.dateRange.start)} to {jakartaTime.dayDate(
+					data.dateRange.end
+				)}
 			</p>
 		</div>
 	</div>
@@ -403,41 +422,43 @@
 	<!-- Key Insights -->
 	{#if peakHourInsights()}
 		<div class="bg-base-100 rounded-box p-6 shadow">
-			<h2 class="mb-4 text-xl font-bold flex items-center gap-2">
-				<AlertCircle class="h-5 w-5 text-info" />
+			<h2 class="mb-4 flex items-center gap-2 text-xl font-bold">
+				<AlertCircle class="text-info h-5 w-5" />
 				Key Insights
 			</h2>
 			<div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
 				<div class="bg-base-200 rounded-lg p-4">
-					<div class="text-sm text-base-content/70">Primary Peak Hour</div>
-					<div class="text-2xl font-bold text-primary">
+					<div class="text-base-content/70 text-sm">Primary Peak Hour</div>
+					<div class="text-primary text-2xl font-bold">
 						{getHourRange(peakHourInsights()!.primaryPeak.hour)}
 					</div>
-					<div class="text-sm text-base-content/70 mt-1">
+					<div class="text-base-content/70 mt-1 text-sm">
 						~{peakHourInsights()!.primaryPeak.avgTransactions} orders/day
 					</div>
 				</div>
 				<div class="bg-base-200 rounded-lg p-4">
-					<div class="text-sm text-base-content/70">Peak Hours Revenue</div>
-					<div class="text-2xl font-bold text-success">
+					<div class="text-base-content/70 text-sm">Peak Hours Revenue</div>
+					<div class="text-success text-2xl font-bold">
 						{formatCurrency(peakHourInsights()!.avgPeakRevenue)}
 					</div>
-					<div class="text-sm text-base-content/70 mt-1">Average per day</div>
+					<div class="text-base-content/70 mt-1 text-sm">Average per day</div>
 				</div>
 				<div class="bg-base-200 rounded-lg p-4">
-					<div class="text-sm text-base-content/70">Peak Period</div>
+					<div class="text-base-content/70 text-sm">Peak Period</div>
 					<div class="text-lg font-bold">
-						{peakHourInsights()!.peakHours.map(h => formatHour(h)).join(', ')}
+						{peakHourInsights()!
+							.peakHours.map((h) => formatHour(h))
+							.join(', ')}
 					</div>
-					<div class="text-sm text-base-content/70 mt-1">Top 5 busiest hours</div>
+					<div class="text-base-content/70 mt-1 text-sm">Top 5 busiest hours</div>
 				</div>
 				<div class="bg-base-200 rounded-lg p-4">
-					<div class="text-sm text-base-content/70">Staff Recommendation</div>
-					<div class="text-lg font-bold flex items-center gap-2">
+					<div class="text-base-content/70 text-sm">Staff Recommendation</div>
+					<div class="flex items-center gap-2 text-lg font-bold">
 						<Users class="h-5 w-5" />
 						{peakHourInsights()!.avgPeakTransactions > 20 ? '3-4' : '2-3'} Staff
 					</div>
-					<div class="text-sm text-base-content/70 mt-1">During peak hours</div>
+					<div class="text-base-content/70 mt-1 text-sm">During peak hours</div>
 				</div>
 			</div>
 		</div>
@@ -448,8 +469,8 @@
 		<!-- Peak Hours -->
 		<div class="bg-base-100 rounded-box shadow">
 			<div class="border-b p-4">
-				<h3 class="text-lg font-bold flex items-center gap-2">
-					<TrendingUp class="h-5 w-5 text-success" />
+				<h3 class="flex items-center gap-2 text-lg font-bold">
+					<TrendingUp class="text-success h-5 w-5" />
 					Peak Hours (Top 5)
 				</h3>
 			</div>
@@ -461,14 +482,14 @@
 								<div class="badge badge-lg badge-success font-bold">{index + 1}</div>
 								<div>
 									<p class="font-medium">{getHourRange(hour.hour)}</p>
-									<p class="text-sm text-base-content/70">
+									<p class="text-base-content/70 text-sm">
 										~{Math.round(hour.avgTransactions)} orders/day
 									</p>
 								</div>
 							</div>
 							<div class="text-right">
 								<p class="font-semibold">{formatCurrency(hour.avgRevenue)}</p>
-								<p class="text-xs text-base-content/70">avg revenue/day</p>
+								<p class="text-base-content/70 text-xs">avg revenue/day</p>
 							</div>
 						</div>
 					{/each}
@@ -479,8 +500,8 @@
 		<!-- Quiet Hours -->
 		<div class="bg-base-100 rounded-box shadow">
 			<div class="border-b p-4">
-				<h3 class="text-lg font-bold flex items-center gap-2">
-					<TrendingDown class="h-5 w-5 text-warning" />
+				<h3 class="flex items-center gap-2 text-lg font-bold">
+					<TrendingDown class="text-warning h-5 w-5" />
 					Quiet Hours (Bottom 5)
 				</h3>
 			</div>
@@ -492,14 +513,14 @@
 								<div class="badge badge-lg badge-warning font-bold">{index + 1}</div>
 								<div>
 									<p class="font-medium">{getHourRange(hour.hour)}</p>
-									<p class="text-sm text-base-content/70">
+									<p class="text-base-content/70 text-sm">
 										~{Math.round(hour.avgTransactions)} orders/day
 									</p>
 								</div>
 							</div>
 							<div class="text-right">
 								<p class="font-semibold">{formatCurrency(hour.avgRevenue)}</p>
-								<p class="text-xs text-base-content/70">avg revenue/day</p>
+								<p class="text-base-content/70 text-xs">avg revenue/day</p>
 							</div>
 						</div>
 					{/each}
@@ -513,7 +534,7 @@
 		<div style="position: relative; height: 400px;">
 			<canvas bind:this={heatmapCanvas}></canvas>
 		</div>
-		<div class="mt-4 text-sm text-base-content/70 text-center">
+		<div class="text-base-content/70 mt-4 text-center text-sm">
 			Darker blue indicates higher transaction volume
 		</div>
 	</div>
@@ -535,7 +556,7 @@
 	<!-- Day of Week Analysis -->
 	<div class="bg-base-100 rounded-box shadow">
 		<div class="border-b p-4">
-			<h3 class="text-lg font-bold flex items-center gap-2">
+			<h3 class="flex items-center gap-2 text-lg font-bold">
 				<Calendar class="h-5 w-5" />
 				Day of Week Performance
 			</h3>
@@ -568,36 +589,41 @@
 
 	<!-- Recommendations -->
 	<div class="bg-info/10 rounded-box p-6 shadow">
-		<h3 class="text-lg font-bold mb-4 flex items-center gap-2">
-			<AlertCircle class="h-5 w-5 text-info" />
+		<h3 class="mb-4 flex items-center gap-2 text-lg font-bold">
+			<AlertCircle class="text-info h-5 w-5" />
 			Recommendations Based on Peak Hours Analysis
 		</h3>
 		<div class="space-y-3">
 			<div class="flex items-start gap-3">
 				<span class="badge badge-info">Staffing</span>
 				<p class="text-sm">
-					Schedule additional staff during {data.peakHours.slice(0, 3).map(h => formatHour(h.hour)).join(', ')} 
+					Schedule additional staff during {data.peakHours
+						.slice(0, 3)
+						.map((h) => formatHour(h.hour))
+						.join(', ')}
 					to handle the increased order volume efficiently.
 				</p>
 			</div>
 			<div class="flex items-start gap-3">
 				<span class="badge badge-info">Inventory</span>
 				<p class="text-sm">
-					Ensure adequate stock levels before peak hours begin. Consider pre-preparing popular items 
+					Ensure adequate stock levels before peak hours begin. Consider pre-preparing popular items
 					30 minutes before {formatHour(data.peakHours[0]?.hour || 12)}.
 				</p>
 			</div>
 			<div class="flex items-start gap-3">
 				<span class="badge badge-info">Marketing</span>
 				<p class="text-sm">
-					Target promotions during quiet hours ({data.quietHours.slice(0, 3).map(h => formatHour(h.hour)).join(', ')}) 
-					to balance order distribution throughout the day.
+					Target promotions during quiet hours ({data.quietHours
+						.slice(0, 3)
+						.map((h) => formatHour(h.hour))
+						.join(', ')}) to balance order distribution throughout the day.
 				</p>
 			</div>
 			<div class="flex items-start gap-3">
 				<span class="badge badge-info">Operations</span>
 				<p class="text-sm">
-					Schedule maintenance, training, and administrative tasks during quiet periods to minimize 
+					Schedule maintenance, training, and administrative tasks during quiet periods to minimize
 					disruption to service.
 				</p>
 			</div>

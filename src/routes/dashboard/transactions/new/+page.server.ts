@@ -124,7 +124,7 @@ export const actions = {
 		}
 
 		const db = createDB(platform.env.DB);
-		
+
 		// Try to create transaction with retry logic for unique constraint
 		let transactionCreated = false;
 		let transactionId = nanoid();
@@ -146,7 +146,7 @@ export const actions = {
 				// Find the highest number for today
 				let nextNumber = 1;
 				if (todayTransactions.length > 0) {
-					const numbers = todayTransactions.map(t => {
+					const numbers = todayTransactions.map((t) => {
 						const parts = t.transactionNumber.split('-');
 						return parseInt(parts[1]) || 0;
 					});
@@ -194,7 +194,7 @@ export const actions = {
 		try {
 			// Create transaction items and calculate total cost
 			let totalCost = 0;
-			
+
 			for (const item of result.data.items) {
 				// Get product cost for the item
 				const prod = await db.query.product.findFirst({
@@ -218,9 +218,7 @@ export const actions = {
 			}
 
 			// Update transaction with calculated total cost
-			await db.update(transaction)
-				.set({ totalCost })
-				.where(eq(transaction.id, transactionId));
+			await db.update(transaction).set({ totalCost }).where(eq(transaction.id, transactionId));
 
 			// Update inventory based on product recipes
 			for (const item of result.data.items) {
@@ -283,7 +281,7 @@ export const actions = {
 				// This is a redirect, not an error - re-throw it
 				throw error;
 			}
-			
+
 			console.error('Create transaction error:', error);
 			// If we already created the transaction but failed on items, we should clean up
 			if (transactionCreated) {

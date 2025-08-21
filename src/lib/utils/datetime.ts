@@ -202,7 +202,8 @@ export function isTomorrow(date: Date | string | number): boolean {
 export function formatRelativeTime(date: Date | string | number): string {
 	const jakartaDate = toJakartaTime(date);
 	const now = getCurrentJakartaTime();
-	const diffMs = (jakartaDate instanceof Date ? jakartaDate : new Date(jakartaDate)).getTime() - now.getTime();
+	const diffMs =
+		(jakartaDate instanceof Date ? jakartaDate : new Date(jakartaDate)).getTime() - now.getTime();
 	const diffSecs = Math.floor(diffMs / 1000);
 	const diffMins = Math.floor(diffSecs / 60);
 	const diffHours = Math.floor(diffMins / 60);

@@ -109,14 +109,14 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 		.orderBy(sql`strftime('%Y-%m-%d', ${transaction.createdAt} / 1000, 'unixepoch')`);
 
 	// Fill in missing dates with zero values
-	const salesByDate = new Map(dailySalesData.map(d => [d.date, d]));
+	const salesByDate = new Map(dailySalesData.map((d) => [d.date, d]));
 	const completeData = [];
-	
+
 	for (let i = 0; i < 7; i++) {
 		const date = new Date(sevenDaysAgo);
 		date.setDate(date.getDate() + i);
 		const dateStr = date.toISOString().split('T')[0];
-		
+
 		const dayData = salesByDate.get(dateStr);
 		completeData.push({
 			date: dateStr,
@@ -176,10 +176,9 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 			revenue: sql<number>`coalesce(sum(${transaction.totalAmount}), 0)`
 		})
 		.from(transaction)
-		.where(and(
-			gte(transaction.createdAt, currentHourStart),
-			lte(transaction.createdAt, currentHourEnd)
-		));
+		.where(
+			and(gte(transaction.createdAt, currentHourStart), lte(transaction.createdAt, currentHourEnd))
+		);
 
 	// Get top cashier performance for today (admin only)
 	let topCashiersToday: any[] = [];
@@ -193,11 +192,13 @@ export const load: PageServerLoad = async ({ locals, platform }) => {
 			})
 			.from(transaction)
 			.innerJoin(user, eq(transaction.cashierId, user.id))
-			.where(and(
-				eq(transaction.status, 'completed'),
-				gte(transaction.createdAt, startOfDay),
-				lte(transaction.createdAt, endOfDay)
-			))
+			.where(
+				and(
+					eq(transaction.status, 'completed'),
+					gte(transaction.createdAt, startOfDay),
+					lte(transaction.createdAt, endOfDay)
+				)
+			)
 			.groupBy(transaction.cashierId, user.name)
 			.orderBy(desc(sql`sum(${transaction.totalAmount})`))
 			.limit(3);

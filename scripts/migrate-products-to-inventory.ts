@@ -13,7 +13,7 @@ async function migrateProductsToInventory() {
 		// Note: This script should be run with proper database connection
 		// For local development: Use wrangler D1 execute or similar
 		// For production: Run through appropriate deployment pipeline
-		
+
 		const db = createDB(/* your D1 database instance */);
 
 		// Get all products
@@ -55,7 +55,6 @@ async function migrateProductsToInventory() {
 		console.log(`- Created: ${created} inventory items`);
 		console.log(`- Skipped: ${skipped} (already existed)`);
 		console.log(`- Total products: ${products.length}`);
-
 	} catch (error) {
 		console.error('Migration failed:', error);
 		process.exit(1);

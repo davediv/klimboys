@@ -1,6 +1,14 @@
 <script lang="ts">
 	import Button from '$lib/components/Button.svelte';
-	import { BarChart3, TrendingUp, Package, Clock, CreditCard, ArrowLeft, Users } from '@lucide/svelte';
+	import {
+		BarChart3,
+		TrendingUp,
+		Package,
+		Clock,
+		CreditCard,
+		ArrowLeft,
+		Users
+	} from '@lucide/svelte';
 	import { jakartaTime } from '$lib/utils/datetime';
 	import type { PageData } from './$types';
 	import type { TransactionChannel, PaymentMethod } from '$lib/server/db/schema';
@@ -54,16 +62,14 @@
 	const topProducts = $derived(
 		selectedChannel === 'all'
 			? []
-			: data.topProductsByChannel
-					.filter(p => p.channel === selectedChannel)
-					.slice(0, 10)
+			: data.topProductsByChannel.filter((p) => p.channel === selectedChannel).slice(0, 10)
 	);
 
 	// Get payment methods for selected channel
 	const paymentMethods = $derived(
 		selectedChannel === 'all'
 			? []
-			: data.paymentMethodByChannel.filter(p => p.channel === selectedChannel)
+			: data.paymentMethodByChannel.filter((p) => p.channel === selectedChannel)
 	);
 
 	// Create revenue trend chart
@@ -80,7 +86,7 @@
 
 		// Group data by date
 		const dateMap = new Map<string, Record<TransactionChannel, number>>();
-		data.channelDailyPerformance.forEach(item => {
+		data.channelDailyPerformance.forEach((item) => {
 			if (!dateMap.has(item.date)) {
 				dateMap.set(item.date, {} as Record<TransactionChannel, number>);
 			}
@@ -88,11 +94,17 @@
 		});
 
 		const dates = Array.from(dateMap.keys()).sort();
-		const channels: TransactionChannel[] = ['grabfood', 'gofood', 'shopeefood', 'ubereats', 'store'];
+		const channels: TransactionChannel[] = [
+			'grabfood',
+			'gofood',
+			'shopeefood',
+			'ubereats',
+			'store'
+		];
 
-		const datasets = channels.map(channel => ({
+		const datasets = channels.map((channel) => ({
 			label: channelNames[channel],
-			data: dates.map(date => dateMap.get(date)?.[channel] || 0),
+			data: dates.map((date) => dateMap.get(date)?.[channel] || 0),
 			borderColor: channelColors[channel],
 			backgroundColor: channelColors[channel] + '20',
 			tension: 0.3,
@@ -102,7 +114,7 @@
 		trendChart = new Chart(ctx, {
 			type: 'line',
 			data: {
-				labels: dates.map(d => jakartaTime.dayDate(d)),
+				labels: dates.map((d) => jakartaTime.dayDate(d)),
 				datasets
 			},
 			options: {
@@ -123,7 +135,7 @@
 					},
 					tooltip: {
 						callbacks: {
-							label: function(context) {
+							label: function (context) {
 								return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
 							}
 						}
@@ -137,7 +149,7 @@
 					y: {
 						display: true,
 						ticks: {
-							callback: function(value) {
+							callback: function (value) {
 								return formatCurrency(value as number);
 							}
 						}
@@ -160,30 +172,36 @@
 		if (!ctx) return;
 
 		// Filter data based on selected channel
-		const filteredData = selectedChannel === 'all'
-			? data.hourlyDistribution
-			: data.hourlyDistribution.filter(h => h.channel === selectedChannel);
+		const filteredData =
+			selectedChannel === 'all'
+				? data.hourlyDistribution
+				: data.hourlyDistribution.filter((h) => h.channel === selectedChannel);
 
 		// Group by hour
 		const hourMap = new Map<number, number>();
-		filteredData.forEach(item => {
+		filteredData.forEach((item) => {
 			hourMap.set(item.hour, (hourMap.get(item.hour) || 0) + item.transactions);
 		});
 
 		// Create 24-hour array
 		const hours = Array.from({ length: 24 }, (_, i) => i);
-		const transactions = hours.map(h => hourMap.get(h) || 0);
+		const transactions = hours.map((h) => hourMap.get(h) || 0);
 
 		hourlyChart = new Chart(ctx, {
 			type: 'bar',
 			data: {
-				labels: hours.map(h => `${h}:00`),
-				datasets: [{
-					label: 'Transactions',
-					data: transactions,
-					backgroundColor: selectedChannel === 'all' ? '#3b82f6' : channelColors[selectedChannel as TransactionChannel],
-					borderWidth: 1
-				}]
+				labels: hours.map((h) => `${h}:00`),
+				datasets: [
+					{
+						label: 'Transactions',
+						data: transactions,
+						backgroundColor:
+							selectedChannel === 'all'
+								? '#3b82f6'
+								: channelColors[selectedChannel as TransactionChannel],
+						borderWidth: 1
+					}
+				]
 			},
 			options: {
 				responsive: true,
@@ -257,7 +275,9 @@
 			</div>
 			<h1 class="mt-2 text-3xl font-bold">Channel Performance Analytics</h1>
 			<p class="text-base-content/70 mt-1">
-				Analyzing data from {jakartaTime.dayDate(data.dateRange.start)} to {jakartaTime.dayDate(data.dateRange.end)}
+				Analyzing data from {jakartaTime.dayDate(data.dateRange.start)} to {jakartaTime.dayDate(
+					data.dateRange.end
+				)}
 			</p>
 		</div>
 		<div class="flex flex-wrap gap-2">
@@ -289,16 +309,8 @@
 
 	<!-- Channel Distribution Charts -->
 	<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-		<ChannelPerformanceChart 
-			data={data.channelSummary} 
-			type="revenue" 
-			height="350px" 
-		/>
-		<ChannelPerformanceChart 
-			data={data.channelSummary} 
-			type="transactions" 
-			height="350px" 
-		/>
+		<ChannelPerformanceChart data={data.channelSummary} type="revenue" height="350px" />
+		<ChannelPerformanceChart data={data.channelSummary} type="transactions" height="350px" />
 	</div>
 
 	<!-- Revenue Trend Chart -->
@@ -315,7 +327,7 @@
 			<Button
 				size="sm"
 				variant={selectedChannel === 'all' ? 'primary' : 'ghost'}
-				onclick={() => selectedChannel = 'all'}
+				onclick={() => (selectedChannel = 'all')}
 			>
 				All Channels
 			</Button>
@@ -323,7 +335,7 @@
 				<Button
 					size="sm"
 					variant={selectedChannel === value ? 'primary' : 'ghost'}
-					onclick={() => selectedChannel = value as TransactionChannel}
+					onclick={() => (selectedChannel = value as TransactionChannel)}
 				>
 					{name}
 				</Button>
@@ -361,7 +373,7 @@
 											<span class="badge badge-sm">{index + 1}</span>
 											<div>
 												<p class="text-sm font-medium">{product.productTitle}</p>
-												<p class="text-xs text-base-content/70">{product.quantity} sold</p>
+												<p class="text-base-content/70 text-xs">{product.quantity} sold</p>
 											</div>
 										</div>
 										<p class="text-sm font-semibold">{formatCurrency(product.revenue)}</p>
@@ -385,20 +397,25 @@
 						{#if paymentMethods.length > 0}
 							<div class="space-y-3">
 								{#each paymentMethods as method}
-									{@const percentage = ((method.transactions / paymentMethods.reduce((sum, m) => sum + m.transactions, 0)) * 100).toFixed(1)}
+									{@const percentage = (
+										(method.transactions /
+											paymentMethods.reduce((sum, m) => sum + m.transactions, 0)) *
+										100
+									).toFixed(1)}
 									<div>
-										<div class="flex items-center justify-between mb-1">
-											<span class="text-sm font-medium">{paymentMethodNames[method.paymentMethod]}</span>
+										<div class="mb-1 flex items-center justify-between">
+											<span class="text-sm font-medium"
+												>{paymentMethodNames[method.paymentMethod]}</span
+											>
 											<span class="text-sm">{percentage}%</span>
 										</div>
-										<div class="w-full bg-base-200 rounded-full h-2">
-											<div
-												class="bg-primary h-2 rounded-full"
-												style="width: {percentage}%"
-											></div>
+										<div class="bg-base-200 h-2 w-full rounded-full">
+											<div class="bg-primary h-2 rounded-full" style="width: {percentage}%"></div>
 										</div>
-										<div class="flex justify-between mt-1">
-											<span class="text-xs text-base-content/70">{method.transactions} transactions</span>
+										<div class="mt-1 flex justify-between">
+											<span class="text-base-content/70 text-xs"
+												>{method.transactions} transactions</span
+											>
 											<span class="text-xs font-medium">{formatCurrency(method.revenue)}</span>
 										</div>
 									</div>
@@ -413,7 +430,7 @@
 				<div class="bg-base-100 rounded-box p-6 shadow">
 					<div class="flex h-full items-center justify-center">
 						<div class="text-center">
-							<BarChart3 class="mx-auto mb-4 h-12 w-12 text-base-content/30" />
+							<BarChart3 class="text-base-content/30 mx-auto mb-4 h-12 w-12" />
 							<p class="text-base-content/50">Select a channel to view details</p>
 						</div>
 					</div>
