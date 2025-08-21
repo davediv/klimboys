@@ -162,25 +162,17 @@
 	<!-- Channel Performance Section -->
 	<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 		<!-- Channel Revenue Distribution -->
-		<ChannelPerformanceChart 
-			data={data.channelPerformance} 
-			type="revenue" 
-			height="350px" 
-		/>
-		
+		<ChannelPerformanceChart data={data.channelPerformance} type="revenue" height="350px" />
+
 		<!-- Channel Transaction Distribution -->
-		<ChannelPerformanceChart 
-			data={data.channelPerformance} 
-			type="transactions" 
-			height="350px" 
-		/>
+		<ChannelPerformanceChart data={data.channelPerformance} type="transactions" height="350px" />
 	</div>
 
 	<!-- Channel Comparison Chart -->
-	<ChannelComparisonChart 
-		monthData={data.channelPerformance} 
-		todayData={data.todayChannelPerformance} 
-		height="400px" 
+	<ChannelComparisonChart
+		monthData={data.channelPerformance}
+		todayData={data.todayChannelPerformance}
+		height="400px"
 	/>
 
 	<!-- Content Grid -->
@@ -278,7 +270,7 @@
 			<!-- Peak Hours Widget -->
 			<div class="bg-base-100 rounded-box mt-6 shadow">
 				<div class="border-b p-4">
-					<h3 class="text-lg font-bold flex items-center gap-2">
+					<h3 class="flex items-center gap-2 text-lg font-bold">
 						<Clock class="h-5 w-5" />
 						Today's Peak Hours
 					</h3>
@@ -316,7 +308,12 @@
 							</div>
 						</div>
 						<div class="mt-4">
-							<Button size="sm" variant="ghost" href="/dashboard/analytics/peak-hours" icon={ChevronRight}>
+							<Button
+								size="sm"
+								variant="ghost"
+								href="/dashboard/analytics/peak-hours"
+								icon={ChevronRight}
+							>
 								View Full Analysis
 							</Button>
 						</div>
@@ -361,7 +358,12 @@
 							</div>
 						{/each}
 						<div class="mt-4">
-							<Button size="sm" variant="ghost" href="/dashboard/analytics/cashier-performance" icon={ChevronRight}>
+							<Button
+								size="sm"
+								variant="ghost"
+								href="/dashboard/analytics/cashier-performance"
+								icon={ChevronRight}
+							>
 								View All Performance
 							</Button>
 						</div>

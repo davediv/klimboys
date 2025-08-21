@@ -68,24 +68,26 @@
 		console.log('Creating channel performance chart with data:', data);
 
 		// Prepare data
-		const labels = data.map(d => channelNames[d.channel]);
-		const backgroundColors = data.map(d => channelColors[d.channel]);
-		const values = data.map(d => type === 'revenue' ? d.revenue : d.transactions);
+		const labels = data.map((d) => channelNames[d.channel]);
+		const backgroundColors = data.map((d) => channelColors[d.channel]);
+		const values = data.map((d) => (type === 'revenue' ? d.revenue : d.transactions));
 
 		// Calculate percentages for labels
 		const total = values.reduce((sum, val) => sum + val, 0);
-		const percentages = values.map(val => total > 0 ? ((val / total) * 100).toFixed(1) : '0');
+		const percentages = values.map((val) => (total > 0 ? ((val / total) * 100).toFixed(1) : '0'));
 
 		chart = new Chart(ctx, {
 			type: 'doughnut',
 			data: {
 				labels,
-				datasets: [{
-					data: values,
-					backgroundColor: backgroundColors,
-					borderWidth: 2,
-					borderColor: '#fff'
-				}]
+				datasets: [
+					{
+						data: values,
+						backgroundColor: backgroundColors,
+						borderWidth: 2,
+						borderColor: '#fff'
+					}
+				]
 			},
 			options: {
 				responsive: true,
@@ -110,10 +112,10 @@
 							font: {
 								size: 12
 							},
-							generateLabels: function(chart) {
+							generateLabels: function (chart) {
 								const data = chart.data;
 								if (!data.labels || !data.datasets) return [];
-								
+
 								return data.labels.map((label, i) => {
 									const value = data.datasets[0].data[i] as number;
 									const percentage = percentages[i];
@@ -131,11 +133,11 @@
 					},
 					tooltip: {
 						callbacks: {
-							label: function(context) {
+							label: function (context) {
 								const label = context.label || '';
 								const value = context.parsed;
 								const percentage = percentages[context.dataIndex];
-								
+
 								if (type === 'revenue') {
 									return `${label}: ${formatCurrency(value)} (${percentage}%)`;
 								} else {
@@ -178,12 +180,14 @@
 		<div style="position: relative; height: {height};">
 			<canvas bind:this={canvas}></canvas>
 		</div>
-		
+
 		<!-- Channel Stats Summary -->
 		<div class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
 			{#each data as channelData}
 				<div class="text-center">
-					<div class="text-sm font-medium text-base-content/70">{channelNames[channelData.channel]}</div>
+					<div class="text-base-content/70 text-sm font-medium">
+						{channelNames[channelData.channel]}
+					</div>
 					<div class="text-lg font-bold" style="color: {channelColors[channelData.channel]}">
 						{#if type === 'revenue'}
 							{formatCurrency(channelData.revenue)}
@@ -192,7 +196,7 @@
 						{/if}
 					</div>
 					{#if channelData.avgOrderValue !== undefined && type === 'revenue'}
-						<div class="text-xs text-base-content/50">
+						<div class="text-base-content/50 text-xs">
 							Avg: {formatCurrency(channelData.avgOrderValue)}
 						</div>
 					{/if}

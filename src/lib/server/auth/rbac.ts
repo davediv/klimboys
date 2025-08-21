@@ -37,7 +37,7 @@ export function requireAuth(
 export function requireRole(
 	session: AuthSession | null,
 	requiredRoles: Role[],
-	redirectTo = '/dashboard'
+	_redirectTo = '/dashboard'
 ): asserts session is AuthSession {
 	requireAuth(session);
 
@@ -55,7 +55,7 @@ export function requireCashier(session: AuthSession | null): asserts session is 
 }
 
 // Helper to filter sensitive data based on role
-export function filterDataByRole<T extends Record<string, any>>(
+export function filterDataByRole<T extends Record<string, unknown>>(
 	data: T,
 	role: Role,
 	sensitiveFields: (keyof T)[]
@@ -91,14 +91,13 @@ export async function logActivity(
 ): Promise<void> {
 	// Import dynamically to avoid circular dependencies
 	const { logActivityToDatabase } = await import('./activity-log');
-	const { createDB } = await import('../db');
-	
+
 	// Get database from global context (will be set in hooks)
 	const db = globalThis.__db;
 	if (!db) {
 		console.warn('[RBAC] Database not available for activity logging');
 		return;
 	}
-	
+
 	await logActivityToDatabase(db, userId, action, details);
 }

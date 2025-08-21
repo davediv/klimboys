@@ -6,7 +6,7 @@ export function getD1Database(db?: DrizzleD1Database<any>): D1Database {
 	if (globalThis.__d1) {
 		return globalThis.__d1;
 	}
-	
+
 	// If a Drizzle instance is provided, try to extract D1 from it
 	if (db) {
 		// Try different internal property paths that might exist
@@ -21,6 +21,6 @@ export function getD1Database(db?: DrizzleD1Database<any>): D1Database {
 			console.error('[Raw DB] Failed to extract D1 from Drizzle instance:', e);
 		}
 	}
-	
+
 	throw new Error('D1 database instance not available. Make sure __d1 is set in global context.');
 }

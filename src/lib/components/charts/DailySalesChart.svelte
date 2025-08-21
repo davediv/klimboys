@@ -45,9 +45,9 @@
 		console.log('Creating chart with data:', data);
 
 		// Prepare data
-		const labels = data.map(d => jakartaTime.dayDate(d.date));
-		const revenueData = data.map(d => d.revenue);
-		const transactionData = data.map(d => d.transactions);
+		const labels = data.map((d) => jakartaTime.dayDate(d.date));
+		const revenueData = data.map((d) => d.revenue);
+		const transactionData = data.map((d) => d.transactions);
 
 		chart = new Chart(ctx, {
 			type: 'line',
@@ -105,7 +105,7 @@
 					},
 					tooltip: {
 						callbacks: {
-							label: function(context) {
+							label: function (context) {
 								if (context.dataset.label === 'Revenue') {
 									return `Revenue: ${formatCurrency(context.parsed.y)}`;
 								}
@@ -129,7 +129,7 @@
 							color: 'rgba(0, 0, 0, 0.05)'
 						},
 						ticks: {
-							callback: function(value) {
+							callback: function (value) {
 								return formatCurrency(value as number);
 							}
 						},
