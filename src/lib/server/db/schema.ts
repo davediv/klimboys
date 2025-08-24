@@ -132,3 +132,19 @@ export const transactions = sqliteTable('transactions', {
 		.default(sql`(unixepoch())`)
 		.$onUpdate(() => new Date())
 });
+
+// Transaction items table - line items for each transaction
+export const transactionItems = sqliteTable('transaction_items', {
+	id: text('id')
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
+	transactionId: text('transaction_id')
+		.notNull()
+		.references(() => transactions.id, { onDelete: 'cascade' }),
+	productVariantId: text('product_variant_id')
+		.notNull()
+		.references(() => productVariants.id),
+	quantity: integer('quantity').notNull(),
+	unitPrice: integer('unit_price').notNull(), // Store as cents
+	totalPrice: integer('total_price').notNull() // Store as cents
+});
