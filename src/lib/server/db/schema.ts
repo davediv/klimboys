@@ -107,3 +107,28 @@ export const productVariants = sqliteTable(
 		uniqueProductSize: unique().on(table.productId, table.size)
 	})
 );
+
+// Transactions table for recording sales
+export const transactions = sqliteTable('transactions', {
+	id: text('id')
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
+	transactionCode: text('transaction_code').notNull().unique(), // Format: TRX-YYYYMMDD-XXXX
+	userId: text('user_id')
+		.notNull()
+		.references(() => user.id), // Reference to the cashier/admin who processed
+	channel: text('channel').notNull(), // 'Store', 'GrabFood', 'GoFood', 'ShopeeFood', 'UberEats'
+	paymentMethod: text('payment_method').notNull(), // 'Cash', 'QRIS', 'Transfer', etc.
+	subtotal: integer('subtotal').notNull(), // Store as cents
+	discount: integer('discount').default(0), // Store as cents
+	total: integer('total').notNull(), // Store as cents
+	notes: text('notes'),
+	status: text('status').notNull().default('completed'), // 'pending', 'completed', 'cancelled', 'refunded'
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.default(sql`(unixepoch())`),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
+		.notNull()
+		.default(sql`(unixepoch())`)
+		.$onUpdate(() => new Date())
+});
