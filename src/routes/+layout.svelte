@@ -1,9 +1,12 @@
 <script lang="ts">
 	import '../app.css';
-	import NotificationToast from '$lib/components/NotificationToast.svelte';
+	import favicon from '$lib/assets/favicon.svg';
 
 	let { children } = $props();
 </script>
 
-<NotificationToast />
-{@render children()}
+<svelte:head>
+	<link rel="icon" href={favicon} />
+</svelte:head>
+
+{@render children?.()}

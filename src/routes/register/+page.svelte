@@ -1,19 +1,19 @@
 <script lang="ts">
-	import { signUp } from '$lib/auth';
-	import { UserPlus, Mail, Lock, User } from '@lucide/svelte';
-	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
-	import { goto } from '$app/navigation';
-
-	let name = $state('');
 	let email = $state('');
 	let password = $state('');
 	let confirmPassword = $state('');
-	let loading = $state(false);
+	let name = $state('');
 	let error = $state('');
+	let loading = $state(false);
+	let registered = $state(false);
 
-	async function handleRegister() {
-		if (!name || !email || !password || !confirmPassword) {
-			error = 'Please fill in all fields';
+	async function handleRegister(e: Event) {
+		e.preventDefault();
+		error = '';
+
+		// Validation
+		if (!email || !password || !confirmPassword) {
+			error = 'All fields are required';
 			return;
 		}
 
@@ -22,158 +22,164 @@
 			return;
 		}
 
-		if (password.length < 6) {
-			error = 'Password must be at least 6 characters';
+		if (password.length < 8) {
+			error = 'Password must be at least 8 characters';
 			return;
 		}
 
 		loading = true;
-		error = '';
 
 		try {
-			const result = await signUp.email({
-				name,
-				email,
-				password
+			const response = await fetch('/api/auth/sign-up/email', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					email,
+					password,
+					name: name || undefined
+				})
 			});
 
-			if (result.error) {
-				error = result.error.message || 'Registration failed';
-			} else {
-				goto('/dashboard');
+			const data = (await response.json()) as { message?: string };
+
+			if (!response.ok) {
+				throw new Error(data?.message || 'Registration failed');
 			}
-		} catch (e) {
-			error = 'An unexpected error occurred';
+
+			registered = true;
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Registration failed';
 		} finally {
 			loading = false;
 		}
 	}
 </script>
 
-<svelte:head>
-	<title>Register - Dashboard</title>
-</svelte:head>
+<div class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+	<div class="w-full max-w-md space-y-8">
+		<div>
+			<h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">Create your account</h2>
+			<p class="mt-2 text-center text-sm text-gray-600">
+				Or
+				<a href="/login" class="font-medium text-indigo-600 hover:text-indigo-500">
+					sign in to your existing account
+				</a>
+			</p>
+		</div>
 
-<div class="bg-base-200 flex min-h-screen items-center justify-center p-4">
-	<!-- Theme toggle in top right -->
-	<div class="fixed top-4 right-4 z-10">
-		<ThemeToggle />
-	</div>
-	<div class="card bg-base-100 w-full max-w-md shadow-xl">
-		<div class="card-body">
-			<div class="mb-6 text-center">
-				<UserPlus class="text-primary mx-auto mb-4 h-12 w-12" />
-				<h1 class="text-2xl font-bold">Create Account</h1>
-				<p class="text-base-content/70">Join our dashboard today</p>
+		{#if registered}
+			<div class="rounded-md bg-green-50 p-4">
+				<div class="flex">
+					<div class="flex-shrink-0">
+						<svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+							<path
+								fill-rule="evenodd"
+								d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+								clip-rule="evenodd"
+							/>
+						</svg>
+					</div>
+					<div class="ml-3">
+						<h3 class="text-sm font-medium text-green-800">Registration successful!</h3>
+						<div class="mt-2 text-sm text-green-700">
+							<p>
+								We've sent a verification email to <strong>{email}</strong>. Please check your email
+								and click the verification link to activate your account.
+							</p>
+							<p class="mt-2">
+								For development: Check the console/terminal for the verification link.
+							</p>
+						</div>
+					</div>
+				</div>
 			</div>
-
-			<form
-				onsubmit={(e) => {
-					e.preventDefault();
-					handleRegister();
-				}}
-				class="space-y-4"
-			>
-				<div class="form-control">
-					<label class="label" for="name">
-						<span class="label-text">Full Name</span>
-					</label>
-					<div class="relative">
-						<div class="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-3">
-							<User class="text-base-content/50 h-5 w-5" />
-						</div>
-						<input
-							id="name"
-							type="text"
-							bind:value={name}
-							placeholder="Enter your full name"
-							class="input input-bordered w-full pl-10"
-							required
-						/>
-					</div>
-				</div>
-
-				<div class="form-control">
-					<label class="label" for="email">
-						<span class="label-text">Email</span>
-					</label>
-					<div class="relative">
-						<div class="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-3">
-							<Mail class="text-base-content/50 h-5 w-5" />
-						</div>
-						<input
-							id="email"
-							type="email"
-							bind:value={email}
-							placeholder="Enter your email"
-							class="input input-bordered w-full pl-10"
-							required
-						/>
-					</div>
-				</div>
-
-				<div class="form-control">
-					<label class="label" for="password">
-						<span class="label-text">Password</span>
-					</label>
-					<div class="relative">
-						<div class="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-3">
-							<Lock class="text-base-content/50 h-5 w-5" />
-						</div>
-						<input
-							id="password"
-							type="password"
-							bind:value={password}
-							placeholder="Enter your password"
-							class="input input-bordered w-full pl-10"
-							required
-						/>
-					</div>
-				</div>
-
-				<div class="form-control">
-					<label class="label" for="confirmPassword">
-						<span class="label-text">Confirm Password</span>
-					</label>
-					<div class="relative">
-						<div class="pointer-events-none absolute inset-y-0 left-0 z-10 flex items-center pl-3">
-							<Lock class="text-base-content/50 h-5 w-5" />
-						</div>
-						<input
-							id="confirmPassword"
-							type="password"
-							bind:value={confirmPassword}
-							placeholder="Confirm your password"
-							class="input input-bordered w-full pl-10"
-							required
-						/>
-					</div>
-				</div>
-
+		{:else}
+			<form class="mt-8 space-y-6" onsubmit={handleRegister}>
 				{#if error}
-					<div class="alert alert-error">
-						<span>{error}</span>
+					<div class="rounded-md bg-red-50 p-4">
+						<div class="flex">
+							<div class="flex-shrink-0">
+								<svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+									<path
+										fill-rule="evenodd"
+										d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+										clip-rule="evenodd"
+									/>
+								</svg>
+							</div>
+							<div class="ml-3">
+								<h3 class="text-sm font-medium text-red-800">{error}</h3>
+							</div>
+						</div>
 					</div>
 				{/if}
 
-				<button type="submit" class="btn btn-primary w-full" disabled={loading}>
-					{#if loading}
-						<span class="loading loading-spinner loading-sm"></span>
-						Creating account...
-					{:else}
-						Create Account
-					{/if}
-				</button>
+				<div class="-space-y-px rounded-md shadow-sm">
+					<div>
+						<label for="name" class="sr-only">Name</label>
+						<input
+							id="name"
+							name="name"
+							type="text"
+							autocomplete="name"
+							bind:value={name}
+							class="relative block w-full appearance-none rounded-none rounded-t-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
+							placeholder="Full name (optional)"
+						/>
+					</div>
+					<div>
+						<label for="email-address" class="sr-only">Email address</label>
+						<input
+							id="email-address"
+							name="email"
+							type="email"
+							autocomplete="email"
+							required
+							bind:value={email}
+							class="relative block w-full appearance-none rounded-none border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
+							placeholder="Email address"
+						/>
+					</div>
+					<div>
+						<label for="password" class="sr-only">Password</label>
+						<input
+							id="password"
+							name="password"
+							type="password"
+							autocomplete="new-password"
+							required
+							bind:value={password}
+							class="relative block w-full appearance-none rounded-none border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
+							placeholder="Password (min 8 characters)"
+						/>
+					</div>
+					<div>
+						<label for="confirm-password" class="sr-only">Confirm Password</label>
+						<input
+							id="confirm-password"
+							name="confirm-password"
+							type="password"
+							autocomplete="new-password"
+							required
+							bind:value={confirmPassword}
+							class="relative block w-full appearance-none rounded-none rounded-b-md border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:z-10 focus:border-indigo-500 focus:ring-indigo-500 focus:outline-none sm:text-sm"
+							placeholder="Confirm password"
+						/>
+					</div>
+				</div>
+
+				<div>
+					<button
+						type="submit"
+						disabled={loading}
+						class="group relative flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+					>
+						{loading ? 'Creating account...' : 'Sign up'}
+					</button>
+				</div>
 			</form>
-
-			<div class="divider">OR</div>
-
-			<div class="text-center">
-				<p class="text-base-content/70 text-sm">
-					Already have an account?
-					<a href="/login" class="link link-primary">Sign in</a>
-				</p>
-			</div>
-		</div>
+		{/if}
 	</div>
 </div>
