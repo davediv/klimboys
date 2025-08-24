@@ -5,12 +5,11 @@ export const load: PageServerLoad = async (event) => {
 	// Require authentication, verification, and at least cashier role
 	const user = routeGuard(event, {
 		requireAuth: true,
-		requireVerified: false, // Allow unverified users to see verification message
+		requireVerified: true,
 		minRole: 'cashier'
 	});
 
 	return {
-		user,
-		needsVerification: user && !user.emailVerified
+		user
 	};
 };

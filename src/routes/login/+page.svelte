@@ -33,14 +33,57 @@
 				})
 			});
 
-			const data = (await response.json()) as { message?: string };
+			const data = (await response.json()) as {
+				message?: string;
+				user?: {
+					id: string;
+					email: string;
+					role?: string;
+				};
+			};
 
 			if (!response.ok) {
 				throw new Error(data?.message || 'Invalid credentials');
 			}
 
-			// Redirect to dashboard or intended page
-			await goto(redirectTo);
+			// Get user data to determine role-based redirect
+			const sessionResponse = await fetch('/api/auth/session');
+			const sessionData = (await sessionResponse.json()) as {
+				user?: {
+					id: string;
+					email: string;
+					role?: string;
+				};
+			};
+
+			if (sessionData?.user) {
+				const userRole = sessionData.user.role || 'viewer';
+
+				// Determine redirect based on role
+				let roleBasedRedirect = redirectTo;
+
+				// Only override the redirect if it's the default dashboard redirect
+				if (redirectTo === '/dashboard') {
+					switch (userRole) {
+						case 'admin':
+							roleBasedRedirect = '/dashboard';
+							break;
+						case 'cashier':
+							roleBasedRedirect = '/transaction';
+							break;
+						case 'viewer':
+							roleBasedRedirect = '/';
+							break;
+						default:
+							roleBasedRedirect = '/';
+					}
+				}
+
+				await goto(roleBasedRedirect);
+			} else {
+				// Fallback to default redirect if we can't get user data
+				await goto(redirectTo);
+			}
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Login failed';
 		} finally {

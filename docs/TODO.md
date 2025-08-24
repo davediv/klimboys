@@ -138,7 +138,7 @@ Klimboys POS system implementation with 127 total tasks across 4 phases. MVP del
 
 ### Authentication UI
 
-- [ ] 🟡 **UI-P2-001**: Create login page with email/password form
+- [x] 🟡 **UI-P2-001**: Create login page with email/password form
   - **Acceptance Criteria**:
     - Form validation for email and password
     - Password visibility toggle
@@ -147,20 +147,21 @@ Klimboys POS system implementation with 127 total tasks across 4 phases. MVP del
   - **Dependencies**: AUTH-P1-003
   - **Effort**: M
 
-- [ ] 🟡 **UI-P2-002**: Implement logout functionality
+- [x] 🟡 **UI-P2-002**: Implement logout functionality
   - **Acceptance Criteria**:
     - Logout button in navigation
     - Clear session and redirect to login
   - **Dependencies**: UI-P2-001
   - **Effort**: S
 
-- [ ] 🟡 **UI-P2-003**: Create role-based routing logic
-  - **Acceptance Criteria**:
+- [x] 🟡 **UI-P2-003**: Create role-based routing logic
+  - **Acceptance Criteria**: ✅ Met
     - Admin users redirected to dashboard after login
     - Cashier users redirected to transaction page
     - Unauthorized access prevented
   - **Dependencies**: AUTH-P1-004, UI-P2-001
-  - **Effort**: M
+  - **Effort**: M (Actual: M)
+  - **Completed**: 2025-08-24
 
 - [ ] 🟢 **UI-P2-004**: Implement "Remember Me" functionality
   - **Acceptance Criteria**:
