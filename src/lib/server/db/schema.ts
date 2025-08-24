@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, unique } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 // User table with role support
@@ -78,3 +78,32 @@ export const products = sqliteTable('products', {
 		.default(sql`(unixepoch())`)
 		.$onUpdate(() => new Date())
 });
+
+// Product variants table for size-based pricing and stock management
+export const productVariants = sqliteTable(
+	'product_variants',
+	{
+		id: text('id')
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		productId: text('product_id')
+			.notNull()
+			.references(() => products.id, { onDelete: 'cascade' }),
+		size: text('size').notNull(), // 'S', 'M', 'L'
+		volumeMl: integer('volume_ml').notNull(), // 250, 350, 500 ml
+		costPrice: integer('cost_price').notNull(), // Store as cents to avoid decimal issues
+		sellingPrice: integer('selling_price').notNull(), // Store as cents
+		stockQuantity: integer('stock_quantity').notNull().default(0),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.default(sql`(unixepoch())`),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
+			.notNull()
+			.default(sql`(unixepoch())`)
+			.$onUpdate(() => new Date())
+	},
+	(table) => ({
+		// Unique constraint: Each product can only have one variant per size
+		uniqueProductSize: unique().on(table.productId, table.size)
+	})
+);
