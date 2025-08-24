@@ -123,7 +123,15 @@
 				<div class="card bg-base-100 transition-shadow hover:shadow-xl">
 					<div class="card-body items-center text-center">
 						<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-							<svelte:component this={feature.icon} class="h-8 w-8 text-primary" />
+							{#if feature.icon === Sparkles}
+								<Sparkles class="h-8 w-8 text-primary" />
+							{:else if feature.icon === Truck}
+								<Truck class="h-8 w-8 text-primary" />
+							{:else if feature.icon === Clock}
+								<Clock class="h-8 w-8 text-primary" />
+							{:else if feature.icon === Shield}
+								<Shield class="h-8 w-8 text-primary" />
+							{/if}
 						</div>
 						<h3 class="card-title">{feature.title}</h3>
 						<p class="text-base-content/70">{feature.description}</p>

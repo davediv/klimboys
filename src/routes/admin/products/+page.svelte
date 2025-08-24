@@ -8,7 +8,8 @@
 		Save,
 		AlertCircle,
 		Upload,
-		Image
+		Image,
+		X
 	} from '@lucide/svelte';
 
 	let searchQuery = $state('');
@@ -31,10 +32,13 @@
 		description: '',
 		category: '',
 		imageUrl: '',
-		variants: [
-			{ size: 'Regular', volumeMl: 250, costPrice: 0, sellingPrice: 0, stockQuantity: 0 },
-			{ size: 'Large', volumeMl: 500, costPrice: 0, sellingPrice: 0, stockQuantity: 0 }
-		]
+		variants: [] as Array<{
+			size: string;
+			volumeMl: number;
+			costPrice: number;
+			sellingPrice: number;
+			stockQuantity: number;
+		}>
 	});
 
 	// Products fetched from API
@@ -77,16 +81,58 @@
 	// Categories for dropdown
 	const categories = ['Classic', 'Fruity', 'Special', 'Seasonal'];
 
+	// Available sizes for variants
+	const availableSizes = ['S', 'M', 'L', 'XL'];
+
+	// Add a new variant
+	function addVariant() {
+		const usedSizes = formData.variants.map((v) => v.size);
+		const availableSize = availableSizes.find((size) => !usedSizes.includes(size));
+
+		if (availableSize) {
+			formData.variants = [
+				...formData.variants,
+				{
+					size: availableSize,
+					volumeMl: 250,
+					costPrice: 0,
+					sellingPrice: 0,
+					stockQuantity: 0
+				}
+			];
+		} else {
+			error = 'Maximum number of variants reached';
+			setTimeout(() => (error = null), 3000);
+		}
+	}
+
+	// Remove a variant
+	function removeVariant(index: number) {
+		if (formData.variants.length > 1) {
+			formData.variants = formData.variants.filter((_, i) => i !== index);
+		} else {
+			error = 'At least one variant is required';
+			setTimeout(() => (error = null), 3000);
+		}
+	}
+
+	// Update variant size
+	function updateVariantSize(index: number, newSize: string) {
+		formData.variants[index].size = newSize;
+		// Suggest default volume based on size
+		if (newSize === 'S') formData.variants[index].volumeMl = 250;
+		else if (newSize === 'M') formData.variants[index].volumeMl = 350;
+		else if (newSize === 'L') formData.variants[index].volumeMl = 500;
+		else if (newSize === 'XL') formData.variants[index].volumeMl = 750;
+	}
+
 	function openAddModal() {
 		formData = {
 			name: '',
 			description: '',
 			category: 'Classic',
 			imageUrl: '',
-			variants: [
-				{ size: 'Regular', volumeMl: 250, costPrice: 0, sellingPrice: 0, stockQuantity: 0 },
-				{ size: 'Large', volumeMl: 500, costPrice: 0, sellingPrice: 0, stockQuantity: 0 }
-			]
+			variants: [{ size: 'S', volumeMl: 250, costPrice: 0, sellingPrice: 0, stockQuantity: 0 }]
 		};
 		imageFile = null;
 		imagePreview = null;
@@ -698,11 +744,59 @@
 				</div>
 
 				<!-- Variants -->
-				<div class="divider">Variants & Pricing</div>
+				<div class="divider">
+					Variants & Pricing
+					<button
+						type="button"
+						class="btn ml-2 btn-xs btn-primary"
+						onclick={addVariant}
+						disabled={formData.variants.length >= availableSizes.length}
+					>
+						<Plus class="h-3 w-3" />
+						Add Variant
+					</button>
+				</div>
+
+				{#if formData.variants.length === 0}
+					<div class="py-4 text-center text-base-content/50">
+						<p>No variants added yet.</p>
+						<button type="button" class="btn mt-2 btn-sm btn-primary" onclick={addVariant}>
+							<Plus class="h-4 w-4" />
+							Add First Variant
+						</button>
+					</div>
+				{/if}
+
 				{#each formData.variants as variant, i}
 					<div class="card bg-base-200">
 						<div class="card-body p-4">
-							<h4 class="font-semibold">{variant.size} Size</h4>
+							<div class="mb-2 flex items-center justify-between">
+								<div class="flex items-center gap-2">
+									<select
+										class="select-bordered select select-sm"
+										value={variant.size}
+										onchange={(e) => updateVariantSize(i, (e.target as HTMLSelectElement).value)}
+									>
+										{#each availableSizes as size}
+											<option
+												value={size}
+												disabled={formData.variants.some((v, idx) => idx !== i && v.size === size)}
+											>
+												Size {size}
+											</option>
+										{/each}
+									</select>
+									<span class="text-sm text-base-content/50">Variant {i + 1}</span>
+								</div>
+								<button
+									type="button"
+									class="btn text-error btn-ghost btn-xs"
+									onclick={() => removeVariant(i)}
+									disabled={formData.variants.length === 1}
+								>
+									<X class="h-4 w-4" />
+								</button>
+							</div>
 							<div class="grid grid-cols-2 gap-4">
 								<div class="form-control">
 									<label class="label">
@@ -712,6 +806,8 @@
 										type="number"
 										class="input-bordered input input-sm"
 										bind:value={variant.volumeMl}
+										min="50"
+										step="50"
 									/>
 								</div>
 								<div class="form-control">
@@ -722,6 +818,7 @@
 										type="number"
 										class="input-bordered input input-sm"
 										bind:value={variant.stockQuantity}
+										min="0"
 									/>
 								</div>
 								<div class="form-control">
@@ -732,6 +829,8 @@
 										type="number"
 										class="input-bordered input input-sm"
 										bind:value={variant.costPrice}
+										min="0"
+										step="100"
 									/>
 								</div>
 								<div class="form-control">
@@ -742,9 +841,19 @@
 										type="number"
 										class="input-bordered input input-sm"
 										bind:value={variant.sellingPrice}
+										min="0"
+										step="100"
 									/>
 								</div>
 							</div>
+							{#if variant.sellingPrice > 0 && variant.costPrice > 0}
+								<div class="mt-2 text-xs text-base-content/70">
+									Profit Margin: {formatCurrency(variant.sellingPrice - variant.costPrice)}
+									({Math.round(
+										((variant.sellingPrice - variant.costPrice) / variant.costPrice) * 100
+									)}%)
+								</div>
+							{/if}
 						</div>
 					</div>
 				{/each}
@@ -868,11 +977,59 @@
 				</div>
 
 				<!-- Variants -->
-				<div class="divider">Variants & Pricing</div>
+				<div class="divider">
+					Variants & Pricing
+					<button
+						type="button"
+						class="btn ml-2 btn-xs btn-primary"
+						onclick={addVariant}
+						disabled={formData.variants.length >= availableSizes.length}
+					>
+						<Plus class="h-3 w-3" />
+						Add Variant
+					</button>
+				</div>
+
+				{#if formData.variants.length === 0}
+					<div class="py-4 text-center text-base-content/50">
+						<p>No variants added yet.</p>
+						<button type="button" class="btn mt-2 btn-sm btn-primary" onclick={addVariant}>
+							<Plus class="h-4 w-4" />
+							Add First Variant
+						</button>
+					</div>
+				{/if}
+
 				{#each formData.variants as variant, i}
 					<div class="card bg-base-200">
 						<div class="card-body p-4">
-							<h4 class="font-semibold">{variant.size} Size</h4>
+							<div class="mb-2 flex items-center justify-between">
+								<div class="flex items-center gap-2">
+									<select
+										class="select-bordered select select-sm"
+										value={variant.size}
+										onchange={(e) => updateVariantSize(i, (e.target as HTMLSelectElement).value)}
+									>
+										{#each availableSizes as size}
+											<option
+												value={size}
+												disabled={formData.variants.some((v, idx) => idx !== i && v.size === size)}
+											>
+												Size {size}
+											</option>
+										{/each}
+									</select>
+									<span class="text-sm text-base-content/50">Variant {i + 1}</span>
+								</div>
+								<button
+									type="button"
+									class="btn text-error btn-ghost btn-xs"
+									onclick={() => removeVariant(i)}
+									disabled={formData.variants.length === 1}
+								>
+									<X class="h-4 w-4" />
+								</button>
+							</div>
 							<div class="grid grid-cols-2 gap-4">
 								<div class="form-control">
 									<label class="label">
@@ -882,6 +1039,8 @@
 										type="number"
 										class="input-bordered input input-sm"
 										bind:value={variant.volumeMl}
+										min="50"
+										step="50"
 									/>
 								</div>
 								<div class="form-control">
@@ -892,6 +1051,7 @@
 										type="number"
 										class="input-bordered input input-sm"
 										bind:value={variant.stockQuantity}
+										min="0"
 									/>
 								</div>
 								<div class="form-control">
@@ -902,6 +1062,8 @@
 										type="number"
 										class="input-bordered input input-sm"
 										bind:value={variant.costPrice}
+										min="0"
+										step="100"
 									/>
 								</div>
 								<div class="form-control">
@@ -912,9 +1074,19 @@
 										type="number"
 										class="input-bordered input input-sm"
 										bind:value={variant.sellingPrice}
+										min="0"
+										step="100"
 									/>
 								</div>
 							</div>
+							{#if variant.sellingPrice > 0 && variant.costPrice > 0}
+								<div class="mt-2 text-xs text-base-content/70">
+									Profit Margin: {formatCurrency(variant.sellingPrice - variant.costPrice)}
+									({Math.round(
+										((variant.sellingPrice - variant.costPrice) / variant.costPrice) * 100
+									)}%)
+								</div>
+							{/if}
 						</div>
 					</div>
 				{/each}

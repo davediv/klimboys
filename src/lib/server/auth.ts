@@ -101,11 +101,11 @@ export async function getAuth(event: RequestEvent) {
 // Role check helper
 export function hasRole(
 	userRole: string | undefined,
-	requiredRole: 'admin' | 'editor' | 'viewer'
+	requiredRole: 'admin' | 'cashier' | 'viewer'
 ): boolean {
 	const roleHierarchy = {
 		admin: 3,
-		editor: 2,
+		cashier: 2,
 		viewer: 1
 	};
 

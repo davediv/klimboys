@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getDb } from '$lib/server/db';
 import { products, productVariants } from '$lib/server/db/schema';
-import { eq, like, sql, and, desc } from 'drizzle-orm';
+import { eq, sql, and, desc } from 'drizzle-orm';
 import { hasRole } from '$lib/server/auth';
 import { nanoid } from 'nanoid';
 
