@@ -22,7 +22,7 @@
 		switch (role) {
 			case 'admin':
 				return 'bg-red-100 text-red-800';
-			case 'editor':
+			case 'cashier':
 				return 'bg-yellow-100 text-yellow-800';
 			case 'viewer':
 				return 'bg-green-100 text-green-800';
@@ -41,10 +41,10 @@
 					'View all content and analytics',
 					'System configuration'
 				];
-			case 'editor':
-				return ['Create and edit content', 'View all content', 'Publish content', 'View analytics'];
+			case 'cashier':
+				return ['Create transaction'];
 			case 'viewer':
-				return ['View content', 'Read-only access', 'View own profile'];
+				return ['View inventory', 'View transactions'];
 			default:
 				return [];
 		}
@@ -219,7 +219,7 @@
 						</button>
 					{/if}
 
-					{#if data.user?.role === 'admin' || data.user?.role === 'editor'}
+					{#if data.user?.role === 'admin' || data.user?.role === 'cashier'}
 						<button
 							class="relative flex items-center space-x-3 rounded-lg border border-gray-300 bg-white px-6 py-4 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
 						>
