@@ -35,58 +35,25 @@
 
 			// Check if response is ok first
 			if (!response.ok) {
-				// Only try to parse JSON if there's an error
+				// Handle error response with defensive JSON parsing
 				let errorMessage = 'Invalid credentials';
 				try {
-					const errorData = await response.json();
-					errorMessage = errorData?.message || errorMessage;
-				} catch {
+					const responseText = await response.text();
+					if (responseText.trim()) {
+						const errorData = JSON.parse(responseText);
+						errorMessage = errorData?.message || errorMessage;
+					}
+				} catch (jsonError) {
 					// If JSON parsing fails, use default error message
+					console.warn('Failed to parse error response JSON:', jsonError);
 				}
 				throw new Error(errorMessage);
 			}
 
-			// For successful login, Better Auth might return empty response
-			// We don't need to parse the response body
-
-			// Get user data to determine role-based redirect
-			const sessionResponse = await fetch('/api/auth/session');
-			const sessionData = (await sessionResponse.json()) as {
-				user?: {
-					id: string;
-					email: string;
-					role?: string;
-				};
-			};
-
-			if (sessionData?.user) {
-				const userRole = sessionData.user.role || 'viewer';
-
-				// Determine redirect based on role
-				let roleBasedRedirect = redirectTo;
-
-				// Only override the redirect if it's the default dashboard redirect
-				if (redirectTo === '/dashboard') {
-					switch (userRole) {
-						case 'admin':
-							roleBasedRedirect = '/dashboard';
-							break;
-						case 'cashier':
-							roleBasedRedirect = '/dashboard/transaction';
-							break;
-						case 'viewer':
-							roleBasedRedirect = '/';
-							break;
-						default:
-							roleBasedRedirect = '/dashboard';
-					}
-				}
-
-				await goto(roleBasedRedirect);
-			} else {
-				// Fallback to default redirect if we can't get user data
-				await goto(redirectTo);
-			}
+			// Login successful - Better Auth handles session via cookies
+			// Redirect immediately without trying to fetch session data
+			// The session will be available in server-side locals after redirect
+			await goto(redirectTo);
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Login failed';
 		} finally {
