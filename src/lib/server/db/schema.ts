@@ -148,3 +148,23 @@ export const transactionItems = sqliteTable('transaction_items', {
 	unitPrice: integer('unit_price').notNull(), // Store as cents
 	totalPrice: integer('total_price').notNull() // Store as cents
 });
+
+// Inventory logs table - track all inventory changes
+export const inventoryLogs = sqliteTable('inventory_logs', {
+	id: text('id')
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
+	productVariantId: text('product_variant_id')
+		.notNull()
+		.references(() => productVariants.id),
+	userId: text('user_id')
+		.notNull()
+		.references(() => user.id),
+	type: text('type').notNull(), // 'sale', 'adjustment', 'restock'
+	quantityChange: integer('quantity_change').notNull(),
+	quantityAfter: integer('quantity_after').notNull(),
+	reason: text('reason'),
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.default(sql`(unixepoch())`)
+});
