@@ -1,48 +1,91 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { ShoppingCart, Search, Plus, Minus, Trash2 } from '@lucide/svelte';
+	import { ShoppingCart, Plus, Minus, Trash2, Package } from '@lucide/svelte';
+	import ProductSearch from '$lib/components/ProductSearch.svelte';
 
 	let { data }: { data: PageData } = $props();
 
 	// Transaction state
-	let searchQuery = $state('');
 	let cart = $state<
 		Array<{
 			id: string;
+			productId: string;
 			name: string;
 			variant: string;
+			variantId: string;
 			price: number;
 			quantity: number;
+			imageUrl?: string | null;
 		}>
 	>([]);
+
+	// Popular products state
+	let popularProducts = $state<any[]>([]);
+	let loadingProducts = $state(false);
 
 	// Calculate total
 	let total = $derived(cart.reduce((sum, item) => sum + item.price * item.quantity, 0));
 
-	// Mock products for now - will be replaced with API call
-	let products = $state([
-		{ id: '1', name: 'Vanilla Shake', variant: 'Regular', price: 4500 },
-		{ id: '2', name: 'Chocolate Shake', variant: 'Large', price: 6500 },
-		{ id: '3', name: 'Strawberry Shake', variant: 'Regular', price: 5000 }
-	]);
+	// Fetch popular products on mount
+	async function fetchPopularProducts() {
+		loadingProducts = true;
+		try {
+			const response = await fetch('/api/products?limit=6&active=true');
+			if (response.ok) {
+				const result = (await response.json()) as any;
+				if (result.success && result.data) {
+					popularProducts = result.data.products || [];
+				}
+			}
+		} catch (error) {
+			console.error('Failed to fetch popular products:', error);
+		} finally {
+			loadingProducts = false;
+		}
+	}
 
-	let filteredProducts = $derived(
-		products.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-	);
+	// Load popular products on mount
+	$effect(() => {
+		fetchPopularProducts();
+	});
 
-	function addToCart(product: (typeof products)[0]) {
-		const existingItem = cart.find((item) => item.id === product.id);
+	// Handle product selection from search
+	function handleProductSelect(product: any, variant?: any) {
+		if (!variant && product.variants && product.variants.length > 0) {
+			// If no variant selected but product has variants, use the first available one
+			variant = product.variants.find((v: any) => v.stockQuantity > 0);
+		}
+
+		if (!variant) {
+			console.error('No variant available for product:', product.name);
+			return;
+		}
+
+		const cartItemId = `${product.id}-${variant.id}`;
+		const existingItem = cart.find((item) => item.id === cartItemId);
+
 		if (existingItem) {
 			existingItem.quantity += 1;
 		} else {
 			cart = [
 				...cart,
 				{
-					...product,
-					quantity: 1
+					id: cartItemId,
+					productId: product.id,
+					name: product.name,
+					variant: variant.size,
+					variantId: variant.id,
+					price: variant.sellingPrice,
+					quantity: 1,
+					imageUrl: product.imageUrl
 				}
 			];
 		}
+	}
+
+	// Add product from popular grid
+	function addToCart(product: any, variant: any) {
+		handleProductSelect(product, variant);
 	}
 
 	function updateQuantity(itemId: string, delta: number) {
@@ -62,6 +105,14 @@
 		alert('Transaction processed successfully!');
 		cart = [];
 	}
+
+	function formatCurrency(amount: number) {
+		return new Intl.NumberFormat('id-ID', {
+			style: 'currency',
+			currency: 'IDR',
+			minimumFractionDigits: 0
+		}).format(amount);
+	}
 </script>
 
 <div class="container mx-auto p-4">
@@ -78,40 +129,60 @@
 			<div class="card-body">
 				<h2 class="mb-4 card-title">Products</h2>
 
-				<!-- Search -->
-				<div class="form-control mb-4">
-					<div class="input-group">
-						<input
-							type="text"
-							placeholder="Search products..."
-							class="input-bordered input w-full"
-							bind:value={searchQuery}
-						/>
-						<span class="btn btn-square">
-							<Search class="h-5 w-5" />
-						</span>
+				<!-- Enhanced Search with Autocomplete -->
+				<div class="mb-6">
+					<ProductSearch
+						onSelect={handleProductSelect}
+						placeholder="Search products by name or category..."
+						showVariants={true}
+					/>
+				</div>
+
+				<!-- Popular Products Grid -->
+				<div class="divider">Popular Products</div>
+
+				{#if loadingProducts}
+					<div class="flex justify-center py-8">
+						<span class="loading loading-lg loading-spinner"></span>
 					</div>
-				</div>
-
-				<!-- Product Grid -->
-				<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-					{#each filteredProducts as product}
-						<button
-							onclick={() => addToCart(product)}
-							class="btn h-auto btn-block flex-col gap-1 py-4 btn-outline"
-						>
-							<ShoppingCart class="h-6 w-6" />
-							<span class="text-xs font-bold">{product.name}</span>
-							<span class="text-xs opacity-70">{product.variant}</span>
-							<span class="text-sm font-semibold">
-								${(product.price / 100).toFixed(2)}
-							</span>
-						</button>
-					{/each}
-				</div>
-
-				{#if filteredProducts.length === 0}
-					<div class="py-8 text-center text-base-content/50">No products found</div>
+				{:else if popularProducts.length > 0}
+					<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+						{#each popularProducts as product}
+							{#if product.variants && product.variants.length > 0}
+								{#each product.variants as variant}
+									{#if variant.stockQuantity > 0}
+										<button
+											onclick={() => addToCart(product, variant)}
+											class="btn h-auto btn-block flex-col gap-1 py-3 btn-outline hover:btn-primary"
+										>
+											{#if product.imageUrl}
+												<div class="avatar">
+													<div class="h-12 w-12 rounded">
+														<img src={product.imageUrl} alt={product.name} />
+													</div>
+												</div>
+											{:else}
+												<Package class="h-8 w-8 opacity-50" />
+											{/if}
+											<span class="text-xs font-bold">{product.name}</span>
+											<span class="text-xs opacity-70">Size {variant.size}</span>
+											<span class="text-sm font-semibold">
+												{formatCurrency(variant.sellingPrice / 100)}
+											</span>
+											{#if variant.stockQuantity < 10}
+												<span class="badge badge-xs badge-warning">Low Stock</span>
+											{/if}
+										</button>
+									{/if}
+								{/each}
+							{/if}
+						{/each}
+					</div>
+				{:else}
+					<div class="py-8 text-center text-base-content/50">
+						<Package class="mx-auto mb-2 h-12 w-12 opacity-50" />
+						<p>No products available</p>
+					</div>
 				{/if}
 			</div>
 		</div>
@@ -136,12 +207,21 @@
 							<div class="card bg-base-200">
 								<div class="card-body p-3">
 									<div class="flex items-center justify-between">
-										<div class="flex-1">
-											<h4 class="font-semibold">{item.name}</h4>
-											<p class="text-sm text-base-content/70">{item.variant}</p>
-											<p class="text-sm font-medium">
-												${(item.price / 100).toFixed(2)} each
-											</p>
+										<div class="flex flex-1 items-start gap-3">
+											{#if item.imageUrl}
+												<div class="avatar">
+													<div class="h-10 w-10 rounded">
+														<img src={item.imageUrl} alt={item.name} />
+													</div>
+												</div>
+											{/if}
+											<div class="flex-1">
+												<h4 class="font-semibold">{item.name}</h4>
+												<p class="text-sm text-base-content/70">Size {item.variant}</p>
+												<p class="text-sm font-medium">
+													{formatCurrency(item.price / 100)} each
+												</p>
+											</div>
 										</div>
 										<div class="flex items-center gap-2">
 											<button
@@ -168,7 +248,7 @@
 									<div class="divider my-2"></div>
 									<div class="flex justify-between font-semibold">
 										<span>Subtotal:</span>
-										<span>${((item.price * item.quantity) / 100).toFixed(2)}</span>
+										<span>{formatCurrency((item.price * item.quantity) / 100)}</span>
 									</div>
 								</div>
 							</div>
@@ -181,7 +261,7 @@
 					<div class="space-y-3">
 						<div class="flex justify-between text-xl font-bold">
 							<span>Total:</span>
-							<span class="text-primary">${(total / 100).toFixed(2)}</span>
+							<span class="text-primary">{formatCurrency(total / 100)}</span>
 						</div>
 						<button
 							onclick={processTransaction}

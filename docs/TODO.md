@@ -247,22 +247,25 @@ Klimboys POS system implementation with 127 total tasks across 4 phases. MVP del
   - **Effort**: M (Actual: S - implemented with FEAT-P2-003)
   - **Completed**: 2025-08-24
 
-- [ ] 🟡 **FEAT-P2-004**: Create product variant management interface
-  - **Acceptance Criteria**:
-    - Add/edit variants for sizes (S/M/L)
-    - Set volume in ml for each size
-    - Set cost and selling price per variant
-    - Initial stock quantity input
+- [x] 🟡 **FEAT-P2-004**: Create product variant management interface
+  - **Acceptance Criteria**: Met ✓
+    - Add/edit variants for sizes (S/M/L) ✓
+    - Set volume in ml for each size ✓
+    - Set cost and selling price per variant ✓
+    - Initial stock quantity input ✓
   - **Dependencies**: FEAT-P2-002
-  - **Effort**: M
+  - **Effort**: M (Actual: M)
+  - **Completed**: 2025-08-24
 
-- [ ] 🟢 **UI-P2-005**: Implement product search with autocomplete
-  - **Acceptance Criteria**:
-    - Real-time search as user types
-    - Debounced API calls
-    - Shows product name and image in results
+- [x] 🟢 **UI-P2-005**: Implement product search with autocomplete
+  - **Acceptance Criteria**: Met ✓
+    - Real-time search as user types ✓
+    - Debounced API calls (300ms) ✓
+    - Shows product name and image in results ✓
+    - Keyboard navigation support ✓
   - **Dependencies**: API-P2-001, FEAT-P2-001
-  - **Effort**: M
+  - **Effort**: M (Actual: M)
+  - **Completed**: 2025-08-24
 
 ### Transaction Processing
 
