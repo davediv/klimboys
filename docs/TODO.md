@@ -190,21 +190,24 @@ Klimboys POS system implementation with 127 total tasks across 4 phases. MVP del
   - **Effort**: M (Actual: M)
   - **Completed**: 2025-08-24
 
-- [ ] 🟡 **API-P2-002**: Implement POST /api/products endpoint
-  - **Acceptance Criteria**:
-    - Creates product with basic info
-    - Validates required fields
-    - Returns created product
+- [x] 🟡 **API-P2-002**: Implement POST /api/products endpoint
+  - **Acceptance Criteria**: Met ✓
+    - Creates product with basic info ✓
+    - Validates required fields ✓
+    - Returns created product ✓
   - **Dependencies**: API-P2-001
-  - **Effort**: M
+  - **Effort**: M (Actual: M)
+  - **Completed**: 2025-08-24
+  - **Commit**: 999a77a
 
-- [ ] 🟡 **API-P2-003**: Implement PUT /api/products/:id endpoint
-  - **Acceptance Criteria**:
-    - Updates product details
-    - Validates input data
-    - Returns updated product
+- [x] 🟡 **API-P2-003**: Implement PUT /api/products/:id endpoint
+  - **Acceptance Criteria**: Met ✓
+    - Updates product details ✓
+    - Validates input data ✓
+    - Returns updated product ✓
   - **Dependencies**: API-P2-001
-  - **Effort**: M
+  - **Effort**: M (Actual: M)
+  - **Completed**: 2025-08-24
 
 - [ ] 🟡 **API-P2-004**: Implement DELETE /api/products/:id endpoint
   - **Acceptance Criteria**:
