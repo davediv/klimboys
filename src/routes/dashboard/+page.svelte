@@ -1,5 +1,8 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { 
+		DollarSign, ShoppingCart, Package, AlertCircle,
+		ChevronRight, Activity, Coffee, Users
+	} from '@lucide/svelte';
 	import type { PageData } from './$types';
 
 	interface Props {
@@ -8,250 +11,249 @@
 
 	let { data }: Props = $props();
 
-	async function handleLogout() {
-		const response = await fetch('/api/auth/sign-out', {
-			method: 'POST'
-		});
-
-		if (response.ok) {
-			await goto('/');
+	// Mock data for dashboard stats
+	const stats = [
+		{ 
+			label: 'Today\'s Revenue', 
+			value: 'Rp 2,450,000', 
+			change: '+12%', 
+			trend: 'up',
+			icon: DollarSign,
+			color: 'text-green-600 bg-green-100'
+		},
+		{ 
+			label: 'Total Orders', 
+			value: '48', 
+			change: '+8%', 
+			trend: 'up',
+			icon: ShoppingCart,
+			color: 'text-blue-600 bg-blue-100'
+		},
+		{ 
+			label: 'Active Products', 
+			value: '24', 
+			change: '0%', 
+			trend: 'neutral',
+			icon: Package,
+			color: 'text-purple-600 bg-purple-100'
+		},
+		{ 
+			label: 'Low Stock Items', 
+			value: '3', 
+			change: '-2', 
+			trend: 'down',
+			icon: AlertCircle,
+			color: 'text-orange-600 bg-orange-100'
 		}
-	}
+	];
 
-	function getRoleBadgeColor(role: string) {
-		switch (role) {
-			case 'admin':
-				return 'bg-red-100 text-red-800';
-			case 'cashier':
-				return 'bg-yellow-100 text-yellow-800';
-			case 'viewer':
-				return 'bg-green-100 text-green-800';
-			default:
-				return 'bg-gray-100 text-gray-800';
-		}
-	}
+	const recentOrders = [
+		{ id: 'TRX-20250124-0001', time: '5 mins ago', amount: 'Rp 85,000', status: 'completed', items: 3 },
+		{ id: 'TRX-20250124-0002', time: '12 mins ago', amount: 'Rp 120,000', status: 'completed', items: 4 },
+		{ id: 'TRX-20250124-0003', time: '25 mins ago', amount: 'Rp 45,000', status: 'pending', items: 2 },
+		{ id: 'TRX-20250124-0004', time: '1 hour ago', amount: 'Rp 200,000', status: 'completed', items: 7 },
+		{ id: 'TRX-20250124-0005', time: '2 hours ago', amount: 'Rp 95,000', status: 'completed', items: 3 }
+	];
 
-	function getRolePermissions(role: string) {
-		switch (role) {
-			case 'admin':
-				return [
-					'Full system access',
-					'Manage users and roles',
-					'Create, edit, and delete content',
-					'View all content and analytics',
-					'System configuration'
-				];
-			case 'cashier':
-				return ['Create transaction'];
-			case 'viewer':
-				return ['View inventory', 'View transactions'];
+	const lowStockItems = [
+		{ name: 'Chocolate Shake (L)', stock: 5, minStock: 10 },
+		{ name: 'Vanilla Dream (M)', stock: 3, minStock: 8 },
+		{ name: 'Oreo Blast (S)', stock: 2, minStock: 5 }
+	];
+
+	const quickActions = {
+		admin: [
+			{ icon: ShoppingCart, label: 'New Transaction', href: '/dashboard/transaction', color: 'bg-[#FF6B6B] text-white' },
+			{ icon: Package, label: 'Manage Products', href: '/dashboard/products', color: 'bg-blue-600 text-white' },
+			{ icon: Users, label: 'User Management', href: '/dashboard/users', color: 'bg-purple-600 text-white' },
+			{ icon: Activity, label: 'View Reports', href: '/dashboard/reports', color: 'bg-green-600 text-white' }
+		],
+		cashier: [
+			{ icon: ShoppingCart, label: 'New Transaction', href: '/dashboard/transaction', color: 'bg-[#FF6B6B] text-white' },
+			{ icon: Activity, label: 'Transaction History', href: '/dashboard/transactions', color: 'bg-blue-600 text-white' },
+			{ icon: Package, label: 'View Products', href: '/dashboard/products', color: 'bg-purple-600 text-white' },
+			{ icon: Activity, label: 'My Shift Report', href: '/dashboard/shift-report', color: 'bg-green-600 text-white' }
+		]
+	};
+
+	function getStatusColor(status: string) {
+		switch (status) {
+			case 'completed':
+				return 'badge-success';
+			case 'pending':
+				return 'badge-warning';
+			case 'cancelled':
+				return 'badge-error';
 			default:
-				return [];
+				return 'badge-ghost';
 		}
 	}
 </script>
 
-<div class="min-h-screen bg-gray-50">
-	<!-- Navigation -->
-	<nav class="bg-white shadow">
-		<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-			<div class="flex h-16 justify-between">
-				<div class="flex">
-					<div class="flex flex-shrink-0 items-center">
-						<h1 class="text-xl font-bold">Dashboard</h1>
+<!-- Welcome Section -->
+<div class="mb-6">
+	<h1 class="text-2xl font-bold text-gray-900">
+		Welcome back, {data.user?.name || data.user?.email?.split('@')[0]}! 👋
+	</h1>
+	<p class="text-gray-600 mt-1">Here's what's happening with your store today.</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+	{#each stats as stat}
+		<div class="card bg-white shadow-sm">
+			<div class="card-body">
+				<div class="flex items-center justify-between">
+					<div>
+						<p class="text-sm text-gray-600">{stat.label}</p>
+						<p class="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+						<div class="flex items-center gap-1 mt-2">
+							<span class={`text-xs font-medium ${
+								stat.trend === 'up' ? 'text-green-600' : 
+								stat.trend === 'down' ? 'text-red-600' : 
+								'text-gray-600'
+							}`}>
+								{stat.change} from yesterday
+							</span>
+						</div>
 					</div>
-					<div class="hidden sm:ml-6 sm:flex sm:space-x-8">
-						<a
-							href="/dashboard"
-							class="inline-flex items-center border-b-2 border-indigo-500 px-1 pt-1 text-sm font-medium text-gray-900"
-						>
-							Dashboard
-						</a>
-						{#if data.user?.role === 'admin'}
-							<a
-								href="/admin"
-								class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
-							>
-								Admin Panel
-							</a>
-						{/if}
+					<div class={`p-3 rounded-lg ${stat.color}`}>
+						<svelte:component this={stat.icon} class="h-6 w-6" />
 					</div>
-				</div>
-				<div class="flex items-center">
-					<span class="mr-4 text-sm text-gray-700">
-						{data.user?.email}
-					</span>
-					<button
-						onclick={handleLogout}
-						class="ml-3 inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
-					>
-						Sign out
-					</button>
 				</div>
 			</div>
 		</div>
-	</nav>
+	{/each}
+</div>
 
-	<!-- Main Content -->
-	<main class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
-		{#if data.needsVerification}
-			<!-- Email Verification Warning -->
-			<div class="px-4 py-6 sm:px-0">
-				<div class="rounded-md bg-yellow-50 p-4">
-					<div class="flex">
-						<div class="flex-shrink-0">
-							<svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-								<path
-									fill-rule="evenodd"
-									d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-									clip-rule="evenodd"
-								/>
-							</svg>
-						</div>
-						<div class="ml-3">
-							<h3 class="text-sm font-medium text-yellow-800">Email verification required</h3>
-							<div class="mt-2 text-sm text-yellow-700">
-								<p>
-									Please verify your email address to access all features. Check your email for the
-									verification link.
-								</p>
-							</div>
-						</div>
-					</div>
+<!-- Quick Actions -->
+<div class="mb-6">
+	<h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+	<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+		{#each (quickActions[data.user?.role] || quickActions.cashier) as action}
+			<a
+				href={action.href}
+				class={`card ${action.color} shadow-sm hover:shadow-md transition-shadow`}
+			>
+				<div class="card-body items-center text-center p-4">
+					<svelte:component this={action.icon} class="h-8 w-8 mb-2" />
+					<p class="text-sm font-medium">{action.label}</p>
 				</div>
-			</div>
-		{/if}
+			</a>
+		{/each}
+	</div>
+</div>
 
-		<div class="px-4 py-6 sm:px-0">
-			<!-- User Info Card -->
-			<div class="overflow-hidden rounded-lg bg-white shadow">
-				<div class="px-4 py-5 sm:p-6">
-					<h3 class="text-lg leading-6 font-medium text-gray-900">
-						Welcome, {data.user?.name || data.user?.email}!
-					</h3>
-					<div class="mt-5">
-						<dl class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-							<div>
-								<dt class="text-sm font-medium text-gray-500">Email</dt>
-								<dd class="mt-1 text-sm text-gray-900">{data.user?.email}</dd>
-							</div>
-							<div>
-								<dt class="text-sm font-medium text-gray-500">Role</dt>
-								<dd class="mt-1">
-									<span
-										class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getRoleBadgeColor(data.user?.role || 'viewer')}`}
-									>
-										{data.user?.role?.toUpperCase()}
-									</span>
-								</dd>
-							</div>
-							<div>
-								<dt class="text-sm font-medium text-gray-500">Email Verified</dt>
-								<dd class="mt-1 text-sm text-gray-900">
-									{#if data.user?.emailVerified}
-										<span class="text-green-600">✓ Verified</span>
-									{:else}
-										<span class="text-red-600">✗ Not Verified</span>
-									{/if}
-								</dd>
-							</div>
-							<div>
-								<dt class="text-sm font-medium text-gray-500">Member Since</dt>
-								<dd class="mt-1 text-sm text-gray-900">
-									{new Date(data.user?.createdAt || '').toLocaleDateString()}
-								</dd>
-							</div>
-						</dl>
-					</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+	<!-- Recent Orders -->
+	<div class="lg:col-span-2">
+		<div class="card bg-white shadow-sm">
+			<div class="card-body">
+				<div class="flex items-center justify-between mb-4">
+					<h3 class="text-lg font-semibold text-gray-900">Recent Transactions</h3>
+					<a href="/dashboard/transactions" class="btn btn-ghost btn-sm gap-1">
+						View All
+						<ChevronRight class="h-4 w-4" />
+					</a>
 				</div>
-			</div>
-
-			<!-- Role Permissions Card -->
-			<div class="mt-6 overflow-hidden rounded-lg bg-white shadow">
-				<div class="px-4 py-5 sm:p-6">
-					<h3 class="text-lg leading-6 font-medium text-gray-900">Your Permissions</h3>
-					<p class="mt-1 text-sm text-gray-500">
-						As a {data.user?.role}, you have the following permissions:
-					</p>
-					<ul class="mt-4 space-y-2">
-						{#each getRolePermissions(data.user?.role || 'viewer') as permission (permission)}
-							<li class="flex items-start">
-								<svg
-									class="h-5 w-5 flex-shrink-0 text-green-400"
-									viewBox="0 0 20 20"
-									fill="currentColor"
-								>
-									<path
-										fill-rule="evenodd"
-										d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-										clip-rule="evenodd"
-									/>
-								</svg>
-								<span class="ml-2 text-sm text-gray-700">{permission}</span>
-							</li>
-						{/each}
-					</ul>
-				</div>
-			</div>
-
-			<!-- Quick Actions -->
-			<div class="mt-6">
-				<h3 class="mb-4 text-lg leading-6 font-medium text-gray-900">Quick Actions</h3>
-				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-					{#if data.user?.role === 'admin'}
-						<button
-							class="relative flex items-center space-x-3 rounded-lg border border-gray-300 bg-white px-6 py-4 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
-						>
-							<div class="min-w-0 flex-1">
-								<span class="absolute inset-0" aria-hidden="true"></span>
-								<p class="text-sm font-medium text-gray-900">Manage Users</p>
-								<p class="text-sm text-gray-500">Add, edit, or remove users</p>
-							</div>
-						</button>
-						<button
-							class="relative flex items-center space-x-3 rounded-lg border border-gray-300 bg-white px-6 py-4 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
-						>
-							<div class="min-w-0 flex-1">
-								<span class="absolute inset-0" aria-hidden="true"></span>
-								<p class="text-sm font-medium text-gray-900">System Settings</p>
-								<p class="text-sm text-gray-500">Configure system preferences</p>
-							</div>
-						</button>
-					{/if}
-
-					{#if data.user?.role === 'admin' || data.user?.role === 'cashier'}
-						<button
-							class="relative flex items-center space-x-3 rounded-lg border border-gray-300 bg-white px-6 py-4 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
-						>
-							<div class="min-w-0 flex-1">
-								<span class="absolute inset-0" aria-hidden="true"></span>
-								<p class="text-sm font-medium text-gray-900">Create Content</p>
-								<p class="text-sm text-gray-500">Add new articles or posts</p>
-							</div>
-						</button>
-					{/if}
-
-					<button
-						class="relative flex items-center space-x-3 rounded-lg border border-gray-300 bg-white px-6 py-4 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
-					>
-						<div class="min-w-0 flex-1">
-							<span class="absolute inset-0" aria-hidden="true"></span>
-							<p class="text-sm font-medium text-gray-900">View Content</p>
-							<p class="text-sm text-gray-500">Browse available content</p>
-						</div>
-					</button>
-
-					<button
-						class="relative flex items-center space-x-3 rounded-lg border border-gray-300 bg-white px-6 py-4 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
-					>
-						<div class="min-w-0 flex-1">
-							<span class="absolute inset-0" aria-hidden="true"></span>
-							<p class="text-sm font-medium text-gray-900">Profile Settings</p>
-							<p class="text-sm text-gray-500">Update your profile information</p>
-						</div>
-					</button>
+				<div class="overflow-x-auto">
+					<table class="table table-sm">
+						<thead>
+							<tr>
+								<th>Transaction ID</th>
+								<th>Time</th>
+								<th>Items</th>
+								<th>Amount</th>
+								<th>Status</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each recentOrders as order}
+								<tr class="hover">
+									<td class="font-medium">{order.id}</td>
+									<td class="text-gray-600">{order.time}</td>
+									<td>{order.items}</td>
+									<td class="font-semibold">{order.amount}</td>
+									<td>
+										<span class={`badge badge-sm ${getStatusColor(order.status)}`}>
+											{order.status}
+										</span>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
 				</div>
 			</div>
 		</div>
-	</main>
+	</div>
+
+	<!-- Side Panel -->
+	<div class="space-y-6">
+		<!-- Low Stock Alert -->
+		<div class="card bg-white shadow-sm">
+			<div class="card-body">
+				<div class="flex items-center justify-between mb-4">
+					<h3 class="text-lg font-semibold text-gray-900">Low Stock Alert</h3>
+					<span class="badge badge-warning badge-sm">{lowStockItems.length} items</span>
+				</div>
+				<div class="space-y-3">
+					{#each lowStockItems as item}
+						<div class="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
+							<div>
+								<p class="text-sm font-medium text-gray-900">{item.name}</p>
+								<p class="text-xs text-gray-600">Min stock: {item.minStock}</p>
+							</div>
+							<span class="badge badge-error">{item.stock} left</span>
+						</div>
+					{/each}
+				</div>
+				<button class="btn btn-sm btn-outline btn-warning w-full mt-4">
+					Manage Inventory
+				</button>
+			</div>
+		</div>
+
+		<!-- Today's Activity -->
+		<div class="card bg-white shadow-sm">
+			<div class="card-body">
+				<div class="flex items-center gap-2 mb-4">
+					<Activity class="h-5 w-5 text-[#FF6B6B]" />
+					<h3 class="text-lg font-semibold text-gray-900">Today's Activity</h3>
+				</div>
+				<div class="space-y-3">
+					<div class="flex items-center gap-3">
+						<div class="p-2 bg-green-100 rounded-lg">
+							<DollarSign class="h-4 w-4 text-green-600" />
+						</div>
+						<div class="flex-1">
+							<p class="text-sm font-medium">Revenue</p>
+							<p class="text-xs text-gray-600">48 transactions</p>
+						</div>
+						<p class="text-sm font-bold">Rp 2.45M</p>
+					</div>
+					<div class="flex items-center gap-3">
+						<div class="p-2 bg-blue-100 rounded-lg">
+							<Coffee class="h-4 w-4 text-blue-600" />
+						</div>
+						<div class="flex-1">
+							<p class="text-sm font-medium">Best Seller</p>
+							<p class="text-xs text-gray-600">Chocolate Shake</p>
+						</div>
+						<p class="text-sm font-bold">23 sold</p>
+					</div>
+					<div class="flex items-center gap-3">
+						<div class="p-2 bg-purple-100 rounded-lg">
+							<Users class="h-4 w-4 text-purple-600" />
+						</div>
+						<div class="flex-1">
+							<p class="text-sm font-medium">Customers</p>
+							<p class="text-xs text-gray-600">New & returning</p>
+						</div>
+						<p class="text-sm font-bold">48</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>
