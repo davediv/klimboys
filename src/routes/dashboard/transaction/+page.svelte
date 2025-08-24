@@ -118,12 +118,12 @@
 
 	function processTransaction() {
 		// TODO: Implement transaction processing
-		console.log('Processing transaction:', { 
-			cart, 
-			total, 
-			channel, 
-			paymentMethod, 
-			orderNotes 
+		console.log('Processing transaction:', {
+			cart,
+			total,
+			channel,
+			paymentMethod,
+			orderNotes
 		});
 		alert('Transaction processed successfully!');
 		cart = [];
@@ -286,7 +286,7 @@
 						<!-- Channel Selection -->
 						<div>
 							<label class="text-sm font-medium text-gray-700">Channel</label>
-							<select bind:value={channel} class="select select-bordered select-sm w-full mt-1">
+							<select bind:value={channel} class="select-bordered select mt-1 w-full select-sm">
 								<option value="Store">Store</option>
 								<option value="GrabFood">GrabFood</option>
 								<option value="GoFood">GoFood</option>
@@ -298,7 +298,10 @@
 						<!-- Payment Method -->
 						<div>
 							<label class="text-sm font-medium text-gray-700">Payment Method</label>
-							<select bind:value={paymentMethod} class="select select-bordered select-sm w-full mt-1">
+							<select
+								bind:value={paymentMethod}
+								class="select-bordered select mt-1 w-full select-sm"
+							>
 								<option value="Cash">Cash</option>
 								<option value="QRIS">QRIS</option>
 								<option value="Transfer">Bank Transfer</option>
@@ -311,10 +314,10 @@
 						<!-- Order Notes -->
 						<div>
 							<label class="text-sm font-medium text-gray-700">Order Notes</label>
-							<textarea 
+							<textarea
 								bind:value={orderNotes}
 								placeholder="Add any special instructions..."
-								class="textarea textarea-bordered textarea-sm w-full mt-1"
+								class="textarea-bordered textarea mt-1 w-full textarea-sm"
 								rows="2"
 							></textarea>
 						</div>
@@ -344,7 +347,7 @@
 </div>
 
 <!-- Product Size Selection Modal -->
-<ProductSizeModal 
+<ProductSizeModal
 	product={selectedProduct}
 	show={showSizeModal}
 	onClose={() => {

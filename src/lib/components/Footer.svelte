@@ -5,7 +5,9 @@
 
 <div class="bg-base-200" data-theme="light">
 	<div class="container mx-auto px-4">
-		<footer class="footer grid grid-cols-1 gap-8 p-10 text-base-content md:grid-cols-2 lg:grid-cols-4">
+		<footer
+			class="footer grid grid-cols-1 gap-8 p-10 text-base-content md:grid-cols-2 lg:grid-cols-4"
+		>
 			<aside>
 				<img src={Logo} alt="Klimboys" class="mb-4 h-12 w-auto" />
 				<p class="text-lg font-semibold">Klimboys Milkshake Store</p>
@@ -26,7 +28,10 @@
 				<h6 class="footer-title">Store Info</h6>
 				<div class="flex items-start gap-2">
 					<MapPin class="mt-0.5 h-4 w-4 flex-shrink-0" />
-					<span>JL. PEPAYA RAYA NO. 8 BLOK. 13K<br />RT.2/RW.5, JAGAKARSA<br />KOTA ADM JAKARTA SELATAN 12620</span>
+					<span
+						>JL. PEPAYA RAYA NO. 8 BLOK. 13K<br />RT.2/RW.5, JAGAKARSA<br />KOTA ADM JAKARTA SELATAN
+						12620</span
+					>
 				</div>
 				<div class="flex items-center gap-2">
 					<Phone class="h-4 w-4 flex-shrink-0" />
@@ -50,11 +55,7 @@
 				<div class="mt-4">
 					<h6 class="footer-title">Follow Us</h6>
 					<div class="flex gap-4">
-						<a
-							href="/go/twitter"
-							aria-label="Twitter"
-							class="transition-colors hover:text-primary"
-						>
+						<a href="/go/twitter" aria-label="Twitter" class="transition-colors hover:text-primary">
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
 								width="24"
@@ -120,7 +121,7 @@
 
 <div class="bg-base-300" data-theme="light">
 	<div class="container mx-auto">
-		<div class="footer footer-center p-4 text-base-content">
+		<div class="footer-center footer p-4 text-base-content">
 			<aside>
 				<p>© {new Date().getFullYear()} Klimboys. All rights reserved.</p>
 			</aside>

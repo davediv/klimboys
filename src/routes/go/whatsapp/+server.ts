@@ -6,6 +6,6 @@ export const GET: RequestHandler = async () => {
 	const phoneNumber = '6282112345678'; // Replace with actual number
 	const message = encodeURIComponent('Halo Klimboys! Saya ingin memesan milkshake.');
 	const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
-	
+
 	redirect(302, whatsappUrl);
 };
