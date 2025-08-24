@@ -51,7 +51,7 @@ export function routeGuard(event: ServerLoadEvent, options: GuardOptions = {}) {
 		// Redirect based on user's actual role
 		const roleRedirects: Record<string, string> = {
 			admin: '/dashboard',
-			cashier: '/transaction',
+			cashier: '/dashboard/transaction',
 			viewer: '/'
 		};
 
@@ -77,7 +77,7 @@ export function getDefaultRedirect(role: string | undefined): string {
 		case 'admin':
 			return '/dashboard';
 		case 'cashier':
-			return '/transaction';
+			return '/dashboard/transaction';
 		case 'viewer':
 		default:
 			return '/';

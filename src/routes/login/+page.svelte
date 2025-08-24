@@ -33,18 +33,21 @@
 				})
 			});
 
-			const data = (await response.json()) as {
-				message?: string;
-				user?: {
-					id: string;
-					email: string;
-					role?: string;
-				};
-			};
-
+			// Check if response is ok first
 			if (!response.ok) {
-				throw new Error(data?.message || 'Invalid credentials');
+				// Only try to parse JSON if there's an error
+				let errorMessage = 'Invalid credentials';
+				try {
+					const errorData = await response.json();
+					errorMessage = errorData?.message || errorMessage;
+				} catch {
+					// If JSON parsing fails, use default error message
+				}
+				throw new Error(errorMessage);
 			}
+
+			// For successful login, Better Auth might return empty response
+			// We don't need to parse the response body
 
 			// Get user data to determine role-based redirect
 			const sessionResponse = await fetch('/api/auth/session');
@@ -69,13 +72,13 @@
 							roleBasedRedirect = '/dashboard';
 							break;
 						case 'cashier':
-							roleBasedRedirect = '/transaction';
+							roleBasedRedirect = '/dashboard/transaction';
 							break;
 						case 'viewer':
 							roleBasedRedirect = '/';
 							break;
 						default:
-							roleBasedRedirect = '/';
+							roleBasedRedirect = '/dashboard';
 					}
 				}
 

@@ -269,7 +269,7 @@ Klimboys POS system implementation with 127 total tasks across 4 phases. MVP del
 
 ### Transaction Processing
 
-- [ ] 🟡 **FEAT-P2-005**: Create transaction page layout with product grid and cart
+- [x] ✅ **FEAT-P2-005**: Create transaction page layout with product grid and cart
   - **Acceptance Criteria**:
     - Two-column layout (products | cart)
     - Product search bar
@@ -278,7 +278,7 @@ Klimboys POS system implementation with 127 total tasks across 4 phases. MVP del
   - **Dependencies**: UI-P2-003
   - **Effort**: M
 
-- [ ] 🟡 **FEAT-P2-006**: Implement product selection and add to cart
+- [x] ✅ **FEAT-P2-006**: Implement product selection and add to cart
   - **Acceptance Criteria**:
     - Click product to show size selection
     - Add to cart with quantity
@@ -286,7 +286,7 @@ Klimboys POS system implementation with 127 total tasks across 4 phases. MVP del
   - **Dependencies**: FEAT-P2-005, API-P2-001
   - **Effort**: M
 
-- [ ] 🟡 **FEAT-P2-007**: Create cart management functionality
+- [x] ✅ **FEAT-P2-007**: Create cart management functionality
   - **Acceptance Criteria**:
     - Update item quantities
     - Remove items from cart
@@ -295,7 +295,7 @@ Klimboys POS system implementation with 127 total tasks across 4 phases. MVP del
   - **Dependencies**: FEAT-P2-006
   - **Effort**: M
 
-- [ ] 🟡 **FEAT-P2-008**: Implement transaction metadata inputs
+- [x] ✅ **FEAT-P2-008**: Implement transaction metadata inputs
   - **Acceptance Criteria**:
     - Channel selection (GrabFood, GoFood, ShopeeFood, UberEats, Store)
     - Payment method selection (Cash, QRIS, Transfer, etc.)
