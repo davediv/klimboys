@@ -5,11 +5,11 @@
 
 /* Custom theme colors */
 :root {
-  --primary: #FF6B6B;
+	--primary: #ff6b6b;
 }
 
-[data-theme="light"] {
-  --p: 0 71% 66%; /* #FF6B6B in HSL */
-  --pf: 0 71% 60%; /* Darker shade */
-  --pc: 0 0% 100%; /* White text on primary */
+[data-theme='light'] {
+	--p: 0 71% 66%; /* #FF6B6B in HSL */
+	--pf: 0 71% 60%; /* Darker shade */
+	--pc: 0 0% 100%; /* White text on primary */
 }

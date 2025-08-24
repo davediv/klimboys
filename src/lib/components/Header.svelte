@@ -1,16 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import Logo from '$lib/assets/logo.svg';
-	import {
-		Menu,
-		X,
-		ShoppingBag,
-		User,
-		LogOut,
-		Settings,
-		LayoutDashboard,
-		ShoppingCart
-	} from '@lucide/svelte';
+	import { Menu, X } from '@lucide/svelte';
+	import { fly, fade } from 'svelte/transition';
+	import { quintOut } from 'svelte/easing';
 
 	interface Props {
 		user?: {
@@ -28,32 +21,49 @@
 	let { user = null }: Props = $props();
 
 	let mobileMenuOpen = $state(false);
+	let scrolled = $state(false);
+
+	// Track scroll position for navbar transparency
+	$effect(() => {
+		function handleScroll() {
+			scrolled = window.scrollY > 50;
+		}
+
+		window.addEventListener('scroll', handleScroll);
+		return () => window.removeEventListener('scroll', handleScroll);
+	});
 
 	// Dynamic nav items based on user role
 	let navItems = $derived(() => {
 		const items = [
-			{ href: '/', label: 'Home', roles: ['viewer', 'cashier', 'admin'] },
-			{ href: '/menu', label: 'Menu', roles: ['viewer', 'cashier', 'admin'] },
-			{ href: '/about', label: 'About', roles: ['viewer', 'cashier', 'admin'] },
-			{ href: '/contact', label: 'Contact', roles: ['viewer', 'cashier', 'admin'] }
+			{ href: '/', label: 'Home' },
+			{ href: '/menu', label: 'Menu' },
+			{ href: '/about', label: 'About' },
+			{ href: '/contact', label: 'Contact' }
 		];
 
 		// Add role-specific items
 		if (user?.role === 'admin') {
 			items.push(
-				{ href: '/dashboard', label: 'Dashboard', roles: ['admin'] },
-				{ href: '/admin/products', label: 'Products', roles: ['admin'] }
+				{ href: '/dashboard', label: 'Dashboard' },
+				{ href: '/admin/products', label: 'Products' }
 			);
 		} else if (user?.role === 'cashier') {
 			items.push(
-				{ href: '/transaction', label: 'POS', roles: ['cashier'] },
-				{ href: '/dashboard', label: 'Dashboard', roles: ['cashier'] }
+				{ href: '/dashboard/transaction', label: 'POS' },
+				{ href: '/dashboard', label: 'Dashboard' }
 			);
 		}
 
-		return items.filter(
-			(item) => !user || !item.roles || item.roles.includes(user.role || 'viewer')
-		);
+		// Add login/logout items
+		if (user) {
+			items.push({ href: '/profile', label: 'Profile' });
+		} else {
+			items.push({ href: '/login', label: 'Login' });
+			items.push({ href: '/register', label: 'Register' });
+		}
+
+		return items;
 	});
 
 	async function handleLogout() {
@@ -62,96 +72,120 @@
 	}
 </script>
 
-<header class="sticky top-0 z-50 navbar border-b border-base-200 bg-base-100 shadow-sm">
-	<div class="navbar-start">
-		<div class="dropdown lg:hidden">
+<header
+	class="fixed top-0 right-0 left-0 z-50 transition-all duration-300 {scrolled
+		? 'bg-white shadow-md'
+		: 'bg-transparent'}"
+>
+	<div class="container mx-auto px-4">
+		<div class="flex items-center justify-between py-4">
+			<!-- Logo (Left) -->
+			<a href="/" class="flex items-center">
+				<img
+					src={Logo}
+					alt="Klimboys"
+					class="h-12 w-auto transition-all duration-300 sm:h-14 md:h-16"
+				/>
+			</a>
+
+			<!-- Hamburger Menu (Right) -->
 			<button
-				tabindex="0"
-				class="btn btn-circle btn-ghost"
+				class="relative z-50 rounded-lg p-2 transition-all duration-300 {scrolled
+					? 'hover:bg-gray-100'
+					: 'bg-white/80 backdrop-blur-sm hover:bg-white/90'} {mobileMenuOpen ? 'rotate-90' : ''}"
 				onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
 				aria-label="Toggle menu"
 			>
-				{#if mobileMenuOpen}
-					<X class="h-5 w-5" />
-				{:else}
-					<Menu class="h-5 w-5" />
-				{/if}
+				<div class="relative h-6 w-6">
+					{#if mobileMenuOpen}
+						<div
+							transition:fade={{ duration: 150 }}
+							class="absolute inset-0 flex items-center justify-center"
+						>
+							<X class="h-6 w-6 text-gray-900" />
+						</div>
+					{:else}
+						<div
+							transition:fade={{ duration: 150 }}
+							class="absolute inset-0 flex items-center justify-center"
+						>
+							<Menu class="h-6 w-6 text-gray-900" />
+						</div>
+					{/if}
+				</div>
 			</button>
-			{#if mobileMenuOpen}
-				<ul
-					class="dropdown-content menu z-[1] mt-3 w-52 menu-sm rounded-box bg-base-100 p-2 shadow"
-				>
-					{#each navItems() as item}
-						<li>
-							<a
-								href={item.href}
-								class="font-medium {$page.url.pathname === item.href ? 'active' : ''}"
-								onclick={() => (mobileMenuOpen = false)}
-							>
-								{item.label}
-							</a>
-						</li>
-					{/each}
-				</ul>
-			{/if}
 		</div>
-
-		<a href="/" class="flex items-center gap-2 px-2">
-			<img src={Logo} alt="Klimboys Logo" class="h-8 w-auto sm:h-10" />
-		</a>
 	</div>
 
-	<div class="navbar-center hidden lg:flex">
-		<ul class="menu menu-horizontal gap-2 px-1">
-			{#each navItems() as item}
-				<li>
-					<a
-						href={item.href}
-						class="font-medium {$page.url.pathname === item.href ? 'active text-primary' : ''}"
-					>
-						{item.label}
-					</a>
-				</li>
-			{/each}
-		</ul>
-	</div>
+	<!-- Full-screen Menu Overlay -->
+	{#if mobileMenuOpen}
+		<!-- Backdrop -->
+		<button
+			class="fixed inset-0 z-40 bg-black/50"
+			onclick={() => (mobileMenuOpen = false)}
+			aria-label="Close menu"
+			transition:fade={{ duration: 300, easing: quintOut }}
+		></button>
 
-	<div class="navbar-end">
-		{#if user?.role === 'cashier' || user?.role === 'admin'}
-			<button class="btn btn-circle btn-ghost" aria-label="Shopping cart">
-				<ShoppingBag class="h-5 w-5" />
-			</button>
-		{/if}
-		<div class="dropdown dropdown-end">
-			<button tabindex="0" class="btn btn-circle btn-ghost" aria-label="User menu">
-				<User class="h-5 w-5" />
-			</button>
-			<ul class="dropdown-content menu z-[1] mt-3 w-52 menu-sm rounded-box bg-base-100 p-2 shadow">
+		<!-- Menu Panel -->
+		<div
+			class="fixed top-0 right-0 z-40 h-full w-full bg-white shadow-2xl sm:w-96"
+			transition:fly={{ x: '100%', duration: 300, easing: quintOut }}
+		>
+			<div class="flex h-full flex-col">
+				<!-- Menu Header -->
+				<div class="flex items-center justify-between border-b p-6">
+					<h2 class="text-xl font-bold text-gray-900">Menu</h2>
+				</div>
+
+				<!-- Menu Items -->
+				<nav class="flex-1 overflow-y-auto">
+					<ul class="py-4">
+						{#each navItems() as item}
+							<li>
+								<a
+									href={item.href}
+									class="block px-6 py-3 text-lg font-medium transition-colors hover:bg-gray-50 {$page
+										.url.pathname === item.href
+										? 'bg-red-50 text-[#FF6B6B]'
+										: 'text-gray-900'}"
+									onclick={() => (mobileMenuOpen = false)}
+								>
+									{item.label}
+								</a>
+							</li>
+						{/each}
+
+						{#if user}
+							<li class="mt-4 border-t pt-4">
+								<button
+									onclick={handleLogout}
+									class="block w-full px-6 py-3 text-left text-lg font-medium text-red-600 transition-colors hover:bg-red-50"
+								>
+									Logout
+								</button>
+							</li>
+						{/if}
+					</ul>
+				</nav>
+
+				<!-- User Info (if logged in) -->
 				{#if user}
-					<li class="menu-title">
-						<span>{user.name || user.email}</span>
-						<span class="text-xs opacity-60">{user.role}</span>
-					</li>
-					{#if user.role === 'admin'}
-						<li><a href="/dashboard"><LayoutDashboard class="h-4 w-4" /> Dashboard</a></li>
-						<li><a href="/admin/products"><Settings class="h-4 w-4" /> Manage Products</a></li>
-					{/if}
-					{#if user.role === 'cashier'}
-						<li><a href="/transaction"><ShoppingCart class="h-4 w-4" /> POS</a></li>
-						<li><a href="/dashboard"><LayoutDashboard class="h-4 w-4" /> Dashboard</a></li>
-					{/if}
-					<li><a href="/profile"><User class="h-4 w-4" /> Profile</a></li>
-					<div class="divider my-0"></div>
-					<li>
-						<button onclick={handleLogout} class="text-error">
-							<LogOut class="h-4 w-4" /> Logout
-						</button>
-					</li>
-				{:else}
-					<li><a href="/login">Login</a></li>
-					<li><a href="/register">Register</a></li>
+					<div class="border-t p-6">
+						<div class="text-sm text-gray-600">
+							<p class="font-medium text-gray-900">{user.name || user.email}</p>
+							<p class="capitalize">{user.role}</p>
+						</div>
+					</div>
 				{/if}
-			</ul>
+			</div>
 		</div>
-	</div>
+	{/if}
 </header>
+
+<style>
+	/* Add padding to body to account for fixed header */
+	:global(body) {
+		padding-top: 0;
+	}
+</style>

@@ -7,7 +7,7 @@
 	import type { LayoutData } from './$types';
 
 	let { children, data }: { children: any; data: LayoutData } = $props();
-	
+
 	// Don't show header/footer on dashboard routes
 	let showHeaderFooter = $derived(!$page.url.pathname.startsWith('/dashboard'));
 </script>

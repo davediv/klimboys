@@ -6,7 +6,7 @@
 	import type { LayoutData } from './$types';
 
 	let { children, data }: { children: any; data: LayoutData } = $props();
-	
+
 	// Get page title based on current route
 	let pageTitle = $derived(() => {
 		const path = $page.url.pathname;
