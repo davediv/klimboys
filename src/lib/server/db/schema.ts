@@ -1,11 +1,12 @@
 import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { sql } from 'drizzle-orm';
 
 // User table with role support
 export const user = sqliteTable('user', {
 	id: text('id').primaryKey(),
 	email: text('email').notNull().unique(),
 	name: text('name'),
-	role: text('role').notNull().default('viewer'), // admin, editor, viewer
+	role: text('role').notNull().default('viewer'), // admin, cashier, viewer
 	emailVerified: integer('emailVerified', { mode: 'boolean' }).notNull().default(false),
 	image: text('image'),
 	createdAt: integer('createdAt', { mode: 'timestamp' }).notNull(),
@@ -53,4 +54,27 @@ export const verification = sqliteTable('verification', {
 	expiresAt: integer('expiresAt', { mode: 'timestamp' }).notNull(),
 	createdAt: integer('createdAt', { mode: 'timestamp' }),
 	updatedAt: integer('updatedAt', { mode: 'timestamp' })
+});
+
+// ============================================
+// POS System Tables
+// ============================================
+
+// Products table for managing milk shake products
+export const products = sqliteTable('products', {
+	id: text('id')
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
+	name: text('name').notNull(),
+	description: text('description'),
+	category: text('category').notNull(),
+	imageUrl: text('image_url'),
+	isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+	createdAt: integer('created_at', { mode: 'timestamp' })
+		.notNull()
+		.default(sql`(unixepoch())`),
+	updatedAt: integer('updated_at', { mode: 'timestamp' })
+		.notNull()
+		.default(sql`(unixepoch())`)
+		.$onUpdate(() => new Date())
 });
