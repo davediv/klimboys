@@ -85,19 +85,21 @@ Klimboys POS system implementation with 127 total tasks across 4 phases. MVP del
   - **Effort**: S
   - **Completed**: 2025-08-24
 
-- [ ] 🔴 **DB-P1-006**: Generate and run initial database migrations
+- [x] 🟢 **DB-P1-006**: Generate and run initial database migrations
   - **Acceptance Criteria**:
     - All tables created in D1 database
     - Migration files generated with drizzle-kit
   - **Dependencies**: DB-P1-001, DB-P1-002, DB-P1-003, DB-P1-004, DB-P1-005
   - **Effort**: S
+  - **Completed**: 2025-08-24
 
-- [ ] 🟡 **DB-P1-007**: Create database connection singleton with lazy initialization
+- [x] 🟢 **DB-P1-007**: Create database connection singleton with lazy initialization
   - **Acceptance Criteria**:
     - Database connection properly initialized in hooks.server.ts
     - Handles Cloudflare Workers context correctly
   - **Dependencies**: DB-P1-006
   - **Effort**: M
+  - **Completed**: Already implemented (verified 2025-08-24)
 
 ### Authentication Setup
 
