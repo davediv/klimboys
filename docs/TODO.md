@@ -77,12 +77,13 @@ Klimboys POS system implementation with 127 total tasks across 4 phases. MVP del
   - **Effort**: S
   - **Completed**: 2025-08-24
 
-- [ ] 🔴 **DB-P1-005**: Create inventory_logs table schema
+- [x] 🟢 **DB-P1-005**: Create inventory_logs table schema
   - **Acceptance Criteria**:
     - Table includes: id, product_variant_id, user_id, type, quantity_change, quantity_after, reason, created_at
     - Type enum includes: 'sale', 'adjustment', 'restock'
   - **Dependencies**: DB-P1-002
   - **Effort**: S
+  - **Completed**: 2025-08-24
 
 - [ ] 🔴 **DB-P1-006**: Generate and run initial database migrations
   - **Acceptance Criteria**:
