@@ -1,12 +1,13 @@
-import type { Config } from 'drizzle-kit';
+import { defineConfig } from 'drizzle-kit';
 
-export default {
+export default defineConfig({
 	schema: './src/lib/server/db/schema.ts',
-	out: './drizzle/migrations',
 	dialect: 'sqlite',
 	driver: 'd1-http',
 	dbCredentials: {
 		wranglerConfigPath: './wrangler.jsonc',
 		dbName: 'klimboys'
-	}
-} satisfies Config;
+	},
+	verbose: true,
+	strict: true
+});

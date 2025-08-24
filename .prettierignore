@@ -5,6 +5,6 @@ yarn.lock
 bun.lock
 bun.lockb
 
-.claude/
-CLAUDE.md
-/docs/
+# Miscellaneous
+/static/
+/drizzle/

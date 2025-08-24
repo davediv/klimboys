@@ -1,25 +1,37 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
-import type { Auth } from '$lib/server/auth';
-import type { AuthSession } from '$lib/server/auth/rbac';
-
 declare global {
 	namespace App {
 		interface Platform {
-			env: Env & {
-				DB: D1Database;
-				BUCKET: R2Bucket;
-			};
+			env: Env;
 			cf: CfProperties;
 			ctx: ExecutionContext;
 		}
+
 		interface Locals {
-			auth: Auth;
-			session: AuthSession | null;
+			user?: {
+				id: string;
+				email: string;
+				name?: string | null;
+				role: string;
+				emailVerified: boolean;
+				image?: string | null;
+				createdAt: Date;
+				updatedAt: Date;
+			};
+			session?: {
+				id: string;
+				userId: string;
+				expiresAt: Date;
+				token: string;
+				createdAt: Date;
+				updatedAt: Date;
+			};
 		}
-		interface PageData {
-			session: AuthSession | null;
-		}
+
+		// interface Error {}
+		// interface PageData {}
+		// interface PageState {}
 	}
 }
 

@@ -1,411 +1,257 @@
 <script lang="ts">
-	import { useSession } from '$lib/auth';
-	import Button from '$lib/components/Button.svelte';
-	import {
-		ShoppingCart,
-		DollarSign,
-		TrendingUp,
-		AlertTriangle,
-		Package,
-		Clock,
-		ExternalLink,
-		ChevronRight,
-		Award
-	} from '@lucide/svelte';
-	import { jakartaTime } from '$lib/utils/datetime';
+	import { goto } from '$app/navigation';
 	import type { PageData } from './$types';
-	import DailySalesChart from '$lib/components/charts/DailySalesChart.svelte';
-	import ChannelPerformanceChart from '$lib/components/charts/ChannelPerformanceChart.svelte';
-	import ChannelComparisonChart from '$lib/components/charts/ChannelComparisonChart.svelte';
 
-	const session = useSession();
-	let { data }: { data: PageData } = $props();
-
-	function formatCurrency(amount: number) {
-		return new Intl.NumberFormat('id-ID', {
-			style: 'currency',
-			currency: 'IDR',
-			minimumFractionDigits: 0
-		}).format(amount);
+	interface Props {
+		data: PageData;
 	}
 
-	function getStockPercentage(current: number, minimum: number) {
-		if (minimum === 0) return 100;
-		return Math.round((current / minimum) * 100);
+	let { data }: Props = $props();
+
+	async function handleLogout() {
+		const response = await fetch('/api/auth/sign-out', {
+			method: 'POST'
+		});
+
+		if (response.ok) {
+			await goto('/');
+		}
 	}
 
-	function getStockStatus(current: number, minimum: number) {
-		if (current === 0) return { label: 'Out of Stock', class: 'text-error' };
-		if (current <= minimum) return { label: 'Low Stock', class: 'text-warning' };
-		return { label: 'In Stock', class: 'text-success' };
+	function getRoleBadgeColor(role: string) {
+		switch (role) {
+			case 'admin':
+				return 'bg-red-100 text-red-800';
+			case 'editor':
+				return 'bg-yellow-100 text-yellow-800';
+			case 'viewer':
+				return 'bg-green-100 text-green-800';
+			default:
+				return 'bg-gray-100 text-gray-800';
+		}
+	}
+
+	function getRolePermissions(role: string) {
+		switch (role) {
+			case 'admin':
+				return [
+					'Full system access',
+					'Manage users and roles',
+					'Create, edit, and delete content',
+					'View all content and analytics',
+					'System configuration'
+				];
+			case 'editor':
+				return ['Create and edit content', 'View all content', 'Publish content', 'View analytics'];
+			case 'viewer':
+				return ['View content', 'Read-only access', 'View own profile'];
+			default:
+				return [];
+		}
 	}
 </script>
 
-<svelte:head>
-	<title>Dashboard - Klimboys POS</title>
-</svelte:head>
-
-<div class="space-y-6">
-	<!-- Welcome Section -->
-	<div class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-		<div>
-			<h1 class="text-3xl font-bold">Welcome back, {$session.data?.user.name}!</h1>
-			<p class="text-base-content/70 mt-1">
-				Here's your store overview for {jakartaTime.dayDate(new Date())}
-			</p>
-		</div>
-		<Button variant="primary" href="/dashboard/transactions/new" icon={ShoppingCart}>
-			New Transaction
-		</Button>
-	</div>
-
-	<!-- Low Stock Alert -->
-	{#if data.lowStockItems.length > 0}
-		<div class="alert alert-warning shadow-lg">
-			<div class="flex w-full items-start justify-between">
-				<div class="flex items-start gap-3">
-					<AlertTriangle class="h-6 w-6 flex-shrink-0" />
-					<div class="space-y-1">
-						<h3 class="font-bold">Low Stock Alert</h3>
-						<p class="text-sm">
-							{data.stats.lowStockCount} items are running low.
-							{#if data.stats.outOfStockCount > 0}
-								<span class="font-semibold"
-									>{data.stats.outOfStockCount} items are out of stock!</span
-								>
-							{/if}
-						</p>
-						<div class="mt-2 flex flex-wrap gap-2">
-							{#each data.lowStockItems.slice(0, 3) as item}
-								{@const status = getStockStatus(item.currentStock, item.minimumStock)}
-								<div class="badge badge-outline">
-									<span class="{status.class} mr-1">•</span>
-									{item.name}: {item.currentStock}/{item.minimumStock}
-									{item.unit}
-								</div>
-							{/each}
-							{#if data.lowStockItems.length > 3}
-								<div class="badge badge-outline">+{data.lowStockItems.length - 3} more</div>
-							{/if}
-						</div>
+<div class="min-h-screen bg-gray-50">
+	<!-- Navigation -->
+	<nav class="bg-white shadow">
+		<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+			<div class="flex h-16 justify-between">
+				<div class="flex">
+					<div class="flex flex-shrink-0 items-center">
+						<h1 class="text-xl font-bold">Dashboard</h1>
+					</div>
+					<div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+						<a
+							href="/dashboard"
+							class="inline-flex items-center border-b-2 border-indigo-500 px-1 pt-1 text-sm font-medium text-gray-900"
+						>
+							Dashboard
+						</a>
+						{#if data.user?.role === 'admin'}
+							<a
+								href="/admin"
+								class="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+							>
+								Admin Panel
+							</a>
+						{/if}
 					</div>
 				</div>
-				<Button
-					size="sm"
-					variant="ghost"
-					href="/dashboard/inventory"
-					icon={ExternalLink}
-					class="flex-shrink-0"
-				>
-					View Inventory
-				</Button>
-			</div>
-		</div>
-	{/if}
-
-	<!-- Stats Grid -->
-	<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-		<div class="stats shadow">
-			<div class="stat">
-				<div class="stat-figure text-primary">
-					<ShoppingCart class="h-8 w-8" />
-				</div>
-				<div class="stat-title">Today's Transactions</div>
-				<div class="stat-value">{data.stats.todayTransactions}</div>
-				<div class="stat-desc">Updated in real-time</div>
-			</div>
-		</div>
-
-		<div class="stats shadow">
-			<div class="stat">
-				<div class="stat-figure text-success">
-					<DollarSign class="h-8 w-8" />
-				</div>
-				<div class="stat-title">Today's Revenue</div>
-				<div class="stat-value text-success">{formatCurrency(data.stats.todayRevenue)}</div>
-				<div class="stat-desc">Gross revenue</div>
-			</div>
-		</div>
-
-		<div class="stats shadow">
-			<div class="stat">
-				<div class="stat-figure text-info">
-					<TrendingUp class="h-8 w-8" />
-				</div>
-				<div class="stat-title">Month Revenue</div>
-				<div class="stat-value text-info">{formatCurrency(data.stats.monthRevenue)}</div>
-				<div class="stat-desc">{jakartaTime.monthYear(new Date())}</div>
-			</div>
-		</div>
-
-		<div class="stats shadow">
-			<div class="stat">
-				<div class="stat-figure text-warning">
-					<Package class="h-8 w-8" />
-				</div>
-				<div class="stat-title">Low Stock Items</div>
-				<div class="stat-value text-warning">{data.stats.lowStockCount}</div>
-				<div class="stat-desc">
-					{#if data.stats.outOfStockCount > 0}
-						<span class="text-error">{data.stats.outOfStockCount} out of stock</span>
-					{:else}
-						All items in stock
-					{/if}
+				<div class="flex items-center">
+					<span class="mr-4 text-sm text-gray-700">
+						{data.user?.email}
+					</span>
+					<button
+						onclick={handleLogout}
+						class="ml-3 inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none"
+					>
+						Sign out
+					</button>
 				</div>
 			</div>
 		</div>
-	</div>
+	</nav>
 
-	<!-- Daily Sales Chart -->
-	<DailySalesChart data={data.dailySalesData} height="400px" />
-
-	<!-- Channel Performance Section -->
-	<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-		<!-- Channel Revenue Distribution -->
-		<ChannelPerformanceChart data={data.channelPerformance} type="revenue" height="350px" />
-
-		<!-- Channel Transaction Distribution -->
-		<ChannelPerformanceChart data={data.channelPerformance} type="transactions" height="350px" />
-	</div>
-
-	<!-- Channel Comparison Chart -->
-	<ChannelComparisonChart
-		monthData={data.channelPerformance}
-		todayData={data.todayChannelPerformance}
-		height="400px"
-	/>
-
-	<!-- Content Grid -->
-	<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
-		<!-- Recent Transactions -->
-		<div class="lg:col-span-2">
-			<div class="bg-base-100 rounded-box shadow">
-				<div class="flex items-center justify-between border-b p-4">
-					<h3 class="text-lg font-bold">Recent Transactions</h3>
-					<Button size="sm" variant="ghost" href="/dashboard/transactions" icon={ChevronRight}>
-						View All
-					</Button>
-				</div>
-				<div class="overflow-x-auto">
-					<table class="table">
-						<thead>
-							<tr>
-								<th>Transaction #</th>
-								<th>Time</th>
-								<th>Items</th>
-								<th>Total</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each data.recentTransactions as trx}
-								<tr>
-									<td class="font-medium">{trx.transactionNumber}</td>
-									<td>
-										<div class="flex items-center gap-1">
-											<Clock class="text-base-content/50 h-4 w-4" />
-											<span class="text-sm">{jakartaTime.time(trx.createdAt)}</span>
-										</div>
-									</td>
-									<td>
-										<div class="flex flex-col gap-1">
-											{#each trx.items.slice(0, 2) as item}
-												<span class="text-sm">
-													{item.quantity}x {item.product?.title}
-												</span>
-											{/each}
-											{#if trx.items.length > 2}
-												<span class="text-base-content/50 text-sm"
-													>+{trx.items.length - 2} more</span
-												>
-											{/if}
-										</div>
-									</td>
-									<td class="font-semibold">{formatCurrency(trx.totalAmount)}</td>
-								</tr>
-							{:else}
-								<tr>
-									<td colspan="4" class="py-8 text-center text-base-content/50">
-										No transactions yet today.
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
-			</div>
-		</div>
-
-		<!-- Best Selling Products -->
-		<div>
-			<div class="bg-base-100 rounded-box shadow">
-				<div class="border-b p-4">
-					<h3 class="text-lg font-bold">Today's Best Sellers</h3>
-				</div>
-				<div class="p-4">
-					{#if data.bestSellingToday.length > 0}
-						<div class="space-y-3">
-							{#each data.bestSellingToday as product, index}
-								<div class="flex items-center justify-between">
-									<div class="flex items-center gap-3">
-										<div class="badge badge-lg font-bold">{index + 1}</div>
-										<div>
-											<p class="font-medium">{product.title}</p>
-											<p class="text-base-content/70 text-sm">
-												{product.totalQuantity} sold
-											</p>
-										</div>
-									</div>
-									<div class="text-right">
-										<p class="font-semibold">{formatCurrency(product.totalRevenue)}</p>
-									</div>
-								</div>
-							{/each}
+	<!-- Main Content -->
+	<main class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
+		{#if data.needsVerification}
+			<!-- Email Verification Warning -->
+			<div class="px-4 py-6 sm:px-0">
+				<div class="rounded-md bg-yellow-50 p-4">
+					<div class="flex">
+						<div class="flex-shrink-0">
+							<svg class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+								<path
+									fill-rule="evenodd"
+									d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+									clip-rule="evenodd"
+								/>
+							</svg>
 						</div>
-					{:else}
-						<div class="text-base-content/50 py-8 text-center">No sales data yet today.</div>
-					{/if}
-				</div>
-			</div>
-
-			<!-- Peak Hours Widget -->
-			<div class="bg-base-100 rounded-box mt-6 shadow">
-				<div class="border-b p-4">
-					<h3 class="flex items-center gap-2 text-lg font-bold">
-						<Clock class="h-5 w-5" />
-						Today's Peak Hours
-					</h3>
-				</div>
-				<div class="p-4">
-					{#if data.todayPeakHours.length > 0}
-						<div class="space-y-3">
-							{#each data.todayPeakHours as peak, index}
-								<div class="flex items-center justify-between">
-									<div class="flex items-center gap-3">
-										<div class="badge badge-lg badge-primary font-bold">{index + 1}</div>
-										<div>
-											<p class="font-medium">{peak.hour}:00 - {peak.hour + 1}:00</p>
-											<p class="text-base-content/70 text-sm">
-												{peak.transactions} transactions
-											</p>
-										</div>
-									</div>
-									<div class="text-right">
-										<p class="font-semibold">{formatCurrency(peak.revenue)}</p>
-									</div>
-								</div>
-							{/each}
-						</div>
-						<div class="divider"></div>
-						<div class="flex items-center justify-between">
-							<div class="text-sm">
-								<p class="font-medium">Current Hour ({data.currentHour}:00)</p>
-								<p class="text-base-content/70">
-									{data.stats.currentHourTransactions} transactions
+						<div class="ml-3">
+							<h3 class="text-sm font-medium text-yellow-800">Email verification required</h3>
+							<div class="mt-2 text-sm text-yellow-700">
+								<p>
+									Please verify your email address to access all features. Check your email for the
+									verification link.
 								</p>
 							</div>
-							<div class="text-right">
-								<p class="font-semibold">{formatCurrency(data.stats.currentHourRevenue)}</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		{/if}
+
+		<div class="px-4 py-6 sm:px-0">
+			<!-- User Info Card -->
+			<div class="overflow-hidden rounded-lg bg-white shadow">
+				<div class="px-4 py-5 sm:p-6">
+					<h3 class="text-lg leading-6 font-medium text-gray-900">
+						Welcome, {data.user?.name || data.user?.email}!
+					</h3>
+					<div class="mt-5">
+						<dl class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+							<div>
+								<dt class="text-sm font-medium text-gray-500">Email</dt>
+								<dd class="mt-1 text-sm text-gray-900">{data.user?.email}</dd>
 							</div>
-						</div>
-						<div class="mt-4">
-							<Button
-								size="sm"
-								variant="ghost"
-								href="/dashboard/analytics/peak-hours"
-								icon={ChevronRight}
-							>
-								View Full Analysis
-							</Button>
-						</div>
-					{:else}
-						<div class="text-base-content/50 py-4 text-center">No transactions yet today.</div>
-					{/if}
+							<div>
+								<dt class="text-sm font-medium text-gray-500">Role</dt>
+								<dd class="mt-1">
+									<span
+										class={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getRoleBadgeColor(data.user?.role || 'viewer')}`}
+									>
+										{data.user?.role?.toUpperCase()}
+									</span>
+								</dd>
+							</div>
+							<div>
+								<dt class="text-sm font-medium text-gray-500">Email Verified</dt>
+								<dd class="mt-1 text-sm text-gray-900">
+									{#if data.user?.emailVerified}
+										<span class="text-green-600">✓ Verified</span>
+									{:else}
+										<span class="text-red-600">✗ Not Verified</span>
+									{/if}
+								</dd>
+							</div>
+							<div>
+								<dt class="text-sm font-medium text-gray-500">Member Since</dt>
+								<dd class="mt-1 text-sm text-gray-900">
+									{new Date(data.user?.createdAt || '').toLocaleDateString()}
+								</dd>
+							</div>
+						</dl>
+					</div>
 				</div>
 			</div>
 
-			<!-- Top Cashiers Today (Admin Only) -->
-			{#if $session?.user?.role === 'admin' && data.topCashiersToday.length > 0}
-				<div class="bg-base-100 rounded-box mt-6 shadow">
-					<div class="border-b p-4">
-						<h3 class="text-lg font-bold">Top Cashiers Today</h3>
-					</div>
-					<div class="divide-y p-4">
-						{#each data.topCashiersToday as cashier, index}
-							<div class="py-3 first:pt-0 last:pb-0">
-								<div class="flex items-center justify-between">
-									<div class="flex items-center gap-3">
-										{#if index === 0}
-											<Award class="text-warning h-5 w-5" />
-										{:else}
-											<span class="text-base-content/50 w-5 text-center font-medium">
-												#{index + 1}
-											</span>
-										{/if}
-										<div>
-											<p class="font-medium">{cashier.cashierName}</p>
-											<p class="text-base-content/70 text-sm">
-												{cashier.transactions} transactions
-											</p>
-										</div>
-									</div>
-									<div class="text-right">
-										<p class="font-semibold">{formatCurrency(cashier.revenue)}</p>
-										<p class="text-base-content/50 text-xs">
-											Avg: {formatCurrency(cashier.revenue / cashier.transactions)}
-										</p>
-									</div>
-								</div>
-							</div>
+			<!-- Role Permissions Card -->
+			<div class="mt-6 overflow-hidden rounded-lg bg-white shadow">
+				<div class="px-4 py-5 sm:p-6">
+					<h3 class="text-lg leading-6 font-medium text-gray-900">Your Permissions</h3>
+					<p class="mt-1 text-sm text-gray-500">
+						As a {data.user?.role}, you have the following permissions:
+					</p>
+					<ul class="mt-4 space-y-2">
+						{#each getRolePermissions(data.user?.role || 'viewer') as permission (permission)}
+							<li class="flex items-start">
+								<svg
+									class="h-5 w-5 flex-shrink-0 text-green-400"
+									viewBox="0 0 20 20"
+									fill="currentColor"
+								>
+									<path
+										fill-rule="evenodd"
+										d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+										clip-rule="evenodd"
+									/>
+								</svg>
+								<span class="ml-2 text-sm text-gray-700">{permission}</span>
+							</li>
 						{/each}
-						<div class="mt-4">
-							<Button
-								size="sm"
-								variant="ghost"
-								href="/dashboard/analytics/cashier-performance"
-								icon={ChevronRight}
-							>
-								View All Performance
-							</Button>
-						</div>
-					</div>
+					</ul>
 				</div>
-			{/if}
+			</div>
 
-			<!-- Critical Low Stock Items -->
-			{#if data.lowStockItems.length > 0}
-				<div class="bg-base-100 rounded-box mt-6 shadow">
-					<div class="border-b p-4">
-						<h3 class="text-lg font-bold">Critical Stock Levels</h3>
-					</div>
-					<div class="divide-y p-4">
-						{#each data.lowStockItems.slice(0, 5) as item}
-							{@const percentage = getStockPercentage(item.currentStock, item.minimumStock)}
-							{@const status = getStockStatus(item.currentStock, item.minimumStock)}
-							<div class="py-3 first:pt-0 last:pb-0">
-								<div class="mb-2 flex items-start justify-between">
-									<div>
-										<p class="font-medium">{item.name}</p>
-										<p class="text-sm {status.class}">
-											{item.currentStock}/{item.minimumStock}
-											{item.unit} • {status.label}
-										</p>
-									</div>
-								</div>
-								<div class="bg-base-200 relative mt-2 h-2 w-full overflow-hidden rounded-full">
-									<div
-										class="h-full transition-all duration-300"
-										class:bg-error={item.currentStock === 0}
-										class:bg-warning={item.currentStock > 0 &&
-											item.currentStock <= item.minimumStock}
-										class:bg-success={item.currentStock > item.minimumStock}
-										style="width: {Math.min(percentage, 100)}%"
-									></div>
-								</div>
+			<!-- Quick Actions -->
+			<div class="mt-6">
+				<h3 class="mb-4 text-lg leading-6 font-medium text-gray-900">Quick Actions</h3>
+				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+					{#if data.user?.role === 'admin'}
+						<button
+							class="relative flex items-center space-x-3 rounded-lg border border-gray-300 bg-white px-6 py-4 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
+						>
+							<div class="min-w-0 flex-1">
+								<span class="absolute inset-0" aria-hidden="true"></span>
+								<p class="text-sm font-medium text-gray-900">Manage Users</p>
+								<p class="text-sm text-gray-500">Add, edit, or remove users</p>
 							</div>
-						{/each}
-					</div>
+						</button>
+						<button
+							class="relative flex items-center space-x-3 rounded-lg border border-gray-300 bg-white px-6 py-4 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
+						>
+							<div class="min-w-0 flex-1">
+								<span class="absolute inset-0" aria-hidden="true"></span>
+								<p class="text-sm font-medium text-gray-900">System Settings</p>
+								<p class="text-sm text-gray-500">Configure system preferences</p>
+							</div>
+						</button>
+					{/if}
+
+					{#if data.user?.role === 'admin' || data.user?.role === 'editor'}
+						<button
+							class="relative flex items-center space-x-3 rounded-lg border border-gray-300 bg-white px-6 py-4 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
+						>
+							<div class="min-w-0 flex-1">
+								<span class="absolute inset-0" aria-hidden="true"></span>
+								<p class="text-sm font-medium text-gray-900">Create Content</p>
+								<p class="text-sm text-gray-500">Add new articles or posts</p>
+							</div>
+						</button>
+					{/if}
+
+					<button
+						class="relative flex items-center space-x-3 rounded-lg border border-gray-300 bg-white px-6 py-4 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
+					>
+						<div class="min-w-0 flex-1">
+							<span class="absolute inset-0" aria-hidden="true"></span>
+							<p class="text-sm font-medium text-gray-900">View Content</p>
+							<p class="text-sm text-gray-500">Browse available content</p>
+						</div>
+					</button>
+
+					<button
+						class="relative flex items-center space-x-3 rounded-lg border border-gray-300 bg-white px-6 py-4 shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-2 hover:border-gray-400"
+					>
+						<div class="min-w-0 flex-1">
+							<span class="absolute inset-0" aria-hidden="true"></span>
+							<p class="text-sm font-medium text-gray-900">Profile Settings</p>
+							<p class="text-sm text-gray-500">Update your profile information</p>
+						</div>
+					</button>
 				</div>
-			{/if}
+			</div>
 		</div>
-	</div>
+	</main>
 </div>

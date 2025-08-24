@@ -26,8 +26,5 @@ vite.config.ts.timestamp-*
 *.db
 
 .dev.vars*
-
-#Claude
-.claude/
-CLAUDE.md
-/docs/
+!.dev.vars.example
+.env*
