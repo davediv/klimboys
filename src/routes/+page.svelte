@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { ArrowRight, Sparkles, Truck, Clock, Shield, Star, ChevronRight } from '@lucide/svelte';
+	import { ArrowRight, Sparkles, Truck, Clock, Shield, Star, ChevronRight, MessageCircle } from '@lucide/svelte';
+	import Mascot from '$lib/assets/klimboys-maskot.svg';
 
 	const features = [
 		{
@@ -76,20 +77,23 @@
 		name="description"
 		content="Experience the best milkshakes in town at Klimboys. Fresh ingredients, premium quality, and fast delivery."
 	/>
+	<meta name="theme-color" content="#FF6B6B" />
 </svelte:head>
 
 <!-- Hero Section -->
-<section class="hero min-h-[80vh] bg-gradient-to-br from-primary/10 via-base-100 to-secondary/10">
-	<div class="hero-content text-center">
-		<div class="max-w-3xl">
+<section class="hero min-h-[80vh] bg-gradient-to-br from-[#FF6B6B]/10 via-base-100 to-secondary/10" data-theme="light">
+	<div class="hero-content flex-col lg:flex-row-reverse">
+		<img src={Mascot} alt="Klimboys Mascot" class="max-w-sm w-full lg:w-1/2 rounded-lg" />
+		<div class="max-w-3xl text-center lg:text-left">
 			<div class="mb-4 inline-block">
-				<span class="badge gap-2 badge-lg badge-primary">
+				<span class="badge gap-2 badge-lg" style="background-color: #FF6B6B; color: white; border-color: #FF6B6B;">
 					<Sparkles class="h-4 w-4" />
 					Now Open for Delivery
 				</span>
 			</div>
 			<h1
-				class="bg-gradient-to-r from-primary to-secondary bg-clip-text text-5xl font-bold text-transparent md:text-7xl"
+				class="text-5xl font-bold md:text-7xl"
+				style="background: linear-gradient(to right, #FF6B6B, #FF8E8E); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;"
 			>
 				Shake Up Your Day
 			</h1>
@@ -97,19 +101,37 @@
 				Premium milkshakes crafted with love. From classic flavors to unique creations, experience
 				the perfect blend of taste and quality.
 			</p>
-			<div class="flex flex-col justify-center gap-4 sm:flex-row">
-				<a href="/menu" class="btn gap-2 btn-lg btn-primary">
+			<div class="flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
+				<a href="/menu" class="btn gap-2 btn-lg" style="background-color: #FF6B6B; color: white; border-color: #FF6B6B;">
 					View Menu
 					<ArrowRight class="h-5 w-5" />
 				</a>
-				<button class="btn btn-outline btn-lg">Order Now</button>
+				<a href="/go/whatsapp" class="btn btn-outline btn-lg gap-2">
+					<MessageCircle class="h-5 w-5" />
+					Order via WhatsApp
+				</a>
+			</div>
+			<!-- Delivery Partners -->
+			<div class="mt-8">
+				<p class="text-sm text-base-content/60 mb-3">Also available on:</p>
+				<div class="flex gap-4 flex-wrap justify-center lg:justify-start">
+					<a href="/go/gofood" class="btn btn-sm btn-ghost">
+						<span class="font-bold">GoFood</span>
+					</a>
+					<a href="/go/grabfood" class="btn btn-sm btn-ghost">
+						<span class="font-bold text-green-600">GrabFood</span>
+					</a>
+					<a href="/go/shopeefood" class="btn btn-sm btn-ghost">
+						<span class="font-bold text-orange-600">ShopeeFood</span>
+					</a>
+				</div>
 			</div>
 		</div>
 	</div>
 </section>
 
 <!-- Features Section -->
-<section class="px-4 py-20">
+<section class="px-4 py-20" data-theme="light">
 	<div class="container mx-auto">
 		<div class="mb-12 text-center">
 			<h2 class="mb-4 text-3xl font-bold md:text-4xl">Why Choose Klimboys?</h2>
@@ -143,7 +165,7 @@
 </section>
 
 <!-- Popular Items Section -->
-<section class="bg-base-200/50 px-4 py-20">
+<section class="bg-base-200/50 px-4 py-20" data-theme="light">
 	<div class="container mx-auto">
 		<div class="mb-12 flex items-center justify-between">
 			<div>
@@ -171,7 +193,7 @@
 						<h3 class="card-title">{item.name}</h3>
 						<p class="text-xl font-bold text-primary">{item.price}</p>
 						<div class="mt-4 card-actions justify-end">
-							<button class="btn w-full btn-sm btn-primary">Add to Cart</button>
+							<button class="btn w-full btn-sm" style="background-color: #FF6B6B; color: white; border-color: #FF6B6B;">Add to Cart</button>
 						</div>
 					</div>
 				</div>
@@ -181,17 +203,17 @@
 </section>
 
 <!-- CTA Section -->
-<section class="px-4 py-20">
+<section class="px-4 py-20" data-theme="light">
 	<div class="container mx-auto">
-		<div class="card bg-gradient-to-r from-primary to-secondary text-primary-content">
+		<div class="card text-white" style="background: linear-gradient(to right, #FF6B6B, #FF8E8E);">
 			<div class="card-body py-16 text-center">
 				<h2 class="mb-4 text-3xl font-bold md:text-4xl">Ready to Taste the Difference?</h2>
 				<p class="mx-auto mb-8 max-w-2xl text-lg opacity-90">
 					Join thousands of happy customers who made Klimboys their favorite milkshake destination.
 				</p>
 				<div class="flex flex-col justify-center gap-4 sm:flex-row">
-					<button class="btn btn-lg btn-neutral">Order Online</button>
-					<button class="btn text-primary-content btn-ghost btn-lg">Find Our Store</button>
+					<a href="/go/whatsapp" class="btn btn-lg btn-neutral">Order via WhatsApp</a>
+					<button class="btn text-white btn-ghost btn-lg">Find Our Store</button>
 				</div>
 			</div>
 		</div>
@@ -199,7 +221,7 @@
 </section>
 
 <!-- Testimonials Section -->
-<section class="bg-base-200/50 px-4 py-20">
+<section class="bg-base-200/50 px-4 py-20" data-theme="light">
 	<div class="container mx-auto">
 		<div class="mb-12 text-center">
 			<h2 class="mb-4 text-3xl font-bold md:text-4xl">What Our Customers Say</h2>
@@ -226,7 +248,7 @@
 </section>
 
 <!-- Newsletter Section -->
-<section class="px-4 py-20">
+<section class="px-4 py-20" data-theme="light">
 	<div class="container mx-auto max-w-2xl text-center">
 		<h2 class="mb-4 text-3xl font-bold md:text-4xl">Stay Updated</h2>
 		<p class="mb-8 text-base-content/70">
@@ -239,7 +261,7 @@
 				class="input-bordered input flex-1"
 				required
 			/>
-			<button type="submit" class="btn btn-primary">Subscribe</button>
+			<button type="submit" class="btn" style="background-color: #FF6B6B; color: white; border-color: #FF6B6B;">Subscribe</button>
 		</form>
 	</div>
 </section>
