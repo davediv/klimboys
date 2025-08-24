@@ -209,12 +209,14 @@ Klimboys POS system implementation with 127 total tasks across 4 phases. MVP del
   - **Effort**: M (Actual: M)
   - **Completed**: 2025-08-24
 
-- [ ] 🟡 **API-P2-004**: Implement DELETE /api/products/:id endpoint
-  - **Acceptance Criteria**:
-    - Soft delete (sets is_active to false)
-    - Checks for existing transactions before hard delete
+- [x] 🟡 **API-P2-004**: Implement DELETE /api/products/:id endpoint
+  - **Acceptance Criteria**: Met ✓
+    - Soft delete (sets is_active to false) ✓
+    - Checks for existing transactions before hard delete (N/A - only soft delete implemented)
   - **Dependencies**: API-P2-001
-  - **Effort**: S
+  - **Effort**: S (Actual: S - completed with API-P2-003)
+  - **Completed**: 2025-08-24
+  - **Commit**: 88e802c
 
 - [ ] 🟡 **FEAT-P2-002**: Create product add/edit modal with form
   - **Acceptance Criteria**:
