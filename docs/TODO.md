@@ -218,31 +218,34 @@ Klimboys POS system implementation with 127 total tasks across 4 phases. MVP del
   - **Completed**: 2025-08-24
   - **Commit**: 88e802c
 
-- [ ] 🟡 **FEAT-P2-002**: Create product add/edit modal with form
-  - **Acceptance Criteria**:
-    - Input fields for name, description, category
-    - Image upload component
-    - Variant management (sizes S/M/L)
-    - Price and cost input for each variant
+- [x] 🟡 **FEAT-P2-002**: Create product add/edit modal with form
+  - **Acceptance Criteria**: Met ✓
+    - Input fields for name, description, category ✓
+    - Image upload component (placeholder ready for FEAT-P2-003)
+    - Variant management (sizes S/M/L) ✓
+    - Price and cost input for each variant ✓
   - **Dependencies**: FEAT-P2-001
-  - **Effort**: L
+  - **Effort**: L (Actual: L)
+  - **Completed**: 2025-08-24
 
-- [ ] 🟡 **FEAT-P2-003**: Implement R2 image upload functionality
-  - **Acceptance Criteria**:
-    - Accept image files (jpg, png, webp)
-    - Upload to R2 bucket
-    - Return public URL
-    - Max file size 5MB
+- [x] 🟡 **FEAT-P2-003**: Implement R2 image upload functionality
+  - **Acceptance Criteria**: Met ✓
+    - Accept image files (jpg, png, webp) ✓
+    - Upload to R2 bucket ✓
+    - Return public URL ✓
+    - Max file size 5MB ✓
   - **Dependencies**: INFRA-P1-002, API-P2-002
-  - **Effort**: M
+  - **Effort**: M (Actual: M)
+  - **Completed**: 2025-08-24
 
-- [ ] 🟡 **API-P2-005**: Implement POST /api/products/:id/image endpoint
-  - **Acceptance Criteria**:
-    - Accepts multipart form data
-    - Uploads to R2 with unique filename
-    - Updates product image_url
+- [x] 🟡 **API-P2-005**: Implement POST /api/products/:id/image endpoint
+  - **Acceptance Criteria**: Met ✓
+    - Accepts multipart form data ✓
+    - Uploads to R2 with unique filename ✓
+    - Updates product image_url ✓
   - **Dependencies**: FEAT-P2-003
-  - **Effort**: M
+  - **Effort**: M (Actual: S - implemented with FEAT-P2-003)
+  - **Completed**: 2025-08-24
 
 - [ ] 🟡 **FEAT-P2-004**: Create product variant management interface
   - **Acceptance Criteria**:

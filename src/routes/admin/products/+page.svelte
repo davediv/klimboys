@@ -1,14 +1,29 @@
 <script lang="ts">
-	import type { PageData } from './$types';
-	import { Package, Plus, Edit, Trash2, Search, X, Save, AlertCircle } from '@lucide/svelte';
-
-	let { data }: { data: PageData } = $props();
+	import {
+		Package,
+		Plus,
+		Edit,
+		Trash2,
+		Search,
+		Save,
+		AlertCircle,
+		Upload,
+		Image
+	} from '@lucide/svelte';
 
 	let searchQuery = $state('');
 	let showAddModal = $state(false);
 	let showEditModal = $state(false);
 	let showDeleteModal = $state(false);
 	let selectedProduct = $state<any>(null);
+	let loading = $state(false);
+	let error = $state<string | null>(null);
+	let successMessage = $state<string | null>(null);
+
+	// Image upload states
+	let imageFile = $state<File | null>(null);
+	let uploadingImage = $state(false);
+	let imagePreview = $state<string | null>(null);
 
 	// Form states for add/edit
 	let formData = $state({
@@ -22,45 +37,34 @@
 		]
 	});
 
-	// Mock products for now - will be replaced with API call
-	let products = $state([
-		{
-			id: '1',
-			name: 'Vanilla Shake',
-			category: 'Classic',
-			description: 'Smooth vanilla shake made with premium vanilla',
-			imageUrl: '',
-			isActive: true,
-			variants: [
-				{ size: 'Regular', volumeMl: 250, costPrice: 2500, sellingPrice: 4500, stockQuantity: 50 },
-				{ size: 'Large', volumeMl: 500, costPrice: 4000, sellingPrice: 6500, stockQuantity: 30 }
-			]
-		},
-		{
-			id: '2',
-			name: 'Chocolate Shake',
-			category: 'Classic',
-			description: 'Rich chocolate shake with Belgian chocolate',
-			imageUrl: '',
-			isActive: true,
-			variants: [
-				{ size: 'Regular', volumeMl: 250, costPrice: 3000, sellingPrice: 5000, stockQuantity: 45 },
-				{ size: 'Large', volumeMl: 500, costPrice: 4500, sellingPrice: 7000, stockQuantity: 25 }
-			]
-		},
-		{
-			id: '3',
-			name: 'Strawberry Shake',
-			category: 'Fruity',
-			description: 'Fresh strawberry shake with real fruit',
-			imageUrl: '',
-			isActive: true,
-			variants: [
-				{ size: 'Regular', volumeMl: 250, costPrice: 2800, sellingPrice: 4800, stockQuantity: 40 },
-				{ size: 'Large', volumeMl: 500, costPrice: 4200, sellingPrice: 6800, stockQuantity: 20 }
-			]
+	// Products fetched from API
+	let products = $state<any[]>([]);
+
+	// Fetch products from API
+	async function fetchProducts() {
+		loading = true;
+		error = null;
+		try {
+			const response = await fetch('/api/products?limit=100&active=true');
+			if (!response.ok) {
+				throw new Error('Failed to fetch products');
+			}
+			const result = (await response.json()) as any;
+			if (result.success && result.data) {
+				products = result.data.products || [];
+			}
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to load products';
+			console.error('Error fetching products:', err);
+		} finally {
+			loading = false;
 		}
-	]);
+	}
+
+	// Load products on mount
+	$effect(() => {
+		fetchProducts();
+	});
 
 	let filteredProducts = $derived(
 		products.filter(
@@ -84,6 +88,8 @@
 				{ size: 'Large', volumeMl: 500, costPrice: 0, sellingPrice: 0, stockQuantity: 0 }
 			]
 		};
+		imageFile = null;
+		imagePreview = null;
 		showAddModal = true;
 	}
 
@@ -94,8 +100,16 @@
 			description: product.description,
 			category: product.category,
 			imageUrl: product.imageUrl || '',
-			variants: [...product.variants]
+			variants: product.variants.map((v: any) => ({
+				size: v.size,
+				volumeMl: v.volumeMl,
+				costPrice: v.costPrice / 100, // Convert from cents to currency
+				sellingPrice: v.sellingPrice / 100, // Convert from cents to currency
+				stockQuantity: v.stockQuantity
+			}))
 		};
+		imageFile = null;
+		imagePreview = product.imageUrl || null;
 		showEditModal = true;
 	}
 
@@ -104,44 +118,221 @@
 		showDeleteModal = true;
 	}
 
-	function handleAddProduct() {
-		// TODO: Call API to add product
-		const newProduct = {
-			id: String(products.length + 1),
-			...formData,
-			isActive: true
-		};
-		products = [...products, newProduct];
-		showAddModal = false;
-	}
-
-	function handleEditProduct() {
-		// TODO: Call API to update product
-		if (selectedProduct) {
-			const index = products.findIndex((p) => p.id === selectedProduct.id);
-			if (index !== -1) {
-				products[index] = {
-					...products[index],
-					...formData
-				};
+	async function handleAddProduct() {
+		loading = true;
+		error = null;
+		try {
+			// Validate form
+			if (!formData.name.trim()) {
+				error = 'Product name is required';
+				return;
 			}
+			if (!formData.category) {
+				error = 'Product category is required';
+				return;
+			}
+			if (formData.variants.length === 0) {
+				error = 'At least one variant is required';
+				return;
+			}
+
+			// First, create the product
+			const response = await fetch('/api/products', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					name: formData.name,
+					description: formData.description || null,
+					category: formData.category,
+					imageUrl: formData.imageUrl || null,
+					isActive: true,
+					variants: formData.variants.map((v) => ({
+						size: v.size,
+						volumeMl: v.volumeMl,
+						costPrice: v.costPrice * 100, // Convert to cents
+						sellingPrice: v.sellingPrice * 100, // Convert to cents
+						stockQuantity: v.stockQuantity
+					}))
+				})
+			});
+
+			if (!response.ok) {
+				const errorData = (await response.json()) as any;
+				throw new Error(errorData.error || 'Failed to add product');
+			}
+
+			const result = (await response.json()) as any;
+			if (result.success && result.data) {
+				const productId = result.data.product.id;
+
+				// Upload image if file selected
+				if (imageFile) {
+					try {
+						const imageUrl = await uploadImage(productId);
+						if (imageUrl) {
+							// Image uploaded successfully, it's already associated with the product
+							successMessage = 'Product added with image successfully!';
+						}
+					} catch (imgErr) {
+						// Product created but image upload failed
+						console.error('Image upload failed:', imgErr);
+						successMessage = 'Product added, but image upload failed';
+					}
+				} else {
+					successMessage = 'Product added successfully!';
+				}
+
+				showAddModal = false;
+				await fetchProducts(); // Refresh the list
+				setTimeout(() => (successMessage = null), 3000);
+			}
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to add product';
+			console.error('Error adding product:', err);
+		} finally {
+			loading = false;
 		}
-		showEditModal = false;
 	}
 
-	function handleDeleteProduct() {
-		// TODO: Call API to delete product
-		if (selectedProduct) {
-			products = products.filter((p) => p.id !== selectedProduct.id);
+	async function handleEditProduct() {
+		if (!selectedProduct) return;
+
+		loading = true;
+		error = null;
+		try {
+			// Validate form
+			if (!formData.name.trim()) {
+				error = 'Product name is required';
+				return;
+			}
+			if (!formData.category) {
+				error = 'Product category is required';
+				return;
+			}
+			if (formData.variants.length === 0) {
+				error = 'At least one variant is required';
+				return;
+			}
+
+			// Upload image first if file selected
+			let newImageUrl = formData.imageUrl;
+			if (imageFile) {
+				try {
+					const uploadedUrl = await uploadImage(selectedProduct.id);
+					if (uploadedUrl) {
+						newImageUrl = uploadedUrl;
+					}
+				} catch (imgErr) {
+					console.error('Image upload failed:', imgErr);
+					// Continue with update even if image upload fails
+				}
+			}
+
+			const response = await fetch(`/api/products/${selectedProduct.id}`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					name: formData.name,
+					description: formData.description || null,
+					category: formData.category,
+					imageUrl: newImageUrl || null,
+					variants: formData.variants.map((v) => ({
+						size: v.size,
+						volumeMl: v.volumeMl,
+						costPrice: v.costPrice * 100, // Convert to cents
+						sellingPrice: v.sellingPrice * 100, // Convert to cents
+						stockQuantity: v.stockQuantity
+					}))
+				})
+			});
+
+			if (!response.ok) {
+				const errorData = (await response.json()) as any;
+				throw new Error(errorData.error || 'Failed to update product');
+			}
+
+			const result = (await response.json()) as any;
+			if (result.success) {
+				successMessage = imageFile
+					? 'Product and image updated successfully!'
+					: 'Product updated successfully!';
+				showEditModal = false;
+				await fetchProducts(); // Refresh the list
+				setTimeout(() => (successMessage = null), 3000);
+			}
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to update product';
+			console.error('Error updating product:', err);
+		} finally {
+			loading = false;
 		}
-		showDeleteModal = false;
 	}
 
-	function toggleProductStatus(productId: string) {
-		// TODO: Call API to toggle status
+	async function handleDeleteProduct() {
+		if (!selectedProduct) return;
+
+		loading = true;
+		error = null;
+		try {
+			const response = await fetch(`/api/products/${selectedProduct.id}`, {
+				method: 'DELETE'
+			});
+
+			if (!response.ok) {
+				const errorData = (await response.json()) as any;
+				throw new Error(errorData.error || 'Failed to delete product');
+			}
+
+			const result = (await response.json()) as any;
+			if (result.success) {
+				successMessage = 'Product deleted successfully!';
+				showDeleteModal = false;
+				await fetchProducts(); // Refresh the list
+				setTimeout(() => (successMessage = null), 3000);
+			}
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to delete product';
+			console.error('Error deleting product:', err);
+		} finally {
+			loading = false;
+		}
+	}
+
+	async function toggleProductStatus(productId: string) {
 		const product = products.find((p) => p.id === productId);
-		if (product) {
-			product.isActive = !product.isActive;
+		if (!product) return;
+
+		loading = true;
+		error = null;
+		try {
+			const response = await fetch(`/api/products/${productId}`, {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					isActive: !product.isActive
+				})
+			});
+
+			if (!response.ok) {
+				const errorData = (await response.json()) as any;
+				throw new Error(errorData.error || 'Failed to toggle product status');
+			}
+
+			const result = (await response.json()) as any;
+			if (result.success) {
+				await fetchProducts(); // Refresh the list
+			}
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Failed to toggle product status';
+			console.error('Error toggling product status:', err);
+		} finally {
+			loading = false;
 		}
 	}
 
@@ -152,16 +343,117 @@
 			minimumFractionDigits: 0
 		}).format(amount);
 	}
+
+	// Handle file selection
+	function handleFileSelect(event: Event) {
+		const input = event.target as HTMLInputElement;
+		const file = input.files?.[0];
+
+		if (file) {
+			// Validate file type
+			const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+			if (!allowedTypes.includes(file.type)) {
+				error = 'Only JPEG, PNG, and WebP images are allowed';
+				return;
+			}
+
+			// Validate file size (5MB)
+			if (file.size > 5 * 1024 * 1024) {
+				error = 'File size must be less than 5MB';
+				return;
+			}
+
+			imageFile = file;
+
+			// Create preview
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				imagePreview = e.target?.result as string;
+			};
+			reader.readAsDataURL(file);
+		}
+	}
+
+	// Upload image to R2
+	async function uploadImage(productId?: string): Promise<string | null> {
+		if (!imageFile) return null;
+
+		uploadingImage = true;
+		try {
+			const formData = new FormData();
+			formData.append('file', imageFile);
+
+			const endpoint = productId ? `/api/products/${productId}/image` : '/api/upload';
+
+			const response = await fetch(endpoint, {
+				method: 'POST',
+				body: formData
+			});
+
+			if (!response.ok) {
+				const errorData = (await response.json()) as any;
+				throw new Error(errorData.error || 'Failed to upload image');
+			}
+
+			const result = (await response.json()) as any;
+			if (result.success && result.data) {
+				if (productId) {
+					return result.data.image?.url || null;
+				}
+				return result.data.url || null;
+			}
+			return null;
+		} catch (err) {
+			console.error('Error uploading image:', err);
+			throw err;
+		} finally {
+			uploadingImage = false;
+		}
+	}
+
+	// Remove selected image
+	function removeImage() {
+		imageFile = null;
+		imagePreview = null;
+		formData.imageUrl = '';
+	}
 </script>
 
 <div class="container mx-auto p-4">
+	<!-- Success/Error Messages -->
+	{#if successMessage}
+		<div class="mb-4 alert alert-success">
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				class="h-6 w-6 shrink-0 stroke-current"
+				fill="none"
+				viewBox="0 0 24 24"
+			>
+				<path
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					stroke-width="2"
+					d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+				/>
+			</svg>
+			<span>{successMessage}</span>
+		</div>
+	{/if}
+
+	{#if error && !showAddModal && !showEditModal && !showDeleteModal}
+		<div class="mb-4 alert alert-error">
+			<AlertCircle class="h-6 w-6" />
+			<span>{error}</span>
+		</div>
+	{/if}
+
 	<!-- Header -->
 	<div class="mb-6 flex items-center justify-between">
 		<div>
 			<h1 class="text-3xl font-bold">Product Management</h1>
 			<p class="text-base-content/70">Manage your product catalog</p>
 		</div>
-		<button class="btn btn-primary" onclick={openAddModal}>
+		<button class="btn btn-primary" onclick={openAddModal} disabled={loading}>
 			<Plus class="h-5 w-5" />
 			Add Product
 		</button>
@@ -202,80 +494,105 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each filteredProducts as product}
+						{#if loading && products.length === 0}
 							<tr>
-								<td>
-									<div class="flex items-center space-x-3">
-										<div class="avatar">
-											<div class="mask h-12 w-12 bg-base-200 mask-squircle">
-												{#if product.imageUrl}
-													<img src={product.imageUrl} alt={product.name} />
-												{:else}
-													<Package class="m-auto mt-2 h-8 w-8" />
-												{/if}
-											</div>
-										</div>
-										<div>
-											<div class="font-bold">{product.name}</div>
-											<div class="text-sm opacity-50">{product.description}</div>
-										</div>
-									</div>
-								</td>
-								<td>{product.category}</td>
-								<td>
-									<div class="space-y-1 text-sm">
-										{#each product.variants as variant}
-											<div>
-												<span class="font-medium">{variant.size}</span>
-												<span class="text-xs opacity-70">({variant.volumeMl}ml)</span>:
-												{formatCurrency(variant.sellingPrice)}
-											</div>
-										{/each}
-									</div>
-								</td>
-								<td>
-									<div class="space-y-1 text-sm">
-										{#each product.variants as variant}
-											<div class="flex items-center gap-2">
-												<span class="font-medium">{variant.size}:</span>
-												<span
-													class="badge {variant.stockQuantity < 10
-														? 'badge-error'
-														: variant.stockQuantity < 20
-															? 'badge-warning'
-															: 'badge-success'} badge-sm"
-												>
-													{variant.stockQuantity}
-												</span>
-											</div>
-										{/each}
-									</div>
-								</td>
-								<td>
-									<button
-										onclick={() => toggleProductStatus(product.id)}
-										class="badge {product.isActive
-											? 'badge-success'
-											: 'badge-error'} cursor-pointer"
-									>
-										{product.isActive ? 'Active' : 'Inactive'}
-									</button>
-								</td>
-								<td>
-									<div class="flex gap-2">
-										<button class="btn btn-ghost btn-xs" onclick={() => openEditModal(product)}>
-											<Edit class="h-4 w-4" />
-										</button>
-										<button
-											class="btn text-error btn-ghost btn-xs"
-											onclick={() => openDeleteModal(product)}
-										>
-											<Trash2 class="h-4 w-4" />
-										</button>
-									</div>
+								<td colspan="6" class="py-8 text-center">
+									<span class="loading loading-lg loading-spinner"></span>
+									<p class="mt-2">Loading products...</p>
 								</td>
 							</tr>
-						{/each}
+						{:else if products.length === 0}
+							<tr>
+								<td colspan="6" class="py-8 text-center">
+									<Package class="mx-auto mb-2 h-12 w-12 opacity-50" />
+									<p>No products found</p>
+									<button class="btn mt-2 btn-sm btn-primary" onclick={openAddModal}>
+										Add your first product
+									</button>
+								</td>
+							</tr>
+						{:else}
+							{#each filteredProducts as product}
+								<tr>
+									<td>
+										<div class="flex items-center space-x-3">
+											<div class="avatar">
+												<div class="mask h-12 w-12 bg-base-200 mask-squircle">
+													{#if product.imageUrl}
+														<img src={product.imageUrl} alt={product.name} />
+													{:else}
+														<Package class="m-auto mt-2 h-8 w-8" />
+													{/if}
+												</div>
+											</div>
+											<div>
+												<div class="font-bold">{product.name}</div>
+												<div class="text-sm opacity-50">{product.description}</div>
+											</div>
+										</div>
+									</td>
+									<td>{product.category}</td>
+									<td>
+										<div class="space-y-1 text-sm">
+											{#each product.variants as variant}
+												<div>
+													<span class="font-medium">{variant.size}</span>
+													<span class="text-xs opacity-70">({variant.volumeMl}ml)</span>:
+													{formatCurrency(variant.sellingPrice / 100)}
+												</div>
+											{/each}
+										</div>
+									</td>
+									<td>
+										<div class="space-y-1 text-sm">
+											{#each product.variants as variant}
+												<div class="flex items-center gap-2">
+													<span class="font-medium">{variant.size}:</span>
+													<span
+														class="badge {variant.stockQuantity < 10
+															? 'badge-error'
+															: variant.stockQuantity < 20
+																? 'badge-warning'
+																: 'badge-success'} badge-sm"
+													>
+														{variant.stockQuantity}
+													</span>
+												</div>
+											{/each}
+										</div>
+									</td>
+									<td>
+										<button
+											onclick={() => toggleProductStatus(product.id)}
+											class="badge {product.isActive
+												? 'badge-success'
+												: 'badge-error'} cursor-pointer"
+											disabled={loading}
+										>
+											{product.isActive ? 'Active' : 'Inactive'}
+										</button>
+									</td>
+									<td>
+										<div class="flex gap-2">
+											<button
+												class="btn btn-ghost btn-xs"
+												onclick={() => openEditModal(product)}
+												disabled={loading}
+											>
+												<Edit class="h-4 w-4" />
+											</button>
+											<button
+												class="btn text-error btn-ghost btn-xs"
+												onclick={() => openDeleteModal(product)}
+												disabled={loading}
+											>
+												<Trash2 class="h-4 w-4" />
+											</button>
+										</div>
+									</td>
+								</tr>
+							{/each}
+						{/if}
 					</tbody>
 				</table>
 
@@ -293,6 +610,13 @@
 		<div class="modal-box max-w-3xl">
 			<h3 class="mb-4 text-lg font-bold">Add New Product</h3>
 
+			{#if error}
+				<div class="mb-4 alert alert-error">
+					<AlertCircle class="h-5 w-5" />
+					<span>{error}</span>
+				</div>
+			{/if}
+
 			<div class="space-y-4">
 				<!-- Basic Info -->
 				<div class="form-control">
@@ -327,6 +651,50 @@
 							<option value={category}>{category}</option>
 						{/each}
 					</select>
+				</div>
+
+				<!-- Image Upload -->
+				<div class="form-control">
+					<label class="label">
+						<span class="label-text">Product Image</span>
+					</label>
+
+					{#if imagePreview}
+						<div class="mb-4">
+							<img
+								src={imagePreview}
+								alt="Product preview"
+								class="mx-auto h-32 w-32 rounded-lg object-cover"
+							/>
+							<button type="button" class="btn mt-2 w-full btn-sm btn-error" onclick={removeImage}>
+								Remove Image
+							</button>
+						</div>
+					{/if}
+
+					<div class="flex gap-2">
+						<input
+							type="file"
+							accept="image/jpeg,image/png,image/webp"
+							onchange={handleFileSelect}
+							class="file-input-bordered file-input flex-1"
+							disabled={uploadingImage || loading}
+						/>
+					</div>
+
+					<div class="label">
+						<span class="label-text-alt">Or enter image URL</span>
+					</div>
+					<input
+						type="url"
+						placeholder="https://example.com/image.jpg"
+						class="input-bordered input"
+						bind:value={formData.imageUrl}
+						disabled={imageFile !== null}
+					/>
+					<div class="label">
+						<span class="label-text-alt">Accepted formats: JPEG, PNG, WebP (max 5MB)</span>
+					</div>
 				</div>
 
 				<!-- Variants -->
@@ -383,9 +751,20 @@
 			</div>
 
 			<div class="modal-action">
-				<button class="btn btn-ghost" onclick={() => (showAddModal = false)}>Cancel</button>
-				<button class="btn btn-primary" onclick={handleAddProduct}>
-					<Save class="h-4 w-4" />
+				<button
+					class="btn btn-ghost"
+					onclick={() => {
+						showAddModal = false;
+						error = null;
+					}}
+					disabled={loading}>Cancel</button
+				>
+				<button class="btn btn-primary" onclick={handleAddProduct} disabled={loading}>
+					{#if loading || uploadingImage}
+						<span class="loading loading-sm loading-spinner"></span>
+					{:else}
+						<Save class="h-4 w-4" />
+					{/if}
 					Add Product
 				</button>
 			</div>
@@ -401,6 +780,13 @@
 		<div class="modal-box max-w-3xl">
 			<h3 class="mb-4 text-lg font-bold">Edit Product</h3>
 
+			{#if error}
+				<div class="mb-4 alert alert-error">
+					<AlertCircle class="h-5 w-5" />
+					<span>{error}</span>
+				</div>
+			{/if}
+
 			<div class="space-y-4">
 				<!-- Basic Info -->
 				<div class="form-control">
@@ -435,6 +821,50 @@
 							<option value={category}>{category}</option>
 						{/each}
 					</select>
+				</div>
+
+				<!-- Image Upload -->
+				<div class="form-control">
+					<label class="label">
+						<span class="label-text">Product Image</span>
+					</label>
+
+					{#if imagePreview}
+						<div class="mb-4">
+							<img
+								src={imagePreview}
+								alt="Product preview"
+								class="mx-auto h-32 w-32 rounded-lg object-cover"
+							/>
+							<button type="button" class="btn mt-2 w-full btn-sm btn-error" onclick={removeImage}>
+								Remove Image
+							</button>
+						</div>
+					{/if}
+
+					<div class="flex gap-2">
+						<input
+							type="file"
+							accept="image/jpeg,image/png,image/webp"
+							onchange={handleFileSelect}
+							class="file-input-bordered file-input flex-1"
+							disabled={uploadingImage || loading}
+						/>
+					</div>
+
+					<div class="label">
+						<span class="label-text-alt">Or enter image URL</span>
+					</div>
+					<input
+						type="url"
+						placeholder="https://example.com/image.jpg"
+						class="input-bordered input"
+						bind:value={formData.imageUrl}
+						disabled={imageFile !== null}
+					/>
+					<div class="label">
+						<span class="label-text-alt">Accepted formats: JPEG, PNG, WebP (max 5MB)</span>
+					</div>
 				</div>
 
 				<!-- Variants -->
@@ -491,9 +921,20 @@
 			</div>
 
 			<div class="modal-action">
-				<button class="btn btn-ghost" onclick={() => (showEditModal = false)}>Cancel</button>
-				<button class="btn btn-primary" onclick={handleEditProduct}>
-					<Save class="h-4 w-4" />
+				<button
+					class="btn btn-ghost"
+					onclick={() => {
+						showEditModal = false;
+						error = null;
+					}}
+					disabled={loading}>Cancel</button
+				>
+				<button class="btn btn-primary" onclick={handleEditProduct} disabled={loading}>
+					{#if loading || uploadingImage}
+						<span class="loading loading-sm loading-spinner"></span>
+					{:else}
+						<Save class="h-4 w-4" />
+					{/if}
 					Save Changes
 				</button>
 			</div>
@@ -509,9 +950,16 @@
 		<div class="modal-box">
 			<h3 class="mb-4 text-lg font-bold">Delete Product</h3>
 
+			{#if error}
+				<div class="mb-4 alert alert-error">
+					<AlertCircle class="h-5 w-5" />
+					<span>{error}</span>
+				</div>
+			{/if}
+
 			<div class="mb-4 alert alert-warning">
 				<AlertCircle class="h-6 w-6" />
-				<span>This action cannot be undone. The product will be permanently deleted.</span>
+				<span>This will mark the product as inactive. It can be reactivated later if needed.</span>
 			</div>
 
 			{#if selectedProduct}
@@ -521,9 +969,20 @@
 			{/if}
 
 			<div class="modal-action">
-				<button class="btn btn-ghost" onclick={() => (showDeleteModal = false)}>Cancel</button>
-				<button class="btn btn-error" onclick={handleDeleteProduct}>
-					<Trash2 class="h-4 w-4" />
+				<button
+					class="btn btn-ghost"
+					onclick={() => {
+						showDeleteModal = false;
+						error = null;
+					}}
+					disabled={loading}>Cancel</button
+				>
+				<button class="btn btn-error" onclick={handleDeleteProduct} disabled={loading}>
+					{#if loading}
+						<span class="loading loading-sm loading-spinner"></span>
+					{:else}
+						<Trash2 class="h-4 w-4" />
+					{/if}
 					Delete Product
 				</button>
 			</div>
