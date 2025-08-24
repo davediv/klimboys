@@ -1,22 +1,16 @@
-import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import { routeGuard } from '$lib/server/guards';
 
-export const load: PageServerLoad = async ({ locals }) => {
-	// Redirect to login if not authenticated
-	if (!locals.user) {
-		throw redirect(302, '/login?redirectTo=/dashboard');
-	}
-
-	// Check if email is verified
-	if (!locals.user.emailVerified) {
-		return {
-			user: locals.user,
-			needsVerification: true
-		};
-	}
+export const load: PageServerLoad = async (event) => {
+	// Require authentication, verification, and at least cashier role
+	const user = routeGuard(event, {
+		requireAuth: true,
+		requireVerified: false, // Allow unverified users to see verification message
+		minRole: 'cashier'
+	});
 
 	return {
-		user: locals.user,
-		needsVerification: false
+		user,
+		needsVerification: user && !user.emailVerified
 	};
 };
