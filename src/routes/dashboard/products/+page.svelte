@@ -12,6 +12,9 @@
 		X
 	} from '@lucide/svelte';
 	import { formatIdr } from '$lib/format';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
 
 	let searchQuery = $state('');
 	let showAddModal = $state(false);
@@ -19,7 +22,7 @@
 	let showDeleteModal = $state(false);
 	let selectedProduct = $state<any>(null);
 	let loading = $state(false);
-	let error = $state<string | null>(null);
+	let error = $state<string | null>(data.productsError);
 	let successMessage = $state<string | null>(null);
 
 	// Image upload states
@@ -43,7 +46,7 @@
 	});
 
 	// Products fetched from API
-	let products = $state<any[]>([]);
+	let products = $state<any[]>(data.products);
 
 	// Fetch products from API
 	async function fetchProducts() {
@@ -65,11 +68,6 @@
 			loading = false;
 		}
 	}
-
-	// Load products on mount
-	$effect(() => {
-		fetchProducts();
-	});
 
 	let filteredProducts = $derived(
 		products.filter(
