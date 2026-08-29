@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Search, Package } from '@lucide/svelte';
+	import { formatIdr } from '$lib/format';
 
 	type ProductVariant = {
 		id: string;
@@ -145,15 +146,6 @@
 		}
 	}
 
-	// Format price
-	function formatPrice(amount: number) {
-		return new Intl.NumberFormat('id-ID', {
-			style: 'currency',
-			currency: 'IDR',
-			minimumFractionDigits: 0
-		}).format(amount);
-	}
-
 	// Lifecycle
 	$effect(() => {
 		if (typeof window !== 'undefined') {
@@ -246,7 +238,7 @@
 											>
 												<span class="font-medium">{variant.size}</span>
 												<span class="text-xs opacity-70">
-													{formatPrice(variant.sellingPrice / 100)}
+													{formatIdr(variant.sellingPrice / 100)}
 												</span>
 												{#if variant.stockQuantity < 10}
 													<span class="badge badge-xs badge-warning">Low</span>

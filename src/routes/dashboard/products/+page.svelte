@@ -11,6 +11,7 @@
 		Image,
 		X
 	} from '@lucide/svelte';
+	import { formatIdr } from '$lib/format';
 
 	let searchQuery = $state('');
 	let showAddModal = $state(false);
@@ -382,14 +383,6 @@
 		}
 	}
 
-	function formatCurrency(amount: number) {
-		return new Intl.NumberFormat('id-ID', {
-			style: 'currency',
-			currency: 'IDR',
-			minimumFractionDigits: 0
-		}).format(amount);
-	}
-
 	// Handle file selection
 	function handleFileSelect(event: Event) {
 		const input = event.target as HTMLInputElement;
@@ -584,7 +577,7 @@
 												<div>
 													<span class="font-medium">{variant.size}</span>
 													<span class="text-xs opacity-70">({variant.volumeMl}ml)</span>:
-													{formatCurrency(variant.sellingPrice / 100)}
+													{formatIdr(variant.sellingPrice / 100)}
 												</div>
 											{/each}
 										</div>
@@ -848,7 +841,7 @@
 							</div>
 							{#if variant.sellingPrice > 0 && variant.costPrice > 0}
 								<div class="mt-2 text-xs text-base-content/70">
-									Profit Margin: {formatCurrency(variant.sellingPrice - variant.costPrice)}
+									Profit Margin: {formatIdr(variant.sellingPrice - variant.costPrice)}
 									({Math.round(
 										((variant.sellingPrice - variant.costPrice) / variant.costPrice) * 100
 									)}%)
@@ -1081,7 +1074,7 @@
 							</div>
 							{#if variant.sellingPrice > 0 && variant.costPrice > 0}
 								<div class="mt-2 text-xs text-base-content/70">
-									Profit Margin: {formatCurrency(variant.sellingPrice - variant.costPrice)}
+									Profit Margin: {formatIdr(variant.sellingPrice - variant.costPrice)}
 									({Math.round(
 										((variant.sellingPrice - variant.costPrice) / variant.costPrice) * 100
 									)}%)

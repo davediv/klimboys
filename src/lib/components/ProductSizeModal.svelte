@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { X, Package } from '@lucide/svelte';
+	import { formatIdr } from '$lib/format';
 
 	interface Props {
 		product: any;
@@ -24,14 +25,6 @@
 			onClose();
 			selectedVariant = null;
 		}
-	}
-
-	function formatCurrency(amount: number) {
-		return new Intl.NumberFormat('id-ID', {
-			style: 'currency',
-			currency: 'IDR',
-			minimumFractionDigits: 0
-		}).format(amount);
 	}
 </script>
 
@@ -95,7 +88,7 @@
 								<div class="text-center">
 									<p class="font-semibold">{variant.size}</p>
 									<p class="mt-1 text-xs text-gray-600">
-										{formatCurrency(variant.sellingPrice / 100)}
+										{formatIdr(variant.sellingPrice / 100)}
 									</p>
 									{#if variant.stockQuantity < 10 && variant.stockQuantity > 0}
 										<span class="absolute top-1 right-1 badge badge-xs badge-warning">
@@ -123,7 +116,7 @@
 								</p>
 							</div>
 							<p class="text-lg font-bold text-[#FF6B6B]">
-								{formatCurrency(selectedVariant.sellingPrice / 100)}
+								{formatIdr(selectedVariant.sellingPrice / 100)}
 							</p>
 						</div>
 					</div>

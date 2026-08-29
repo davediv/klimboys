@@ -3,6 +3,7 @@
 	import { ShoppingCart, Plus, Minus, Trash2, Package, CreditCard } from '@lucide/svelte';
 	import ProductSearch from '$lib/components/ProductSearch.svelte';
 	import ProductSizeModal from '$lib/components/ProductSizeModal.svelte';
+	import { formatIdr } from '$lib/format';
 
 	let { data }: { data: PageData } = $props();
 
@@ -129,14 +130,6 @@
 		cart = [];
 		orderNotes = '';
 	}
-
-	function formatCurrency(amount: number) {
-		return new Intl.NumberFormat('id-ID', {
-			style: 'currency',
-			currency: 'IDR',
-			minimumFractionDigits: 0
-		}).format(amount);
-	}
 </script>
 
 <div class="container mx-auto p-4">
@@ -191,7 +184,7 @@
 											<span class="text-xs font-bold">{product.name}</span>
 											<span class="text-xs opacity-70">Size {variant.size}</span>
 											<span class="text-sm font-semibold">
-												{formatCurrency(variant.sellingPrice / 100)}
+												{formatIdr(variant.sellingPrice / 100)}
 											</span>
 											{#if variant.stockQuantity < 10}
 												<span class="badge badge-xs badge-warning">Low Stock</span>
@@ -243,7 +236,7 @@
 												<h4 class="font-semibold">{item.name}</h4>
 												<p class="text-sm text-base-content/70">Size {item.variant}</p>
 												<p class="text-sm font-medium">
-													{formatCurrency(item.price / 100)} each
+													{formatIdr(item.price / 100)} each
 												</p>
 											</div>
 										</div>
@@ -272,7 +265,7 @@
 									<div class="divider my-2"></div>
 									<div class="flex justify-between font-semibold">
 										<span>Subtotal:</span>
-										<span>{formatCurrency((item.price * item.quantity) / 100)}</span>
+										<span>{formatIdr((item.price * item.quantity) / 100)}</span>
 									</div>
 								</div>
 							</div>
@@ -329,7 +322,7 @@
 					<div class="space-y-3">
 						<div class="flex justify-between text-xl font-bold">
 							<span>Total:</span>
-							<span class="text-primary">{formatCurrency(total / 100)}</span>
+							<span class="text-primary">{formatIdr(total / 100)}</span>
 						</div>
 						<button
 							onclick={processTransaction}
