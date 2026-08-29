@@ -31,34 +31,10 @@
 	let selectedProduct = $state<any>(null);
 
 	// Popular products state
-	let popularProducts = $state<any[]>([]);
-	let loadingProducts = $state(false);
+	let popularProducts = $state<any[]>(data.popularProducts);
 
 	// Calculate total
 	let total = $derived(cart.reduce((sum, item) => sum + item.price * item.quantity, 0));
-
-	// Fetch popular products on mount
-	async function fetchPopularProducts() {
-		loadingProducts = true;
-		try {
-			const response = await fetch('/api/products?limit=6&active=true&includeMeta=false');
-			if (response.ok) {
-				const result = (await response.json()) as any;
-				if (result.success && result.data) {
-					popularProducts = result.data.products || [];
-				}
-			}
-		} catch (error) {
-			console.error('Failed to fetch popular products:', error);
-		} finally {
-			loadingProducts = false;
-		}
-	}
-
-	// Load popular products on mount
-	$effect(() => {
-		fetchPopularProducts();
-	});
 
 	// Handle product selection from search - show modal if no variant specified
 	function handleProductSelect(product: any, variant?: any) {
@@ -158,11 +134,7 @@
 				<!-- Popular Products Grid -->
 				<div class="divider">Popular Products</div>
 
-				{#if loadingProducts}
-					<div class="flex justify-center py-8">
-						<span class="loading loading-lg loading-spinner"></span>
-					</div>
-				{:else if popularProducts.length > 0}
+				{#if popularProducts.length > 0}
 					<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
 						{#each popularProducts as product}
 							{#if product.variants && product.variants.length > 0}
