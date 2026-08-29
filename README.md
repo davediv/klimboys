@@ -4,7 +4,7 @@ An interactive web-based dashboard for Klimboys milk shake store to manage produ
 
 ## Tech Stack
 
-- Frontend: Svelte 5, SvelteKit, TypeScript, TailwindCSS v4, DaisyUI v5
+- Frontend: Svelte 5, SvelteKit, TypeScript, Tailwind CSS v4
 - Backend: SvelteKit (API routes)
 - Database: Cloudflare D1
 - ORM: Drizzle ORM

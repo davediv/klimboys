@@ -10,6 +10,14 @@
 		Users
 	} from '@lucide/svelte';
 	import type { PageData } from './$types';
+	import {
+		badgeStyles,
+		buttonStyles,
+		cardBodyStyles,
+		cardStyles,
+		compactTableStyles,
+		cx
+	} from '$lib/styles';
 
 	interface Props {
 		data: PageData;
@@ -155,16 +163,16 @@
 		]
 	};
 
-	function getStatusColor(status: string) {
+	function getStatusBadge(status: string) {
 		switch (status) {
 			case 'completed':
-				return 'badge-success';
+				return badgeStyles('positive', 'sm');
 			case 'pending':
-				return 'badge-warning';
+				return badgeStyles('caution', 'sm');
 			case 'cancelled':
-				return 'badge-error';
+				return badgeStyles('danger', 'sm');
 			default:
-				return 'badge-ghost';
+				return badgeStyles('ghost', 'sm');
 		}
 	}
 </script>
@@ -180,8 +188,8 @@
 <!-- Stats Grid -->
 <div class="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
 	{#each stats as stat}
-		<div class="card bg-white shadow-sm">
-			<div class="card-body">
+		<div class={cx(cardStyles, 'bg-white shadow-sm')}>
+			<div class={cardBodyStyles}>
 				<div class="flex items-center justify-between">
 					<div>
 						<p class="text-sm text-gray-600">{stat.label}</p>
@@ -216,9 +224,9 @@
 		{#each quickActions[data.user?.role || 'cashier'] || quickActions.cashier as action}
 			<a
 				href={action.href}
-				class={`card ${action.color} shadow-sm transition-shadow hover:shadow-md`}
+				class={cx(cardStyles, action.color, 'shadow-sm transition-shadow hover:shadow-md')}
 			>
-				<div class="card-body items-center p-4 text-center">
+				<div class={cx(cardBodyStyles, 'items-center p-4 text-center')}>
 					<svelte:component this={action.icon} class="mb-2 h-8 w-8" />
 					<p class="text-sm font-medium">{action.label}</p>
 				</div>
@@ -230,17 +238,20 @@
 <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
 	<!-- Recent Orders -->
 	<div class="lg:col-span-2">
-		<div class="card bg-white shadow-sm">
-			<div class="card-body">
+		<div class={cx(cardStyles, 'bg-white shadow-sm')}>
+			<div class={cardBodyStyles}>
 				<div class="mb-4 flex items-center justify-between">
 					<h3 class="text-lg font-semibold text-gray-900">Recent Transactions</h3>
-					<a href="/dashboard/transactions" class="btn gap-1 btn-ghost btn-sm">
+					<a
+						href="/dashboard/transactions"
+						class={cx(buttonStyles({ variant: 'ghost', size: 'sm' }), 'gap-1')}
+					>
 						View All
 						<ChevronRight class="h-4 w-4" />
 					</a>
 				</div>
 				<div class="overflow-x-auto">
-					<table class="table table-sm">
+					<table class={compactTableStyles}>
 						<thead>
 							<tr>
 								<th>Transaction ID</th>
@@ -252,13 +263,13 @@
 						</thead>
 						<tbody>
 							{#each recentOrders as order}
-								<tr class="hover">
+								<tr class="transition-colors hover:bg-surface-muted">
 									<td class="font-medium">{order.id}</td>
 									<td class="text-gray-600">{order.time}</td>
 									<td>{order.items}</td>
 									<td class="font-semibold">{order.amount}</td>
 									<td>
-										<span class={`badge badge-sm ${getStatusColor(order.status)}`}>
+										<span class={getStatusBadge(order.status)}>
 											{order.status}
 										</span>
 									</td>
@@ -274,11 +285,11 @@
 	<!-- Side Panel -->
 	<div class="space-y-6">
 		<!-- Low Stock Alert -->
-		<div class="card bg-white shadow-sm">
-			<div class="card-body">
+		<div class={cx(cardStyles, 'bg-white shadow-sm')}>
+			<div class={cardBodyStyles}>
 				<div class="mb-4 flex items-center justify-between">
 					<h3 class="text-lg font-semibold text-gray-900">Low Stock Alert</h3>
-					<span class="badge badge-sm badge-warning">{lowStockItems.length} items</span>
+					<span class={badgeStyles('caution', 'sm')}>{lowStockItems.length} items</span>
 				</div>
 				<div class="space-y-3">
 					{#each lowStockItems as item}
@@ -287,17 +298,22 @@
 								<p class="text-sm font-medium text-gray-900">{item.name}</p>
 								<p class="text-xs text-gray-600">Min stock: {item.minStock}</p>
 							</div>
-							<span class="badge badge-error">{item.stock} left</span>
+							<span class={badgeStyles('danger')}>{item.stock} left</span>
 						</div>
 					{/each}
 				</div>
-				<button class="btn mt-4 w-full btn-outline btn-sm btn-warning"> Manage Inventory </button>
+				<button
+					class={cx(
+						buttonStyles({ variant: 'outline', tone: 'caution', size: 'sm', block: true }),
+						'mt-4'
+					)}>Manage Inventory</button
+				>
 			</div>
 		</div>
 
 		<!-- Today's Activity -->
-		<div class="card bg-white shadow-sm">
-			<div class="card-body">
+		<div class={cx(cardStyles, 'bg-white shadow-sm')}>
+			<div class={cardBodyStyles}>
 				<div class="mb-4 flex items-center gap-2">
 					<Activity class="h-5 w-5 text-[#FF6B6B]" />
 					<h3 class="text-lg font-semibold text-gray-900">Today's Activity</h3>

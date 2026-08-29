@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { User, Mail, Lock, ArrowRight, UserPlus, CheckCircle, Eye, EyeOff } from '@lucide/svelte';
 	import Logo from '$lib/assets/logo.svg';
+	import { spinnerStyles } from '$lib/styles';
 
 	let email = $state('');
 	let password = $state('');
@@ -268,7 +269,7 @@
 						class="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] px-4 py-3 font-semibold text-white transition-all duration-300 hover:scale-105 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
 					>
 						{#if loading}
-							<span class="loading loading-sm loading-spinner"></span>
+							<span class={spinnerStyles('sm')}></span>
 							Creating Account...
 						{:else}
 							Create Account

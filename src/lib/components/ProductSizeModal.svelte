@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { X, Package } from '@lucide/svelte';
 	import { formatIdr } from '$lib/format';
+	import { badgeStyles, buttonStyles, cx } from '$lib/styles';
 
 	interface Props {
 		product: any;
@@ -30,11 +31,7 @@
 
 {#if show && product}
 	<!-- Modal Backdrop -->
-	<button
-		class="bg-opacity-50 fixed inset-0 z-40 bg-black"
-		onclick={onClose}
-		aria-label="Close modal"
-	></button>
+	<button class="fixed inset-0 z-40 bg-black" onclick={onClose} aria-label="Close modal"></button>
 
 	<!-- Modal Content -->
 	<div class="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -42,7 +39,10 @@
 			<!-- Header -->
 			<div class="flex items-center justify-between border-b border-gray-200 p-4">
 				<h3 class="text-lg font-semibold">Select Size</h3>
-				<button onclick={onClose} class="btn btn-circle btn-ghost btn-sm">
+				<button
+					onclick={onClose}
+					class={buttonStyles({ variant: 'ghost', size: 'sm', shape: 'circle' })}
+				>
 					<X class="h-5 w-5" />
 				</button>
 			</div>
@@ -51,9 +51,9 @@
 			<div class="p-4">
 				<div class="mb-4 flex items-start gap-4">
 					{#if product.imageUrl}
-						<div class="avatar">
-							<div class="h-20 w-20 rounded-lg">
-								<img src={product.imageUrl} alt={product.name} />
+						<div class="relative inline-flex align-middle">
+							<div class="aspect-square h-20 w-20 overflow-hidden rounded-lg">
+								<img src={product.imageUrl} alt={product.name} class="h-full w-full object-cover" />
 							</div>
 						</div>
 					{:else}
@@ -91,11 +91,11 @@
 										{formatIdr(variant.sellingPrice / 100)}
 									</p>
 									{#if variant.stockQuantity < 10 && variant.stockQuantity > 0}
-										<span class="absolute top-1 right-1 badge badge-xs badge-warning">
+										<span class={cx(badgeStyles('caution', 'xs'), 'absolute top-1 right-1')}>
 											{variant.stockQuantity} left
 										</span>
 									{:else if variant.stockQuantity === 0}
-										<span class="absolute top-1 right-1 badge badge-xs badge-error">
+										<span class={cx(badgeStyles('danger', 'xs'), 'absolute top-1 right-1')}>
 											Out of stock
 										</span>
 									{/if}
@@ -125,11 +125,13 @@
 
 			<!-- Footer -->
 			<div class="flex gap-2 border-t border-gray-200 p-4">
-				<button onclick={onClose} class="btn flex-1 btn-ghost"> Cancel </button>
+				<button onclick={onClose} class={cx(buttonStyles({ variant: 'ghost' }), 'flex-1')}>
+					Cancel
+				</button>
 				<button
 					onclick={handleAddToCart}
 					disabled={!selectedVariant}
-					class="btn flex-1 btn-primary"
+					class={cx(buttonStyles({ tone: 'brand' }), 'flex-1')}
 				>
 					Add to Cart
 				</button>

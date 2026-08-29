@@ -10,6 +10,15 @@
 		MessageCircle
 	} from '@lucide/svelte';
 	import Mascot from '$lib/assets/klimboys-maskot.svg';
+	import {
+		badgeStyles,
+		buttonStyles,
+		cardActionsStyles,
+		cardBodyStyles,
+		cardStyles,
+		cardTitleStyles,
+		cx
+	} from '$lib/styles';
 
 	const features = [
 		{
@@ -95,10 +104,11 @@
 
 <!-- Hero Section -->
 <section
-	class="hero min-h-screen bg-gradient-to-br from-[#FF6B6B]/10 via-base-100 to-secondary/10 pt-20"
-	data-theme="light"
+	class="grid min-h-screen w-full place-items-center bg-gradient-to-br from-[#FF6B6B]/10 via-surface to-accent/10 bg-cover bg-center pt-20"
 >
-	<div class="hero-content flex-col lg:flex-row-reverse">
+	<div
+		class="isolate flex max-w-7xl flex-col items-center justify-center gap-4 p-4 lg:flex-row-reverse"
+	>
 		<img
 			src={Mascot}
 			alt="Klimboys Mascot"
@@ -110,7 +120,7 @@
 		<div class="max-w-3xl text-center lg:text-left">
 			<div class="mb-4 inline-block">
 				<span
-					class="badge gap-2 badge-lg"
+					class={badgeStyles('default', 'lg')}
 					style="background-color: #FF6B6B; color: white; border-color: #FF6B6B;"
 				>
 					<Sparkles class="h-4 w-4" />
@@ -123,35 +133,35 @@
 			>
 				Shake Up Your Day
 			</h1>
-			<p class="py-6 text-lg text-base-content/80 md:text-xl">
+			<p class="py-6 text-lg text-ink/80 md:text-xl">
 				Premium milkshakes crafted with love. From classic flavors to unique creations, experience
 				the perfect blend of taste and quality.
 			</p>
 			<div class="flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
 				<a
 					href="/menu"
-					class="btn gap-2 btn-lg"
+					class={buttonStyles({ size: 'lg' })}
 					style="background-color: #FF6B6B; color: white; border-color: #FF6B6B;"
 				>
 					View Menu
 					<ArrowRight class="h-5 w-5" />
 				</a>
-				<a href="/go/whatsapp" class="btn gap-2 btn-outline btn-lg">
+				<a href="/go/whatsapp" class={buttonStyles({ variant: 'outline', size: 'lg' })}>
 					<MessageCircle class="h-5 w-5" />
 					Order via WhatsApp
 				</a>
 			</div>
 			<!-- Delivery Partners -->
 			<div class="mt-8">
-				<p class="mb-3 text-sm text-base-content/60">Also available on:</p>
+				<p class="mb-3 text-sm text-ink/60">Also available on:</p>
 				<div class="flex flex-wrap justify-center gap-4 lg:justify-start">
-					<a href="/go/gofood" class="btn btn-ghost btn-sm">
+					<a href="/go/gofood" class={buttonStyles({ variant: 'ghost', size: 'sm' })}>
 						<span class="font-bold">GoFood</span>
 					</a>
-					<a href="/go/grabfood" class="btn btn-ghost btn-sm">
+					<a href="/go/grabfood" class={buttonStyles({ variant: 'ghost', size: 'sm' })}>
 						<span class="font-bold text-green-600">GrabFood</span>
 					</a>
-					<a href="/go/shopeefood" class="btn btn-ghost btn-sm">
+					<a href="/go/shopeefood" class={buttonStyles({ variant: 'ghost', size: 'sm' })}>
 						<span class="font-bold text-orange-600">ShopeeFood</span>
 					</a>
 				</div>
@@ -161,7 +171,7 @@
 </section>
 
 <!-- Partners/Clients Carousel Section -->
-<section class="bg-gradient-to-r from-pink-50 via-white to-red-50 py-16" data-theme="light">
+<section class="bg-gradient-to-r from-pink-50 via-white to-red-50 py-16">
 	<div class="container mx-auto px-4">
 		<div class="mb-8 text-center">
 			<p class="text-sm font-semibold tracking-wider text-[#FF6B6B] uppercase">Trusted By</p>
@@ -315,32 +325,32 @@
 </section>
 
 <!-- Features Section -->
-<section class="px-4 py-20" data-theme="light">
+<section class="px-4 py-20">
 	<div class="container mx-auto">
 		<div class="mb-12 text-center">
 			<h2 class="mb-4 text-3xl font-bold md:text-4xl">Why Choose Klimboys?</h2>
-			<p class="mx-auto max-w-2xl text-base-content/70">
+			<p class="mx-auto max-w-2xl text-ink/70">
 				We're committed to delivering the best milkshake experience with quality ingredients and
 				exceptional service.
 			</p>
 		</div>
 		<div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
 			{#each features as feature}
-				<div class="card bg-base-100 transition-shadow hover:shadow-xl">
-					<div class="card-body items-center text-center">
-						<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+				<div class={cx(cardStyles, 'bg-surface transition-shadow hover:shadow-xl')}>
+					<div class={cx(cardBodyStyles, 'items-center text-center')}>
+						<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand/10">
 							{#if feature.icon === Sparkles}
-								<Sparkles class="h-8 w-8 text-primary" />
+								<Sparkles class="h-8 w-8 text-brand" />
 							{:else if feature.icon === Truck}
-								<Truck class="h-8 w-8 text-primary" />
+								<Truck class="h-8 w-8 text-brand" />
 							{:else if feature.icon === Clock}
-								<Clock class="h-8 w-8 text-primary" />
+								<Clock class="h-8 w-8 text-brand" />
 							{:else if feature.icon === Shield}
-								<Shield class="h-8 w-8 text-primary" />
+								<Shield class="h-8 w-8 text-brand" />
 							{/if}
 						</div>
-						<h3 class="card-title">{feature.title}</h3>
-						<p class="text-base-content/70">{feature.description}</p>
+						<h3 class={cardTitleStyles}>{feature.title}</h3>
+						<p class="text-ink/70">{feature.description}</p>
 					</div>
 				</div>
 			{/each}
@@ -349,10 +359,7 @@
 </section>
 
 <!-- Popular Items Section -->
-<section
-	class="bg-gradient-to-br from-orange-50 via-white to-pink-50 px-4 py-20"
-	data-theme="light"
->
+<section class="bg-gradient-to-br from-orange-50 via-white to-pink-50 px-4 py-20">
 	<div class="container mx-auto">
 		<div class="mb-12 flex items-center justify-between">
 			<div>
@@ -363,7 +370,13 @@
 				</h2>
 				<p class="text-gray-600">Customer favorites you'll love</p>
 			</div>
-			<a href="/menu" class="btn gap-2 border-[#FF6B6B]/20 btn-ghost hover:bg-[#FF6B6B]/10">
+			<a
+				href="/menu"
+				class={cx(
+					buttonStyles({ variant: 'ghost' }),
+					'gap-2 border-[#FF6B6B]/20 hover:bg-[#FF6B6B]/10'
+				)}
+			>
 				View All
 				<ChevronRight class="h-5 w-5" />
 			</a>
@@ -371,9 +384,12 @@
 		<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
 			{#each popularItems as item}
 				<div
-					class="card border border-gray-100 bg-white shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
+					class={cx(
+						cardStyles,
+						'border border-gray-100 bg-white shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl'
+					)}
 				>
-					<figure class="px-4 pt-4">
+					<figure class="flex items-center justify-center px-4 pt-4">
 						<img
 							src={item.image}
 							alt={item.name}
@@ -384,21 +400,23 @@
 							class="h-48 w-full rounded-xl object-cover"
 						/>
 					</figure>
-					<div class="card-body">
+					<div class={cardBodyStyles}>
 						<div class="mb-2 flex items-center gap-2">
 							<Star class="h-4 w-4 fill-yellow-400 text-yellow-400" />
 							<span class="text-sm font-medium text-gray-700">{item.rating}</span>
 						</div>
-						<h3 class="card-title text-gray-800">{item.name}</h3>
+						<h3 class={cx(cardTitleStyles, 'text-gray-800')}>{item.name}</h3>
 						<p
 							class="bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] bg-clip-text text-xl font-bold text-transparent"
 						>
 							{item.price}
 						</p>
-						<div class="mt-4 card-actions justify-end">
+						<div class={cx(cardActionsStyles, 'mt-4 justify-end')}>
 							<button
-								class="btn w-full border-none bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] text-white transition-all btn-sm hover:scale-105 hover:shadow-lg"
-								>Add to Cart</button
+								class={cx(
+									buttonStyles({ size: 'sm', block: true }),
+									'border-none bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] text-white transition-all hover:scale-105 hover:shadow-lg'
+								)}>Add to Cart</button
 							>
 						</div>
 					</div>
@@ -409,17 +427,24 @@
 </section>
 
 <!-- CTA Section -->
-<section class="px-4 py-20" data-theme="light">
+<section class="px-4 py-20">
 	<div class="container mx-auto">
-		<div class="card text-white" style="background: linear-gradient(to right, #FF6B6B, #FF8E8E);">
-			<div class="card-body py-16 text-center">
+		<div
+			class={cx(cardStyles, 'text-white')}
+			style="background: linear-gradient(to right, #FF6B6B, #FF8E8E);"
+		>
+			<div class={cx(cardBodyStyles, 'py-16 text-center')}>
 				<h2 class="mb-4 text-3xl font-bold md:text-4xl">Ready to Taste the Difference?</h2>
 				<p class="mx-auto mb-8 max-w-2xl text-lg opacity-90">
 					Join thousands of happy customers who made Klimboys their favorite milkshake destination.
 				</p>
 				<div class="flex flex-col justify-center gap-4 sm:flex-row">
-					<a href="/go/whatsapp" class="btn btn-lg btn-neutral">Order via WhatsApp</a>
-					<button class="btn text-white btn-ghost btn-lg">Find Our Store</button>
+					<a href="/go/whatsapp" class={buttonStyles({ tone: 'neutral', size: 'lg' })}
+						>Order via WhatsApp</a
+					>
+					<button class={cx(buttonStyles({ variant: 'ghost', size: 'lg' }), 'text-white')}
+						>Find Our Store</button
+					>
 				</div>
 			</div>
 		</div>
@@ -427,10 +452,7 @@
 </section>
 
 <!-- Testimonials Section -->
-<section
-	class="bg-gradient-to-br from-purple-50 via-pink-50 to-white px-4 py-20"
-	data-theme="light"
->
+<section class="bg-gradient-to-br from-purple-50 via-pink-50 to-white px-4 py-20">
 	<div class="container mx-auto">
 		<div class="mb-12 text-center">
 			<h2
@@ -443,9 +465,12 @@
 		<div class="grid grid-cols-1 gap-8 md:grid-cols-3">
 			{#each testimonials as testimonial}
 				<div
-					class="card border border-purple-100 bg-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+					class={cx(
+						cardStyles,
+						'border border-purple-100 bg-white shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl'
+					)}
 				>
-					<div class="relative card-body">
+					<div class={cx(cardBodyStyles, 'relative')}>
 						<!-- Quote Icon -->
 						<div class="absolute -top-4 -left-2 font-serif text-6xl text-[#FF6B6B]/10">"</div>
 

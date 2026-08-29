@@ -13,6 +13,27 @@
 	} from '@lucide/svelte';
 	import { formatIdr } from '$lib/format';
 	import type { CatalogProduct } from '$lib/product';
+	import {
+		alertStyles,
+		badgeStyles,
+		buttonStyles,
+		cardBodyStyles,
+		cardStyles,
+		cx,
+		dividerStyles,
+		fieldHintStyles,
+		fieldLabelStyles,
+		fileInputStyles,
+		inputStyles,
+		modalActionsStyles,
+		modalBackdropStyles,
+		modalPanelStyles,
+		modalRootStyles,
+		selectStyles,
+		spinnerStyles,
+		tableStyles,
+		textareaStyles
+	} from '$lib/styles';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -444,7 +465,7 @@
 <div class="container mx-auto p-4">
 	<!-- Success/Error Messages -->
 	{#if successMessage}
-		<div class="mb-4 alert alert-success">
+		<div class={cx(alertStyles('positive'), 'mb-4')}>
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
 				class="h-6 w-6 shrink-0 stroke-current"
@@ -463,7 +484,7 @@
 	{/if}
 
 	{#if error && !showAddModal && !showEditModal && !showDeleteModal}
-		<div class="mb-4 alert alert-error">
+		<div class={cx(alertStyles('danger'), 'mb-4')}>
 			<AlertCircle class="h-6 w-6" />
 			<span>{error}</span>
 		</div>
@@ -473,26 +494,26 @@
 	<div class="mb-6 flex items-center justify-between">
 		<div>
 			<h1 class="text-3xl font-bold">Product Management</h1>
-			<p class="text-base-content/70">Manage your product catalog</p>
+			<p class="text-ink/70">Manage your product catalog</p>
 		</div>
-		<button class="btn btn-primary" onclick={openAddModal} disabled={loading}>
+		<button class={buttonStyles({ tone: 'brand' })} onclick={openAddModal} disabled={loading}>
 			<Plus class="h-5 w-5" />
 			Add Product
 		</button>
 	</div>
 
 	<!-- Search and Filter -->
-	<div class="card mb-6 bg-base-100 shadow-xl">
-		<div class="card-body">
-			<div class="form-control">
-				<div class="input-group">
+	<div class={cx(cardStyles, 'mb-6 bg-surface shadow-xl')}>
+		<div class={cardBodyStyles}>
+			<div>
+				<div>
 					<input
 						type="text"
 						placeholder="Search products by name or category..."
-						class="input-bordered input w-full"
+						class={inputStyles({ full: true })}
 						bind:value={searchQuery}
 					/>
-					<span class="btn btn-square">
+					<span class={buttonStyles({ shape: 'square' })}>
 						<Search class="h-5 w-5" />
 					</span>
 				</div>
@@ -501,10 +522,10 @@
 	</div>
 
 	<!-- Products Table -->
-	<div class="card bg-base-100 shadow-xl">
-		<div class="card-body">
+	<div class={cx(cardStyles, 'bg-surface shadow-xl')}>
+		<div class={cardBodyStyles}>
 			<div class="overflow-x-auto">
-				<table class="table">
+				<table class={tableStyles}>
 					<thead>
 						<tr>
 							<th>Product</th>
@@ -519,7 +540,7 @@
 						{#if loading && products.length === 0}
 							<tr>
 								<td colspan="6" class="py-8 text-center">
-									<span class="loading loading-lg loading-spinner"></span>
+									<span class={spinnerStyles('lg')}></span>
 									<p class="mt-2">Loading products...</p>
 								</td>
 							</tr>
@@ -528,7 +549,10 @@
 								<td colspan="6" class="py-8 text-center">
 									<Package class="mx-auto mb-2 h-12 w-12 opacity-50" />
 									<p>No products found</p>
-									<button class="btn mt-2 btn-sm btn-primary" onclick={openAddModal}>
+									<button
+										class={cx(buttonStyles({ tone: 'brand', size: 'sm' }), 'mt-2')}
+										onclick={openAddModal}
+									>
 										Add your first product
 									</button>
 								</td>
@@ -538,8 +562,10 @@
 								<tr>
 									<td>
 										<div class="flex items-center space-x-3">
-											<div class="avatar">
-												<div class="mask h-12 w-12 bg-base-200 mask-squircle">
+											<div class="relative inline-flex align-middle">
+												<div
+													class="aspect-square h-12 w-12 overflow-hidden bg-surface-muted squircle-mask"
+												>
 													{#if product.imageUrl}
 														<img
 															src={product.imageUrl}
@@ -548,6 +574,7 @@
 															height="48"
 															loading="lazy"
 															decoding="async"
+															class="h-full w-full object-cover"
 														/>
 													{:else}
 														<Package class="m-auto mt-2 h-8 w-8" />
@@ -578,11 +605,14 @@
 												<div class="flex items-center gap-2">
 													<span class="font-medium">{variant.size}:</span>
 													<span
-														class="badge {variant.stockQuantity < 10
-															? 'badge-error'
-															: variant.stockQuantity < 20
-																? 'badge-warning'
-																: 'badge-success'} badge-sm"
+														class={badgeStyles(
+															variant.stockQuantity < 10
+																? 'danger'
+																: variant.stockQuantity < 20
+																	? 'caution'
+																	: 'positive',
+															'sm'
+														)}
 													>
 														{variant.stockQuantity}
 													</span>
@@ -593,9 +623,10 @@
 									<td>
 										<button
 											onclick={() => toggleProductStatus(product.id)}
-											class="badge {product.isActive
-												? 'badge-success'
-												: 'badge-error'} cursor-pointer"
+											class={cx(
+												badgeStyles(product.isActive ? 'positive' : 'danger'),
+												'cursor-pointer disabled:cursor-not-allowed disabled:opacity-50'
+											)}
 											disabled={loading}
 										>
 											{product.isActive ? 'Active' : 'Inactive'}
@@ -604,14 +635,14 @@
 									<td>
 										<div class="flex gap-2">
 											<button
-												class="btn btn-ghost btn-xs"
+												class={buttonStyles({ variant: 'ghost', size: 'xs' })}
 												onclick={() => openEditModal(product)}
 												disabled={loading}
 											>
 												<Edit class="h-4 w-4" />
 											</button>
 											<button
-												class="btn text-error btn-ghost btn-xs"
+												class={cx(buttonStyles({ variant: 'ghost', size: 'xs' }), 'text-danger')}
 												onclick={() => openDeleteModal(product)}
 												disabled={loading}
 											>
@@ -626,7 +657,7 @@
 				</table>
 
 				{#if filteredProducts.length === 0}
-					<div class="py-8 text-center text-base-content/50">No products found</div>
+					<div class="py-8 text-center text-ink/50">No products found</div>
 				{/if}
 			</div>
 		</div>
@@ -635,12 +666,12 @@
 
 <!-- Add Product Modal -->
 {#if showAddModal}
-	<div class="modal-open modal">
-		<div class="modal-box max-w-3xl">
+	<div data-modal-root class={modalRootStyles}>
+		<div class={cx(modalPanelStyles, 'max-w-3xl')}>
 			<h3 class="mb-4 text-lg font-bold">Add New Product</h3>
 
 			{#if error}
-				<div class="mb-4 alert alert-error">
+				<div class={cx(alertStyles('danger'), 'mb-4')}>
 					<AlertCircle class="h-5 w-5" />
 					<span>{error}</span>
 				</div>
@@ -648,34 +679,34 @@
 
 			<div class="space-y-4">
 				<!-- Basic Info -->
-				<div class="form-control">
-					<label class="label">
-						<span class="label-text">Product Name</span>
+				<div>
+					<label class={fieldLabelStyles}>
+						<span>Product Name</span>
 					</label>
 					<input
 						type="text"
 						placeholder="Enter product name"
-						class="input-bordered input"
+						class={inputStyles()}
 						bind:value={formData.name}
 					/>
 				</div>
 
-				<div class="form-control">
-					<label class="label">
-						<span class="label-text">Description</span>
+				<div>
+					<label class={fieldLabelStyles}>
+						<span>Description</span>
 					</label>
 					<textarea
 						placeholder="Enter product description"
-						class="textarea-bordered textarea"
+						class={textareaStyles()}
 						bind:value={formData.description}
 					></textarea>
 				</div>
 
-				<div class="form-control">
-					<label class="label">
-						<span class="label-text">Category</span>
+				<div>
+					<label class={fieldLabelStyles}>
+						<span>Category</span>
 					</label>
-					<select class="select-bordered select" bind:value={formData.category}>
+					<select class={selectStyles()} bind:value={formData.category}>
 						{#each categories as category}
 							<option value={category}>{category}</option>
 						{/each}
@@ -683,9 +714,9 @@
 				</div>
 
 				<!-- Image Upload -->
-				<div class="form-control">
-					<label class="label">
-						<span class="label-text">Product Image</span>
+				<div>
+					<label class={fieldLabelStyles}>
+						<span>Product Image</span>
 					</label>
 
 					{#if imagePreview}
@@ -695,7 +726,11 @@
 								alt="Product preview"
 								class="mx-auto h-32 w-32 rounded-lg object-cover"
 							/>
-							<button type="button" class="btn mt-2 w-full btn-sm btn-error" onclick={removeImage}>
+							<button
+								type="button"
+								class={cx(buttonStyles({ tone: 'danger', size: 'sm', block: true }), 'mt-2')}
+								onclick={removeImage}
+							>
 								Remove Image
 							</button>
 						</div>
@@ -706,32 +741,32 @@
 							type="file"
 							accept="image/jpeg,image/png,image/webp"
 							onchange={handleFileSelect}
-							class="file-input-bordered file-input flex-1"
+							class={cx(fileInputStyles, 'flex-1')}
 							disabled={uploadingImage || loading}
 						/>
 					</div>
 
-					<div class="label">
-						<span class="label-text-alt">Or enter image URL</span>
+					<div class={fieldHintStyles}>
+						<span>Or enter image URL</span>
 					</div>
 					<input
 						type="url"
 						placeholder="https://example.com/image.jpg"
-						class="input-bordered input"
+						class={inputStyles()}
 						bind:value={formData.imageUrl}
 						disabled={imageFile !== null}
 					/>
-					<div class="label">
-						<span class="label-text-alt">Accepted formats: JPEG, PNG, WebP (max 5MB)</span>
+					<div class={fieldHintStyles}>
+						<span>Accepted formats: JPEG, PNG, WebP (max 5MB)</span>
 					</div>
 				</div>
 
 				<!-- Variants -->
-				<div class="divider">
+				<div class={dividerStyles}>
 					Variants & Pricing
 					<button
 						type="button"
-						class="btn ml-2 btn-xs btn-primary"
+						class={cx(buttonStyles({ tone: 'brand', size: 'xs' }), 'ml-2')}
 						onclick={addVariant}
 						disabled={formData.variants.length >= availableSizes.length}
 					>
@@ -741,9 +776,13 @@
 				</div>
 
 				{#if formData.variants.length === 0}
-					<div class="py-4 text-center text-base-content/50">
+					<div class="py-4 text-center text-ink/50">
 						<p>No variants added yet.</p>
-						<button type="button" class="btn mt-2 btn-sm btn-primary" onclick={addVariant}>
+						<button
+							type="button"
+							class={cx(buttonStyles({ tone: 'brand', size: 'sm' }), 'mt-2')}
+							onclick={addVariant}
+						>
 							<Plus class="h-4 w-4" />
 							Add First Variant
 						</button>
@@ -751,12 +790,12 @@
 				{/if}
 
 				{#each formData.variants as variant, i}
-					<div class="card bg-base-200">
-						<div class="card-body p-4">
+					<div class={cx(cardStyles, 'bg-surface-muted')}>
+						<div class={cx(cardBodyStyles, 'p-4')}>
 							<div class="mb-2 flex items-center justify-between">
 								<div class="flex items-center gap-2">
 									<select
-										class="select-bordered select select-sm"
+										class={selectStyles({ size: 'sm' })}
 										value={variant.size}
 										onchange={(e) => updateVariantSize(i, (e.target as HTMLSelectElement).value)}
 									>
@@ -769,11 +808,11 @@
 											</option>
 										{/each}
 									</select>
-									<span class="text-sm text-base-content/50">Variant {i + 1}</span>
+									<span class="text-sm text-ink/50">Variant {i + 1}</span>
 								</div>
 								<button
 									type="button"
-									class="btn text-error btn-ghost btn-xs"
+									class={cx(buttonStyles({ variant: 'ghost', size: 'xs' }), 'text-danger')}
 									onclick={() => removeVariant(i)}
 									disabled={formData.variants.length === 1}
 								>
@@ -781,48 +820,48 @@
 								</button>
 							</div>
 							<div class="grid grid-cols-2 gap-4">
-								<div class="form-control">
-									<label class="label">
-										<span class="label-text text-xs">Volume (ml)</span>
+								<div>
+									<label class={fieldLabelStyles}>
+										<span class="text-xs">Volume (ml)</span>
 									</label>
 									<input
 										type="number"
-										class="input-bordered input input-sm"
+										class={inputStyles({ size: 'sm' })}
 										bind:value={variant.volumeMl}
 										min="50"
 										step="50"
 									/>
 								</div>
-								<div class="form-control">
-									<label class="label">
-										<span class="label-text text-xs">Stock Quantity</span>
+								<div>
+									<label class={fieldLabelStyles}>
+										<span class="text-xs">Stock Quantity</span>
 									</label>
 									<input
 										type="number"
-										class="input-bordered input input-sm"
+										class={inputStyles({ size: 'sm' })}
 										bind:value={variant.stockQuantity}
 										min="0"
 									/>
 								</div>
-								<div class="form-control">
-									<label class="label">
-										<span class="label-text text-xs">Cost Price (IDR)</span>
+								<div>
+									<label class={fieldLabelStyles}>
+										<span class="text-xs">Cost Price (IDR)</span>
 									</label>
 									<input
 										type="number"
-										class="input-bordered input input-sm"
+										class={inputStyles({ size: 'sm' })}
 										bind:value={variant.costPrice}
 										min="0"
 										step="100"
 									/>
 								</div>
-								<div class="form-control">
-									<label class="label">
-										<span class="label-text text-xs">Selling Price (IDR)</span>
+								<div>
+									<label class={fieldLabelStyles}>
+										<span class="text-xs">Selling Price (IDR)</span>
 									</label>
 									<input
 										type="number"
-										class="input-bordered input input-sm"
+										class={inputStyles({ size: 'sm' })}
 										bind:value={variant.sellingPrice}
 										min="0"
 										step="100"
@@ -830,7 +869,7 @@
 								</div>
 							</div>
 							{#if variant.sellingPrice > 0 && variant.costPrice > 0}
-								<div class="mt-2 text-xs text-base-content/70">
+								<div class="mt-2 text-xs text-ink/70">
 									Profit Margin: {formatIdr(variant.sellingPrice - variant.costPrice)}
 									({Math.round(
 										((variant.sellingPrice - variant.costPrice) / variant.costPrice) * 100
@@ -842,18 +881,22 @@
 				{/each}
 			</div>
 
-			<div class="modal-action">
+			<div class={modalActionsStyles}>
 				<button
-					class="btn btn-ghost"
+					class={buttonStyles({ variant: 'ghost' })}
 					onclick={() => {
 						showAddModal = false;
 						error = null;
 					}}
 					disabled={loading}>Cancel</button
 				>
-				<button class="btn btn-primary" onclick={handleAddProduct} disabled={loading}>
+				<button
+					class={buttonStyles({ tone: 'brand' })}
+					onclick={handleAddProduct}
+					disabled={loading}
+				>
 					{#if loading || uploadingImage}
-						<span class="loading loading-sm loading-spinner"></span>
+						<span class={spinnerStyles('sm')}></span>
 					{:else}
 						<Save class="h-4 w-4" />
 					{/if}
@@ -861,19 +904,22 @@
 				</button>
 			</div>
 		</div>
-		<button class="modal-backdrop" onclick={() => (showAddModal = false)} aria-label="Close modal"
+		<button
+			class={modalBackdropStyles}
+			onclick={() => (showAddModal = false)}
+			aria-label="Close modal"
 		></button>
 	</div>
 {/if}
 
 <!-- Edit Product Modal -->
 {#if showEditModal}
-	<div class="modal-open modal">
-		<div class="modal-box max-w-3xl">
+	<div data-modal-root class={modalRootStyles}>
+		<div class={cx(modalPanelStyles, 'max-w-3xl')}>
 			<h3 class="mb-4 text-lg font-bold">Edit Product</h3>
 
 			{#if error}
-				<div class="mb-4 alert alert-error">
+				<div class={cx(alertStyles('danger'), 'mb-4')}>
 					<AlertCircle class="h-5 w-5" />
 					<span>{error}</span>
 				</div>
@@ -881,34 +927,34 @@
 
 			<div class="space-y-4">
 				<!-- Basic Info -->
-				<div class="form-control">
-					<label class="label">
-						<span class="label-text">Product Name</span>
+				<div>
+					<label class={fieldLabelStyles}>
+						<span>Product Name</span>
 					</label>
 					<input
 						type="text"
 						placeholder="Enter product name"
-						class="input-bordered input"
+						class={inputStyles()}
 						bind:value={formData.name}
 					/>
 				</div>
 
-				<div class="form-control">
-					<label class="label">
-						<span class="label-text">Description</span>
+				<div>
+					<label class={fieldLabelStyles}>
+						<span>Description</span>
 					</label>
 					<textarea
 						placeholder="Enter product description"
-						class="textarea-bordered textarea"
+						class={textareaStyles()}
 						bind:value={formData.description}
 					></textarea>
 				</div>
 
-				<div class="form-control">
-					<label class="label">
-						<span class="label-text">Category</span>
+				<div>
+					<label class={fieldLabelStyles}>
+						<span>Category</span>
 					</label>
-					<select class="select-bordered select" bind:value={formData.category}>
+					<select class={selectStyles()} bind:value={formData.category}>
 						{#each categories as category}
 							<option value={category}>{category}</option>
 						{/each}
@@ -916,9 +962,9 @@
 				</div>
 
 				<!-- Image Upload -->
-				<div class="form-control">
-					<label class="label">
-						<span class="label-text">Product Image</span>
+				<div>
+					<label class={fieldLabelStyles}>
+						<span>Product Image</span>
 					</label>
 
 					{#if imagePreview}
@@ -928,7 +974,11 @@
 								alt="Product preview"
 								class="mx-auto h-32 w-32 rounded-lg object-cover"
 							/>
-							<button type="button" class="btn mt-2 w-full btn-sm btn-error" onclick={removeImage}>
+							<button
+								type="button"
+								class={cx(buttonStyles({ tone: 'danger', size: 'sm', block: true }), 'mt-2')}
+								onclick={removeImage}
+							>
 								Remove Image
 							</button>
 						</div>
@@ -939,32 +989,32 @@
 							type="file"
 							accept="image/jpeg,image/png,image/webp"
 							onchange={handleFileSelect}
-							class="file-input-bordered file-input flex-1"
+							class={cx(fileInputStyles, 'flex-1')}
 							disabled={uploadingImage || loading}
 						/>
 					</div>
 
-					<div class="label">
-						<span class="label-text-alt">Or enter image URL</span>
+					<div class={fieldHintStyles}>
+						<span>Or enter image URL</span>
 					</div>
 					<input
 						type="url"
 						placeholder="https://example.com/image.jpg"
-						class="input-bordered input"
+						class={inputStyles()}
 						bind:value={formData.imageUrl}
 						disabled={imageFile !== null}
 					/>
-					<div class="label">
-						<span class="label-text-alt">Accepted formats: JPEG, PNG, WebP (max 5MB)</span>
+					<div class={fieldHintStyles}>
+						<span>Accepted formats: JPEG, PNG, WebP (max 5MB)</span>
 					</div>
 				</div>
 
 				<!-- Variants -->
-				<div class="divider">
+				<div class={dividerStyles}>
 					Variants & Pricing
 					<button
 						type="button"
-						class="btn ml-2 btn-xs btn-primary"
+						class={cx(buttonStyles({ tone: 'brand', size: 'xs' }), 'ml-2')}
 						onclick={addVariant}
 						disabled={formData.variants.length >= availableSizes.length}
 					>
@@ -974,9 +1024,13 @@
 				</div>
 
 				{#if formData.variants.length === 0}
-					<div class="py-4 text-center text-base-content/50">
+					<div class="py-4 text-center text-ink/50">
 						<p>No variants added yet.</p>
-						<button type="button" class="btn mt-2 btn-sm btn-primary" onclick={addVariant}>
+						<button
+							type="button"
+							class={cx(buttonStyles({ tone: 'brand', size: 'sm' }), 'mt-2')}
+							onclick={addVariant}
+						>
 							<Plus class="h-4 w-4" />
 							Add First Variant
 						</button>
@@ -984,12 +1038,12 @@
 				{/if}
 
 				{#each formData.variants as variant, i}
-					<div class="card bg-base-200">
-						<div class="card-body p-4">
+					<div class={cx(cardStyles, 'bg-surface-muted')}>
+						<div class={cx(cardBodyStyles, 'p-4')}>
 							<div class="mb-2 flex items-center justify-between">
 								<div class="flex items-center gap-2">
 									<select
-										class="select-bordered select select-sm"
+										class={selectStyles({ size: 'sm' })}
 										value={variant.size}
 										onchange={(e) => updateVariantSize(i, (e.target as HTMLSelectElement).value)}
 									>
@@ -1002,11 +1056,11 @@
 											</option>
 										{/each}
 									</select>
-									<span class="text-sm text-base-content/50">Variant {i + 1}</span>
+									<span class="text-sm text-ink/50">Variant {i + 1}</span>
 								</div>
 								<button
 									type="button"
-									class="btn text-error btn-ghost btn-xs"
+									class={cx(buttonStyles({ variant: 'ghost', size: 'xs' }), 'text-danger')}
 									onclick={() => removeVariant(i)}
 									disabled={formData.variants.length === 1}
 								>
@@ -1014,48 +1068,48 @@
 								</button>
 							</div>
 							<div class="grid grid-cols-2 gap-4">
-								<div class="form-control">
-									<label class="label">
-										<span class="label-text text-xs">Volume (ml)</span>
+								<div>
+									<label class={fieldLabelStyles}>
+										<span class="text-xs">Volume (ml)</span>
 									</label>
 									<input
 										type="number"
-										class="input-bordered input input-sm"
+										class={inputStyles({ size: 'sm' })}
 										bind:value={variant.volumeMl}
 										min="50"
 										step="50"
 									/>
 								</div>
-								<div class="form-control">
-									<label class="label">
-										<span class="label-text text-xs">Stock Quantity</span>
+								<div>
+									<label class={fieldLabelStyles}>
+										<span class="text-xs">Stock Quantity</span>
 									</label>
 									<input
 										type="number"
-										class="input-bordered input input-sm"
+										class={inputStyles({ size: 'sm' })}
 										bind:value={variant.stockQuantity}
 										min="0"
 									/>
 								</div>
-								<div class="form-control">
-									<label class="label">
-										<span class="label-text text-xs">Cost Price (IDR)</span>
+								<div>
+									<label class={fieldLabelStyles}>
+										<span class="text-xs">Cost Price (IDR)</span>
 									</label>
 									<input
 										type="number"
-										class="input-bordered input input-sm"
+										class={inputStyles({ size: 'sm' })}
 										bind:value={variant.costPrice}
 										min="0"
 										step="100"
 									/>
 								</div>
-								<div class="form-control">
-									<label class="label">
-										<span class="label-text text-xs">Selling Price (IDR)</span>
+								<div>
+									<label class={fieldLabelStyles}>
+										<span class="text-xs">Selling Price (IDR)</span>
 									</label>
 									<input
 										type="number"
-										class="input-bordered input input-sm"
+										class={inputStyles({ size: 'sm' })}
 										bind:value={variant.sellingPrice}
 										min="0"
 										step="100"
@@ -1063,7 +1117,7 @@
 								</div>
 							</div>
 							{#if variant.sellingPrice > 0 && variant.costPrice > 0}
-								<div class="mt-2 text-xs text-base-content/70">
+								<div class="mt-2 text-xs text-ink/70">
 									Profit Margin: {formatIdr(variant.sellingPrice - variant.costPrice)}
 									({Math.round(
 										((variant.sellingPrice - variant.costPrice) / variant.costPrice) * 100
@@ -1075,18 +1129,22 @@
 				{/each}
 			</div>
 
-			<div class="modal-action">
+			<div class={modalActionsStyles}>
 				<button
-					class="btn btn-ghost"
+					class={buttonStyles({ variant: 'ghost' })}
 					onclick={() => {
 						showEditModal = false;
 						error = null;
 					}}
 					disabled={loading}>Cancel</button
 				>
-				<button class="btn btn-primary" onclick={handleEditProduct} disabled={loading}>
+				<button
+					class={buttonStyles({ tone: 'brand' })}
+					onclick={handleEditProduct}
+					disabled={loading}
+				>
 					{#if loading || uploadingImage}
-						<span class="loading loading-sm loading-spinner"></span>
+						<span class={spinnerStyles('sm')}></span>
 					{:else}
 						<Save class="h-4 w-4" />
 					{/if}
@@ -1094,25 +1152,28 @@
 				</button>
 			</div>
 		</div>
-		<button class="modal-backdrop" onclick={() => (showEditModal = false)} aria-label="Close modal"
+		<button
+			class={modalBackdropStyles}
+			onclick={() => (showEditModal = false)}
+			aria-label="Close modal"
 		></button>
 	</div>
 {/if}
 
 <!-- Delete Confirmation Modal -->
 {#if showDeleteModal}
-	<div class="modal-open modal">
-		<div class="modal-box">
+	<div data-modal-root class={modalRootStyles}>
+		<div class={modalPanelStyles}>
 			<h3 class="mb-4 text-lg font-bold">Delete Product</h3>
 
 			{#if error}
-				<div class="mb-4 alert alert-error">
+				<div class={cx(alertStyles('danger'), 'mb-4')}>
 					<AlertCircle class="h-5 w-5" />
 					<span>{error}</span>
 				</div>
 			{/if}
 
-			<div class="mb-4 alert alert-warning">
+			<div class={cx(alertStyles('caution'), 'mb-4')}>
 				<AlertCircle class="h-6 w-6" />
 				<span>This will mark the product as inactive. It can be reactivated later if needed.</span>
 			</div>
@@ -1123,18 +1184,22 @@
 				</p>
 			{/if}
 
-			<div class="modal-action">
+			<div class={modalActionsStyles}>
 				<button
-					class="btn btn-ghost"
+					class={buttonStyles({ variant: 'ghost' })}
 					onclick={() => {
 						showDeleteModal = false;
 						error = null;
 					}}
 					disabled={loading}>Cancel</button
 				>
-				<button class="btn btn-error" onclick={handleDeleteProduct} disabled={loading}>
+				<button
+					class={buttonStyles({ tone: 'danger' })}
+					onclick={handleDeleteProduct}
+					disabled={loading}
+				>
 					{#if loading}
-						<span class="loading loading-sm loading-spinner"></span>
+						<span class={spinnerStyles('sm')}></span>
 					{:else}
 						<Trash2 class="h-4 w-4" />
 					{/if}
@@ -1143,7 +1208,7 @@
 			</div>
 		</div>
 		<button
-			class="modal-backdrop"
+			class={modalBackdropStyles}
 			onclick={() => (showDeleteModal = false)}
 			aria-label="Close modal"
 		></button>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Search, Package } from '@lucide/svelte';
 	import { formatIdr } from '$lib/format';
+	import { badgeStyles, buttonStyles, cx, inputStyles, spinnerStyles } from '$lib/styles';
 
 	type ProductVariant = {
 		id: string;
@@ -177,13 +178,13 @@
 </script>
 
 <div class="product-search-container relative w-full">
-	<div class="form-control">
-		<div class="input-group">
+	<div>
+		<div>
 			<input
 				bind:this={searchInput}
 				type="text"
 				{placeholder}
-				class="input-bordered input w-full"
+				class={inputStyles({ full: true })}
 				value={searchQuery}
 				oninput={handleInput}
 				onkeydown={handleKeydown}
@@ -193,9 +194,9 @@
 					}
 				}}
 			/>
-			<span class="btn btn-square">
+			<span class={buttonStyles({ shape: 'square' })}>
 				{#if isSearching}
-					<span class="loading loading-sm loading-spinner"></span>
+					<span class={spinnerStyles('sm')}></span>
 				{:else}
 					<Search class="h-5 w-5" />
 				{/if}
@@ -205,13 +206,13 @@
 
 	{#if showDropdown && searchResults.length > 0}
 		<div
-			class="absolute top-full right-0 left-0 z-50 mt-1 max-h-96 overflow-y-auto rounded-lg border border-base-300 bg-base-100 shadow-xl"
+			class="absolute top-full right-0 left-0 z-50 mt-1 max-h-96 overflow-y-auto rounded-lg border border-surface-strong bg-surface shadow-xl"
 		>
 			{#each searchResults as product, index}
 				<div
-					class="cursor-pointer border-b border-base-200 p-3 last:border-b-0 hover:bg-base-200 {index ===
+					class="cursor-pointer border-b border-surface-muted p-3 last:border-b-0 hover:bg-surface-muted {index ===
 					selectedIndex
-						? 'bg-base-200'
+						? 'bg-surface-muted'
 						: ''}"
 					onclick={() => (showVariants && product.variants?.length ? null : selectProduct(product))}
 					onkeydown={(e) => e.key === 'Enter' && selectProduct(product)}
@@ -220,10 +221,14 @@
 				>
 					<div class="flex items-start gap-3">
 						<!-- Product Image -->
-						<div class="avatar">
-							<div class="h-12 w-12 rounded-lg bg-base-200">
+						<div class="relative inline-flex align-middle">
+							<div class="aspect-square h-12 w-12 overflow-hidden rounded-lg bg-surface-muted">
 								{#if product.imageUrl}
-									<img src={product.imageUrl} alt={product.name} class="object-cover" />
+									<img
+										src={product.imageUrl}
+										alt={product.name}
+										class="h-full w-full object-cover"
+									/>
 								{:else}
 									<div class="flex h-full items-center justify-center">
 										<Package class="h-6 w-6 opacity-50" />
@@ -236,10 +241,10 @@
 						<div class="flex-1">
 							<div class="font-semibold">{product.name}</div>
 							{#if product.description}
-								<div class="line-clamp-1 text-sm text-base-content/60">{product.description}</div>
+								<div class="line-clamp-1 text-sm text-ink/60">{product.description}</div>
 							{/if}
 							{#if product.category}
-								<div class="mt-1 badge badge-ghost badge-sm">{product.category}</div>
+								<div class={cx(badgeStyles('ghost', 'sm'), 'mt-1')}>{product.category}</div>
 							{/if}
 
 							<!-- Variants -->
@@ -248,7 +253,7 @@
 									{#each product.variants as variant}
 										{#if variant.stockQuantity > 0}
 											<button
-												class="btn btn-outline btn-xs"
+												class={buttonStyles({ variant: 'outline', size: 'xs' })}
 												onclick={(e) => {
 													e.stopPropagation();
 													selectProduct(product, variant);
@@ -259,14 +264,14 @@
 													{formatIdr(variant.sellingPrice / 100)}
 												</span>
 												{#if variant.stockQuantity < 10}
-													<span class="badge badge-xs badge-warning">Low</span>
+													<span class={badgeStyles('caution', 'xs')}>Low</span>
 												{/if}
 											</button>
 										{/if}
 									{/each}
 								</div>
 							{:else if product.variants && product.variants.length > 0}
-								<div class="mt-1 text-sm text-base-content/60">
+								<div class="mt-1 text-sm text-ink/60">
 									{product.variants.length} variant{product.variants.length > 1 ? 's' : ''} available
 								</div>
 							{/if}
@@ -279,7 +284,7 @@
 
 	{#if showDropdown && searchQuery.length >= 2 && searchResults.length === 0 && !isSearching}
 		<div
-			class="absolute top-full right-0 left-0 z-50 mt-1 rounded-lg border border-base-300 bg-base-100 p-4 text-center text-base-content/60 shadow-xl"
+			class="absolute top-full right-0 left-0 z-50 mt-1 rounded-lg border border-surface-strong bg-surface p-4 text-center text-ink/60 shadow-xl"
 		>
 			No products found for "{searchQuery}"
 		</div>

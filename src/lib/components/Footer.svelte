@@ -3,12 +3,12 @@
 	import Logo from '$lib/assets/logo.svg';
 </script>
 
-<div class="bg-base-200" data-theme="light">
+<div class="bg-surface-muted">
 	<div class="container mx-auto px-4">
 		<footer
-			class="footer grid grid-cols-1 gap-8 p-10 text-base-content md:grid-cols-2 lg:grid-cols-4"
+			class="grid w-full grid-cols-1 place-items-start gap-8 p-10 text-sm leading-5 text-ink md:grid-cols-2 lg:grid-cols-4"
 		>
-			<aside>
+			<aside class="grid place-items-start gap-2">
 				<img src={Logo} alt="Klimboys" class="mb-4 h-12 w-auto" />
 				<p class="text-lg font-semibold">Klimboys Milkshake Store</p>
 				<p class="mt-2 max-w-xs">
@@ -16,16 +16,28 @@
 				</p>
 			</aside>
 
-			<nav>
-				<h6 class="footer-title">Quick Links</h6>
-				<a href="/menu" class="link link-hover">Our Menu</a>
-				<a href="/about" class="link link-hover">About Us</a>
-				<a href="/contact" class="link link-hover">Contact</a>
-				<a href="/careers" class="link link-hover">Careers</a>
+			<nav class="grid place-items-start gap-2">
+				<h6 class="mb-2 font-semibold uppercase opacity-60">Quick Links</h6>
+				<a
+					href="/menu"
+					class="hover:underline focus-visible:outline-2 focus-visible:outline-offset-2">Our Menu</a
+				>
+				<a
+					href="/about"
+					class="hover:underline focus-visible:outline-2 focus-visible:outline-offset-2">About Us</a
+				>
+				<a
+					href="/contact"
+					class="hover:underline focus-visible:outline-2 focus-visible:outline-offset-2">Contact</a
+				>
+				<a
+					href="/careers"
+					class="hover:underline focus-visible:outline-2 focus-visible:outline-offset-2">Careers</a
+				>
 			</nav>
 
-			<nav>
-				<h6 class="footer-title">Store Info</h6>
+			<nav class="grid place-items-start gap-2">
+				<h6 class="mb-2 font-semibold uppercase opacity-60">Store Info</h6>
 				<div class="flex items-start gap-2">
 					<MapPin class="mt-0.5 h-4 w-4 flex-shrink-0" />
 					<span
@@ -43,8 +55,8 @@
 				</div>
 			</nav>
 
-			<nav>
-				<h6 class="footer-title">Opening Hours</h6>
+			<nav class="grid place-items-start gap-2">
+				<h6 class="mb-2 font-semibold uppercase opacity-60">Opening Hours</h6>
 				<div class="flex items-start gap-2">
 					<Clock class="mt-0.5 h-4 w-4 flex-shrink-0" />
 					<div>
@@ -53,9 +65,9 @@
 					</div>
 				</div>
 				<div class="mt-4">
-					<h6 class="footer-title">Follow Us</h6>
+					<h6 class="mb-2 font-semibold uppercase opacity-60">Follow Us</h6>
 					<div class="flex gap-4">
-						<a href="/go/twitter" aria-label="Twitter" class="transition-colors hover:text-primary">
+						<a href="/go/twitter" aria-label="Twitter" class="transition-colors hover:text-brand">
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
 								width="24"
@@ -75,7 +87,7 @@
 						<a
 							href="/go/instagram"
 							aria-label="Instagram"
-							class="transition-colors hover:text-primary"
+							class="transition-colors hover:text-brand"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -93,11 +105,7 @@
 								<line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
 							</svg>
 						</a>
-						<a
-							href="/go/facebook"
-							aria-label="Facebook"
-							class="transition-colors hover:text-primary"
-						>
+						<a href="/go/facebook" aria-label="Facebook" class="transition-colors hover:text-brand">
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
 								width="24"
@@ -119,10 +127,12 @@
 	</div>
 </div>
 
-<div class="bg-base-300" data-theme="light">
+<div class="bg-surface-strong">
 	<div class="container mx-auto">
-		<div class="footer-center footer p-4 text-base-content">
-			<aside>
+		<div
+			class="grid w-full grid-flow-col-dense place-items-center p-4 text-center text-sm leading-5 text-ink"
+		>
+			<aside class="grid place-items-center gap-2">
 				<p>© {new Date().getFullYear()} Klimboys. All rights reserved.</p>
 			</aside>
 		</div>

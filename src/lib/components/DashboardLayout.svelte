@@ -15,6 +15,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import Logo from '$lib/assets/logo.svg';
+	import { badgeStyles, buttonStyles, cx } from '$lib/styles';
 
 	interface Props {
 		user: any;
@@ -53,7 +54,7 @@
 	}
 </script>
 
-<div class="flex h-screen bg-base-200" data-theme="light">
+<div class="flex h-screen bg-surface-muted">
 	<!-- Sidebar -->
 	<aside
 		class={`fixed inset-y-0 left-0 z-50 w-64 transform bg-white shadow-lg transition-transform duration-300 ease-in-out lg:static lg:inset-0 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
@@ -87,8 +88,8 @@
 			<!-- User section -->
 			<div class="border-t border-gray-200 p-4">
 				<div class="mb-3 flex items-center gap-3">
-					<div class="avatar">
-						<div class="w-10 rounded-full bg-[#FF6B6B] text-white">
+					<div class="relative inline-flex align-middle">
+						<div class="aspect-square w-10 overflow-hidden rounded-full bg-[#FF6B6B] text-white">
 							<span class="flex h-full items-center justify-center text-sm font-medium">
 								{user?.email?.charAt(0).toUpperCase()}
 							</span>
@@ -99,7 +100,13 @@
 						<p class="text-xs text-gray-500 capitalize">{user?.role}</p>
 					</div>
 				</div>
-				<button onclick={handleLogout} class="btn w-full justify-start gap-2 btn-ghost btn-sm">
+				<button
+					onclick={handleLogout}
+					class={cx(
+						buttonStyles({ variant: 'ghost', size: 'sm', block: true }),
+						'justify-start gap-2'
+					)}
+				>
 					<LogOut class="h-4 w-4" />
 					Sign Out
 				</button>
@@ -121,15 +128,20 @@
 
 				<div class="flex items-center gap-4">
 					<!-- Notifications -->
-					<button class="btn btn-circle btn-ghost btn-sm">
-						<div class="indicator">
+					<button class={buttonStyles({ variant: 'ghost', size: 'sm', shape: 'circle' })}>
+						<div class="relative inline-flex w-max">
 							<Bell class="h-5 w-5" />
-							<span class="indicator-item badge badge-xs badge-error">3</span>
+							<span
+								class={cx(
+									badgeStyles('danger', 'xs'),
+									'absolute top-0 right-0 z-10 translate-x-1/2 -translate-y-1/2 whitespace-nowrap'
+								)}>3</span
+							>
 						</div>
 					</button>
 
 					<!-- Settings -->
-					<button class="btn btn-circle btn-ghost btn-sm">
+					<button class={buttonStyles({ variant: 'ghost', size: 'sm', shape: 'circle' })}>
 						<Settings class="h-5 w-5" />
 					</button>
 				</div>
