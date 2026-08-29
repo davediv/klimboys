@@ -40,44 +40,59 @@
 	let selectedIndex = $state(-1);
 	let searchInput: HTMLInputElement;
 	let debounceTimer: ReturnType<typeof setTimeout>;
+	let activeSearchController: AbortController | null = null;
+
+	function cancelActiveSearch() {
+		activeSearchController?.abort();
+		activeSearchController = null;
+		isSearching = false;
+	}
 
 	// Perform search with debouncing
 	async function performSearch(query: string) {
-		if (query.trim().length < 2) {
-			searchResults = [];
-			showDropdown = false;
-			return;
-		}
+		cancelActiveSearch();
+		const controller = new AbortController();
+		activeSearchController = controller;
 
 		isSearching = true;
 
 		try {
 			const response = await fetch(
-				`${apiEndpoint}?search=${encodeURIComponent(query)}&limit=10&active=true&includeMeta=false`
+				`${apiEndpoint}?search=${encodeURIComponent(query.trim())}&limit=10&active=true&includeMeta=false`,
+				{ signal: controller.signal }
 			);
 			if (!response.ok) {
 				throw new Error('Failed to search products');
 			}
 
 			const result = (await response.json()) as any;
+			if (controller.signal.aborted) return;
+
 			if (result.success && result.data) {
 				searchResults = result.data.products || [];
 				showDropdown = searchResults.length > 0;
 				selectedIndex = -1;
 			}
 		} catch (error) {
+			if (controller.signal.aborted) return;
+
 			console.error('Search error:', error);
 			searchResults = [];
 			showDropdown = false;
 		} finally {
-			isSearching = false;
+			if (activeSearchController === controller) {
+				activeSearchController = null;
+				isSearching = false;
+			}
 		}
 	}
 
 	// Debounced search handler
 	function handleSearch(query: string) {
 		clearTimeout(debounceTimer);
-		if (query.trim().length === 0) {
+		cancelActiveSearch();
+
+		if (query.trim().length < 2) {
 			searchResults = [];
 			showDropdown = false;
 			return;
@@ -85,7 +100,7 @@
 
 		debounceTimer = setTimeout(() => {
 			performSearch(query);
-		}, 300); // 300ms debounce delay
+		}, 200);
 	}
 
 	// Handle input changes
@@ -133,6 +148,8 @@
 
 	// Close dropdown
 	function closeDropdown() {
+		clearTimeout(debounceTimer);
+		cancelActiveSearch();
 		showDropdown = false;
 		selectedIndex = -1;
 		searchResults = [];
@@ -153,6 +170,7 @@
 			return () => {
 				window.removeEventListener('click', handleClickOutside);
 				clearTimeout(debounceTimer);
+				cancelActiveSearch();
 			};
 		}
 	});
