@@ -79,17 +79,6 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 		const db = getDb();
 		const productId = params.id;
 
-		// Check if product exists
-		const existingProduct = await db
-			.select({ id: products.id })
-			.from(products)
-			.where(eq(products.id, productId))
-			.limit(1);
-
-		if (existingProduct.length === 0) {
-			return json({ error: 'Product not found' }, { status: 404 });
-		}
-
 		// Parse request body
 		const body = (await request.json()) as {
 			name?: unknown;
@@ -141,10 +130,20 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 			updateData.isActive = body.isActive;
 		}
 
-		// Update product
-		await db.update(products).set(updateData).where(eq(products.id, productId));
+		let variantRecords:
+			| Array<{
+					id: string;
+					productId: string;
+					size: string;
+					volumeMl: number;
+					costPrice: number;
+					sellingPrice: number;
+					stockQuantity: number;
+					createdAt: Date;
+					updatedAt: Date;
+			  }>
+			| undefined;
 
-		// Handle variants if provided
 		if (body.variants !== undefined) {
 			if (!Array.isArray(body.variants)) {
 				return json({ error: 'Variants must be an array' }, { status: 400 });
@@ -186,12 +185,8 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 				}
 			}
 
-			// Delete existing variants
-			await db.delete(productVariants).where(eq(productVariants.productId, productId));
-
-			// Insert new variants
 			const now = new Date();
-			const variantRecords = (body.variants as any[]).map((variant: any) => ({
+			variantRecords = (body.variants as any[]).map((variant: any) => ({
 				id: variant.id || nanoid(),
 				productId: productId,
 				size: variant.size.trim(),
@@ -202,13 +197,13 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 				createdAt: now,
 				updatedAt: now
 			}));
-
-			await db.insert(productVariants).values(variantRecords);
 		}
 
-		// Fetch updated product with variants for response
-		const updatedProduct = await db
-			.select({
+		const updateProduct = db
+			.update(products)
+			.set(updateData)
+			.where(eq(products.id, productId))
+			.returning({
 				id: products.id,
 				name: products.name,
 				description: products.description,
@@ -217,28 +212,72 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 				isActive: products.isActive,
 				createdAt: products.createdAt,
 				updatedAt: products.updatedAt
-			})
-			.from(products)
-			.where(eq(products.id, productId))
-			.limit(1);
+			});
 
-		const updatedVariants = await db
-			.select({
-				id: productVariants.id,
-				size: productVariants.size,
-				volumeMl: productVariants.volumeMl,
-				costPrice: productVariants.costPrice,
-				sellingPrice: productVariants.sellingPrice,
-				stockQuantity: productVariants.stockQuantity
-			})
-			.from(productVariants)
-			.where(eq(productVariants.productId, productId));
+		let updatedProduct;
+		let updatedVariants;
+
+		if (variantRecords) {
+			// Preserve the 404 contract before the write-only batch. D1 then applies
+			// the product update and complete variant replacement in one round trip.
+			const existingProduct = await db
+				.select({ id: products.id })
+				.from(products)
+				.where(eq(products.id, productId))
+				.limit(1);
+
+			if (existingProduct.length === 0) {
+				return json({ error: 'Product not found' }, { status: 404 });
+			}
+
+			const [updatedProducts] = await db.batch([
+				updateProduct,
+				db.delete(productVariants).where(eq(productVariants.productId, productId)),
+				db.insert(productVariants).values(variantRecords)
+			]);
+
+			updatedProduct = updatedProducts[0];
+			updatedVariants = variantRecords.map(
+				({ id, size, volumeMl, costPrice, sellingPrice, stockQuantity }) => ({
+					id,
+					size,
+					volumeMl,
+					costPrice,
+					sellingPrice,
+					stockQuantity
+				})
+			);
+		} else {
+			// Status-only edits can return the updated row and existing variants from
+			// a single D1 batch instead of four sequential database requests.
+			const [updatedProducts, existingVariants] = await db.batch([
+				updateProduct,
+				db
+					.select({
+						id: productVariants.id,
+						size: productVariants.size,
+						volumeMl: productVariants.volumeMl,
+						costPrice: productVariants.costPrice,
+						sellingPrice: productVariants.sellingPrice,
+						stockQuantity: productVariants.stockQuantity
+					})
+					.from(productVariants)
+					.where(eq(productVariants.productId, productId))
+			]);
+
+			if (updatedProducts.length === 0) {
+				return json({ error: 'Product not found' }, { status: 404 });
+			}
+
+			updatedProduct = updatedProducts[0];
+			updatedVariants = existingVariants;
+		}
 
 		// Return updated product with variants
 		return json({
 			success: true,
 			data: {
-				...updatedProduct[0],
+				...updatedProduct,
 				variants: updatedVariants
 			}
 		});
