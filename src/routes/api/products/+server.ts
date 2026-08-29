@@ -52,32 +52,37 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		// Combine conditions
 		const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-		// Get total count for pagination
-		const countResult = await db
-			.select({ count: sql<number>`count(*)` })
-			.from(products)
-			.where(whereClause);
+		// These reads are independent, so send them to D1 concurrently instead of
+		// paying for three sequential network round trips.
+		const [countResult, productsData, categoriesResult] = await Promise.all([
+			db
+				.select({ count: sql<number>`count(*)` })
+				.from(products)
+				.where(whereClause),
+			db
+				.select({
+					id: products.id,
+					name: products.name,
+					description: products.description,
+					category: products.category,
+					imageUrl: products.imageUrl,
+					isActive: products.isActive,
+					createdAt: products.createdAt,
+					updatedAt: products.updatedAt
+				})
+				.from(products)
+				.where(whereClause)
+				.orderBy(desc(products.createdAt))
+				.limit(validLimit)
+				.offset(offset),
+			db
+				.selectDistinct({ category: products.category })
+				.from(products)
+				.where(activeOnly ? eq(products.isActive, true) : undefined)
+		]);
 
 		const totalItems = countResult[0]?.count || 0;
 		const totalPages = Math.ceil(totalItems / validLimit);
-
-		// Get products with pagination
-		const productsData = await db
-			.select({
-				id: products.id,
-				name: products.name,
-				description: products.description,
-				category: products.category,
-				imageUrl: products.imageUrl,
-				isActive: products.isActive,
-				createdAt: products.createdAt,
-				updatedAt: products.updatedAt
-			})
-			.from(products)
-			.where(whereClause)
-			.orderBy(desc(products.createdAt))
-			.limit(validLimit)
-			.offset(offset);
 
 		// Get variants for all products
 		const productIds = productsData.map((p) => p.id);
@@ -130,12 +135,6 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			...product,
 			variants: variantsByProduct[product.id] || []
 		}));
-
-		// Get unique categories for filtering
-		const categoriesResult = await db
-			.selectDistinct({ category: products.category })
-			.from(products)
-			.where(activeOnly ? eq(products.isActive, true) : undefined);
 
 		const categories = categoriesResult.map((r) => r.category).filter(Boolean);
 
