@@ -540,7 +540,14 @@
 											<div class="avatar">
 												<div class="mask h-12 w-12 bg-base-200 mask-squircle">
 													{#if product.imageUrl}
-														<img src={product.imageUrl} alt={product.name} />
+														<img
+															src={product.imageUrl}
+															alt={product.name}
+															width="48"
+															height="48"
+															loading="lazy"
+															decoding="async"
+														/>
 													{:else}
 														<Package class="m-auto mt-2 h-8 w-8" />
 													{/if}
