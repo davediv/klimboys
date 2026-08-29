@@ -262,8 +262,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		const validatedIsActive = body.isActive !== false;
 		const validatedVariants = body.variants as any[];
 
-		// Create product
-		await db.insert(products).values({
+		const productRecord = {
 			id: productId,
 			name: validatedName.trim(),
 			description: validatedDescription?.trim() || null,
@@ -272,9 +271,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			isActive: validatedIsActive, // Default to true if not specified
 			createdAt: now,
 			updatedAt: now
-		});
+		};
 
-		// Create variants
 		const variantRecords = validatedVariants.map((variant: any) => ({
 			id: nanoid(),
 			productId: productId,
@@ -287,42 +285,30 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			updatedAt: now
 		}));
 
-		await db.insert(productVariants).values(variantRecords);
+		// D1 executes batched statements in order in one round trip. Both response
+		// objects are already known, so avoid reading the rows back after insertion.
+		await db.batch([
+			db.insert(products).values(productRecord),
+			db.insert(productVariants).values(variantRecords)
+		]);
 
-		// Fetch the created product with variants for response
-		const createdProduct = await db
-			.select({
-				id: products.id,
-				name: products.name,
-				description: products.description,
-				category: products.category,
-				imageUrl: products.imageUrl,
-				isActive: products.isActive,
-				createdAt: products.createdAt,
-				updatedAt: products.updatedAt
+		const createdVariants = variantRecords.map(
+			({ id, size, volumeMl, costPrice, sellingPrice, stockQuantity }) => ({
+				id,
+				size,
+				volumeMl,
+				costPrice,
+				sellingPrice,
+				stockQuantity
 			})
-			.from(products)
-			.where(eq(products.id, productId))
-			.limit(1);
-
-		const createdVariants = await db
-			.select({
-				id: productVariants.id,
-				size: productVariants.size,
-				volumeMl: productVariants.volumeMl,
-				costPrice: productVariants.costPrice,
-				sellingPrice: productVariants.sellingPrice,
-				stockQuantity: productVariants.stockQuantity
-			})
-			.from(productVariants)
-			.where(eq(productVariants.productId, productId));
+		);
 
 		// Return created product with variants
 		return json(
 			{
 				success: true,
 				data: {
-					...createdProduct[0],
+					...productRecord,
 					variants: createdVariants
 				}
 			},
