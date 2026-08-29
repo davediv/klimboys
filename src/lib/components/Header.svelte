@@ -25,12 +25,26 @@
 
 	// Track scroll position for navbar transparency
 	$effect(() => {
-		function handleScroll() {
+		let frameId = 0;
+
+		function updateScrollState() {
+			frameId = 0;
 			scrolled = window.scrollY > 50;
 		}
 
-		window.addEventListener('scroll', handleScroll);
-		return () => window.removeEventListener('scroll', handleScroll);
+		function handleScroll() {
+			if (frameId === 0) {
+				frameId = window.requestAnimationFrame(updateScrollState);
+			}
+		}
+
+		updateScrollState();
+		window.addEventListener('scroll', handleScroll, { passive: true });
+
+		return () => {
+			window.removeEventListener('scroll', handleScroll);
+			if (frameId !== 0) window.cancelAnimationFrame(frameId);
+		};
 	});
 
 	// Dynamic nav items based on user role
