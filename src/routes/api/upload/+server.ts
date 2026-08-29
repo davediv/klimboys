@@ -54,7 +54,8 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 		const arrayBuffer = await file.arrayBuffer();
 		const r2Object = await platform.env.BUCKET.put(uniqueFilename, arrayBuffer, {
 			httpMetadata: {
-				contentType: file.type
+				contentType: file.type,
+				cacheControl: 'public, max-age=31536000, immutable'
 			},
 			customMetadata: {
 				uploadedBy: locals.user.id,
