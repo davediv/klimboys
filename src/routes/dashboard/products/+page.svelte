@@ -12,6 +12,7 @@
 		X
 	} from '@lucide/svelte';
 	import { formatIdr } from '$lib/format';
+	import type { CatalogProduct } from '$lib/product';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -46,7 +47,7 @@
 	});
 
 	// Product catalog seeded by the server load and reconciled from mutation responses
-	let products = $state<any[]>(data.products);
+	let products = $state<CatalogProduct[]>(data.products);
 
 	let filteredProducts = $derived(
 		products.filter(

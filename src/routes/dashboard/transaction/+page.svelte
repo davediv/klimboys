@@ -4,6 +4,7 @@
 	import ProductSearch from '$lib/components/ProductSearch.svelte';
 	import ProductSizeModal from '$lib/components/ProductSizeModal.svelte';
 	import { formatIdr } from '$lib/format';
+	import type { CatalogProduct } from '$lib/product';
 
 	let { data }: { data: PageData } = $props();
 
@@ -31,7 +32,7 @@
 	let selectedProduct = $state<any>(null);
 
 	// Popular products state
-	let popularProducts = $state<any[]>(data.popularProducts);
+	let popularProducts = $state<CatalogProduct[]>(data.popularProducts);
 
 	// Calculate total
 	let total = $derived(cart.reduce((sum, item) => sum + item.price * item.quantity, 0));

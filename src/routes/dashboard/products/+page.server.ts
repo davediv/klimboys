@@ -1,5 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { routeGuard } from '$lib/server/guards';
+import type { CatalogProduct, ProductListResponse } from '$lib/product';
 
 export const load: PageServerLoad = async (event) => {
 	// Require authentication, verification, and admin role
@@ -8,7 +9,7 @@ export const load: PageServerLoad = async (event) => {
 		requireVerified: true,
 		minRole: 'admin'
 	});
-	let products: any[] = [];
+	let products: CatalogProduct[] = [];
 	let productsError: string | null = null;
 
 	try {
@@ -17,7 +18,7 @@ export const load: PageServerLoad = async (event) => {
 			throw new Error('Failed to fetch products');
 		}
 
-		const result = (await response.json()) as any;
+		const result = (await response.json()) as ProductListResponse;
 		if (result.success && result.data) {
 			products = result.data.products || [];
 		}
