@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, unique } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, text, integer, unique, index } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 // User table with role support
@@ -61,23 +61,29 @@ export const verification = sqliteTable('verification', {
 // ============================================
 
 // Products table for managing milk shake products
-export const products = sqliteTable('products', {
-	id: text('id')
-		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
-	name: text('name').notNull(),
-	description: text('description'),
-	category: text('category').notNull(),
-	imageUrl: text('image_url'),
-	isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.default(sql`(unixepoch())`),
-	updatedAt: integer('updated_at', { mode: 'timestamp' })
-		.notNull()
-		.default(sql`(unixepoch())`)
-		.$onUpdate(() => new Date())
-});
+export const products = sqliteTable(
+	'products',
+	{
+		id: text('id')
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		name: text('name').notNull(),
+		description: text('description'),
+		category: text('category').notNull(),
+		imageUrl: text('image_url'),
+		isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.default(sql`(unixepoch())`),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
+			.notNull()
+			.default(sql`(unixepoch())`)
+			.$onUpdate(() => new Date())
+	},
+	(table) => ({
+		activeCreatedAtIdx: index('products_active_created_at_idx').on(table.isActive, table.createdAt)
+	})
+);
 
 // Product variants table for size-based pricing and stock management
 export const productVariants = sqliteTable(
