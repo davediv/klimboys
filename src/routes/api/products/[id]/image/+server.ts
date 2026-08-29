@@ -33,7 +33,7 @@ export const POST: RequestHandler = async ({ params, request, locals, platform }
 
 		// Check if product exists
 		const existingProduct = await db
-			.select({ id: products.id, imageUrl: products.imageUrl })
+			.select({ id: products.id, name: products.name, imageUrl: products.imageUrl })
 			.from(products)
 			.where(eq(products.id, productId))
 			.limit(1);
@@ -109,30 +109,24 @@ export const POST: RequestHandler = async ({ params, request, locals, platform }
 		// const publicUrl = `https://your-cdn-domain.com/${uniqueFilename}`;
 
 		// Update product with new image URL
+		const updatedAt = new Date();
 		await db
 			.update(products)
 			.set({
 				imageUrl: publicUrl,
-				updatedAt: new Date()
+				updatedAt
 			})
 			.where(eq(products.id, productId));
-
-		// Fetch updated product
-		const updatedProduct = await db
-			.select({
-				id: products.id,
-				name: products.name,
-				imageUrl: products.imageUrl,
-				updatedAt: products.updatedAt
-			})
-			.from(products)
-			.where(eq(products.id, productId))
-			.limit(1);
 
 		return json({
 			success: true,
 			data: {
-				product: updatedProduct[0],
+				product: {
+					id: existingProduct[0].id,
+					name: existingProduct[0].name,
+					imageUrl: publicUrl,
+					updatedAt
+				},
 				image: {
 					url: publicUrl,
 					filename: uniqueFilename,
