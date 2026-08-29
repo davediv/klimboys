@@ -1,7 +1,12 @@
 @import 'tailwindcss';
 @plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
-@plugin 'daisyui';
+@plugin 'daisyui' {
+	include:
+		rootcolor, svg, properties, rootscrollgutter, scrollbar, rootscrolllock, alert, avatar, badge,
+		button, card, divider, fileinput, footer, hero, indicator, input, label, link, loading, mask,
+		modal, select, table, textarea;
+}
 
 /* Custom theme colors */
 :root {
