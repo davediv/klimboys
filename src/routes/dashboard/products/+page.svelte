@@ -45,29 +45,8 @@
 		}>
 	});
 
-	// Products fetched from API
+	// Product catalog seeded by the server load and reconciled from mutation responses
 	let products = $state<any[]>(data.products);
-
-	// Fetch products from API
-	async function fetchProducts() {
-		loading = true;
-		error = null;
-		try {
-			const response = await fetch('/api/products?limit=100&active=true&includeMeta=false');
-			if (!response.ok) {
-				throw new Error('Failed to fetch products');
-			}
-			const result = (await response.json()) as any;
-			if (result.success && result.data) {
-				products = result.data.products || [];
-			}
-		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to load products';
-			console.error('Error fetching products:', err);
-		} finally {
-			loading = false;
-		}
-	}
 
 	let filteredProducts = $derived(
 		products.filter(
@@ -210,14 +189,15 @@
 
 			const result = (await response.json()) as any;
 			if (result.success && result.data) {
-				const productId = result.data.product.id;
+				let createdProduct = result.data;
+				const productId = createdProduct.id;
 
 				// Upload image if file selected
 				if (imageFile) {
 					try {
 						const imageUrl = await uploadImage(productId);
 						if (imageUrl) {
-							// Image uploaded successfully, it's already associated with the product
+							createdProduct = { ...createdProduct, imageUrl };
 							successMessage = 'Product added with image successfully!';
 						}
 					} catch (imgErr) {
@@ -229,8 +209,8 @@
 					successMessage = 'Product added successfully!';
 				}
 
+				products = [createdProduct, ...products];
 				showAddModal = false;
-				await fetchProducts(); // Refresh the list
 				setTimeout(() => (successMessage = null), 3000);
 			}
 		} catch (err) {
@@ -301,12 +281,14 @@
 			}
 
 			const result = (await response.json()) as any;
-			if (result.success) {
+			if (result.success && result.data) {
+				products = products.map((product) =>
+					product.id === result.data.id ? result.data : product
+				);
 				successMessage = imageFile
 					? 'Product and image updated successfully!'
 					: 'Product updated successfully!';
 				showEditModal = false;
-				await fetchProducts(); // Refresh the list
 				setTimeout(() => (successMessage = null), 3000);
 			}
 		} catch (err) {
@@ -334,9 +316,9 @@
 
 			const result = (await response.json()) as any;
 			if (result.success) {
+				products = products.filter((product) => product.id !== selectedProduct.id);
 				successMessage = 'Product deleted successfully!';
 				showDeleteModal = false;
-				await fetchProducts(); // Refresh the list
 				setTimeout(() => (successMessage = null), 3000);
 			}
 		} catch (err) {
@@ -370,8 +352,10 @@
 			}
 
 			const result = (await response.json()) as any;
-			if (result.success) {
-				await fetchProducts(); // Refresh the list
+			if (result.success && result.data) {
+				products = result.data.isActive
+					? products.map((item) => (item.id === productId ? result.data : item))
+					: products.filter((item) => item.id !== productId);
 			}
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to toggle product status';
