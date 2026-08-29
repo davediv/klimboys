@@ -15,6 +15,15 @@ export const handle: Handle = async ({ event, resolve }) => {
 		return auth.handler(event.request);
 	}
 
+	// Product reads are intentionally public and do not consume locals. Skip the
+	// session lookup when an authenticated browser searches or loads the catalog.
+	const isPublicProductRead =
+		event.request.method === 'GET' &&
+		(event.url.pathname === '/api/products' || /^\/api\/products\/[^/]+$/.test(event.url.pathname));
+	if (isPublicProductRead) {
+		return resolve(event);
+	}
+
 	// Get session for all requests
 	try {
 		const sessionToken = event.cookies.get('better-auth.session_token');
