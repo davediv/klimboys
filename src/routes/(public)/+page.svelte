@@ -38,25 +38,29 @@
 		{
 			name: 'Classic Chocolate',
 			price: 'Rp 35.000',
-			image: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400&h=400&fit=crop',
+			image:
+				'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400&h=400&fit=crop&auto=format&q=75',
 			rating: 4.9
 		},
 		{
 			name: 'Strawberry Delight',
 			price: 'Rp 38.000',
-			image: 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=400&h=400&fit=crop',
+			image:
+				'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=400&h=400&fit=crop&auto=format&q=75',
 			rating: 4.8
 		},
 		{
 			name: 'Vanilla Dream',
 			price: 'Rp 32.000',
-			image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=400&fit=crop',
+			image:
+				'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=400&fit=crop&auto=format&q=75',
 			rating: 4.7
 		},
 		{
 			name: 'Oreo Blast',
 			price: 'Rp 40.000',
-			image: 'https://images.unsplash.com/photo-1541658016709-82535e94bc69?w=400&h=400&fit=crop',
+			image:
+				'https://images.unsplash.com/photo-1541658016709-82535e94bc69?w=400&h=400&fit=crop&auto=format&q=75',
 			rating: 4.9
 		}
 	];
@@ -95,7 +99,14 @@
 	data-theme="light"
 >
 	<div class="hero-content flex-col lg:flex-row-reverse">
-		<img src={Mascot} alt="Klimboys Mascot" class="w-full max-w-sm rounded-lg lg:w-1/2" />
+		<img
+			src={Mascot}
+			alt="Klimboys Mascot"
+			width="188"
+			height="321"
+			fetchpriority="high"
+			class="w-full max-w-sm rounded-lg lg:w-1/2"
+		/>
 		<div class="max-w-3xl text-center lg:text-left">
 			<div class="mb-4 inline-block">
 				<span
@@ -363,7 +374,15 @@
 					class="card border border-gray-100 bg-white shadow-md transition-all duration-300 hover:-translate-y-2 hover:shadow-xl"
 				>
 					<figure class="px-4 pt-4">
-						<img src={item.image} alt={item.name} class="h-48 w-full rounded-xl object-cover" />
+						<img
+							src={item.image}
+							alt={item.name}
+							width="400"
+							height="400"
+							loading="lazy"
+							decoding="async"
+							class="h-48 w-full rounded-xl object-cover"
+						/>
 					</figure>
 					<div class="card-body">
 						<div class="mb-2 flex items-center gap-2">
