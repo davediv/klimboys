@@ -50,7 +50,7 @@
 		loading = true;
 		error = null;
 		try {
-			const response = await fetch('/api/products?limit=100&active=true');
+			const response = await fetch('/api/products?limit=100&active=true&includeMeta=false');
 			if (!response.ok) {
 				throw new Error('Failed to fetch products');
 			}

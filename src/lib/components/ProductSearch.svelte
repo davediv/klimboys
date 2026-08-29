@@ -53,7 +53,7 @@
 
 		try {
 			const response = await fetch(
-				`${apiEndpoint}?search=${encodeURIComponent(query)}&limit=10&active=true`
+				`${apiEndpoint}?search=${encodeURIComponent(query)}&limit=10&active=true&includeMeta=false`
 			);
 			if (!response.ok) {
 				throw new Error('Failed to search products');

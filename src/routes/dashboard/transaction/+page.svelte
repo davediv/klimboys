@@ -41,7 +41,7 @@
 	async function fetchPopularProducts() {
 		loadingProducts = true;
 		try {
-			const response = await fetch('/api/products?limit=6&active=true');
+			const response = await fetch('/api/products?limit=6&active=true&includeMeta=false');
 			if (response.ok) {
 				const result = (await response.json()) as any;
 				if (result.success && result.data) {

@@ -23,6 +23,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		const limit = parseInt(url.searchParams.get('limit') || '10');
 		const category = url.searchParams.get('category') || '';
 		const activeOnly = url.searchParams.get('active') !== 'false'; // Default to true
+		const includeMeta = url.searchParams.get('includeMeta') !== 'false';
 
 		// Validate pagination parameters
 		const validPage = Math.max(1, page);
@@ -54,11 +55,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 		// These reads are independent, so send them to D1 concurrently instead of
 		// paying for three sequential network round trips.
-		const [countResult, productsData, categoriesResult] = await Promise.all([
-			db
-				.select({ count: sql<number>`count(*)` })
-				.from(products)
-				.where(whereClause),
+		const [productsData, countResult, categoriesResult] = await Promise.all([
 			db
 				.select({
 					id: products.id,
@@ -75,13 +72,21 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 				.orderBy(desc(products.createdAt))
 				.limit(validLimit)
 				.offset(offset),
-			db
-				.selectDistinct({ category: products.category })
-				.from(products)
-				.where(activeOnly ? eq(products.isActive, true) : undefined)
+			includeMeta
+				? db
+						.select({ count: sql<number>`count(*)` })
+						.from(products)
+						.where(whereClause)
+				: undefined,
+			includeMeta
+				? db
+						.selectDistinct({ category: products.category })
+						.from(products)
+						.where(activeOnly ? eq(products.isActive, true) : undefined)
+				: undefined
 		]);
 
-		const totalItems = countResult[0]?.count || 0;
+		const totalItems = countResult?.[0]?.count || 0;
 		const totalPages = Math.ceil(totalItems / validLimit);
 
 		// Get variants for all products
@@ -136,27 +141,31 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 			variants: variantsByProduct[product.id] || []
 		}));
 
-		const categories = categoriesResult.map((r) => r.category).filter(Boolean);
+		const categories = categoriesResult?.map((r) => r.category).filter(Boolean) ?? [];
 
 		// Return response with pagination metadata
 		return json({
 			success: true,
 			data: {
 				products: productsWithVariants,
-				pagination: {
-					page: validPage,
-					limit: validLimit,
-					totalItems,
-					totalPages,
-					hasNext: validPage < totalPages,
-					hasPrev: validPage > 1
-				},
-				filters: {
-					categories,
-					search: searchQuery,
-					category: category || null,
-					activeOnly
-				}
+				...(includeMeta
+					? {
+							pagination: {
+								page: validPage,
+								limit: validLimit,
+								totalItems,
+								totalPages,
+								hasNext: validPage < totalPages,
+								hasPrev: validPage > 1
+							},
+							filters: {
+								categories,
+								search: searchQuery,
+								category: category || null,
+								activeOnly
+							}
+						}
+					: {})
 			}
 		});
 	} catch (error) {
