@@ -203,8 +203,8 @@
 					</div>
 				</div>
 
-				<!-- Remember & Forgot -->
-				<div class="flex items-center justify-between">
+				<!-- Remember preference -->
+				<div class="flex items-center">
 					<div class="flex items-center">
 						<input
 							id="remember-me"
@@ -214,13 +214,6 @@
 						/>
 						<label for="remember-me" class="ml-2 block text-sm text-gray-700"> Remember me </label>
 					</div>
-
-					<a
-						href="/forgot-password"
-						class="text-sm font-medium text-[#FF6B6B] transition-colors hover:text-[#FF8E8E]"
-					>
-						Forgot password?
-					</a>
 				</div>
 
 				<!-- Submit Button -->

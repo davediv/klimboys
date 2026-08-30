@@ -139,7 +139,7 @@
 			</p>
 			<div class="flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
 				<a
-					href="/menu"
+					href="#menu"
 					class={buttonStyles({ size: 'lg' })}
 					style="background-color: #FF6B6B; color: white; border-color: #FF6B6B;"
 				>
@@ -325,7 +325,7 @@
 </section>
 
 <!-- Features Section -->
-<section class="px-4 py-20">
+<section id="about" class="scroll-mt-24 px-4 py-20">
 	<div class="container mx-auto">
 		<div class="mb-12 text-center">
 			<h2 class="mb-4 text-3xl font-bold md:text-4xl">Why Choose Klimboys?</h2>
@@ -335,7 +335,7 @@
 			</p>
 		</div>
 		<div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-			{#each features as feature}
+			{#each features as feature (feature.title)}
 				<div class={cx(cardStyles, 'bg-surface transition-shadow hover:shadow-xl')}>
 					<div class={cx(cardBodyStyles, 'items-center text-center')}>
 						<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand/10">
@@ -359,7 +359,10 @@
 </section>
 
 <!-- Popular Items Section -->
-<section class="bg-gradient-to-br from-orange-50 via-white to-pink-50 px-4 py-20">
+<section
+	id="menu"
+	class="scroll-mt-24 bg-gradient-to-br from-orange-50 via-white to-pink-50 px-4 py-20"
+>
 	<div class="container mx-auto">
 		<div class="mb-12 flex items-center justify-between">
 			<div>
@@ -371,7 +374,7 @@
 				<p class="text-gray-600">Customer favorites you'll love</p>
 			</div>
 			<a
-				href="/menu"
+				href="#menu"
 				class={cx(
 					buttonStyles({ variant: 'ghost' }),
 					'gap-2 border-[#FF6B6B]/20 hover:bg-[#FF6B6B]/10'
@@ -382,7 +385,7 @@
 			</a>
 		</div>
 		<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-			{#each popularItems as item}
+			{#each popularItems as item (item.name)}
 				<div
 					class={cx(
 						cardStyles,
@@ -442,8 +445,10 @@
 					<a href="/go/whatsapp" class={buttonStyles({ tone: 'neutral', size: 'lg' })}
 						>Order via WhatsApp</a
 					>
-					<button class={cx(buttonStyles({ variant: 'ghost', size: 'lg' }), 'text-white')}
-						>Find Our Store</button
+					<a
+						href="#contact"
+						class={cx(buttonStyles({ variant: 'ghost', size: 'lg' }), 'text-white')}
+						>Find Our Store</a
 					>
 				</div>
 			</div>
@@ -463,7 +468,7 @@
 			<p class="text-gray-600">Real reviews from real shake lovers</p>
 		</div>
 		<div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-			{#each testimonials as testimonial}
+			{#each testimonials as testimonial (testimonial.name)}
 				<div
 					class={cx(
 						cardStyles,
@@ -475,7 +480,7 @@
 						<div class="absolute -top-4 -left-2 font-serif text-6xl text-[#FF6B6B]/10">"</div>
 
 						<div class="mb-4 flex justify-center gap-1">
-							{#each Array(testimonial.rating) as _}
+							{#each Array(testimonial.rating).keys() as starIndex (starIndex)}
 								<Star class="h-5 w-5 fill-yellow-400 text-yellow-400" />
 							{/each}
 						</div>

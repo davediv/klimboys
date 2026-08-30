@@ -3,7 +3,7 @@
 	import Logo from '$lib/assets/logo.svg';
 </script>
 
-<div class="bg-surface-muted">
+<div id="contact" class="scroll-mt-24 bg-surface-muted">
 	<div class="container mx-auto px-4">
 		<footer
 			class="grid w-full grid-cols-1 place-items-start gap-8 p-10 text-sm leading-5 text-ink md:grid-cols-2 lg:grid-cols-4"
@@ -19,20 +19,21 @@
 			<nav class="grid place-items-start gap-2">
 				<h6 class="mb-2 font-semibold uppercase opacity-60">Quick Links</h6>
 				<a
-					href="/menu"
+					href="/#menu"
 					class="hover:underline focus-visible:outline-2 focus-visible:outline-offset-2">Our Menu</a
 				>
 				<a
-					href="/about"
+					href="/#about"
 					class="hover:underline focus-visible:outline-2 focus-visible:outline-offset-2">About Us</a
 				>
 				<a
-					href="/contact"
+					href="/#contact"
 					class="hover:underline focus-visible:outline-2 focus-visible:outline-offset-2">Contact</a
 				>
 				<a
-					href="/careers"
-					class="hover:underline focus-visible:outline-2 focus-visible:outline-offset-2">Careers</a
+					href="/login"
+					class="hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+					>Staff Login</a
 				>
 			</nav>
 

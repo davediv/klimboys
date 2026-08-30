@@ -1,21 +1,18 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import Logo from '$lib/assets/logo.svg';
+	import {
+		getPublicNavigation,
+		publicRoutes,
+		staffRoutes,
+		type NavigationRoute
+	} from '$lib/navigation';
 	import { Menu, X } from '@lucide/svelte';
 	import { fly, fade } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 
 	interface Props {
-		user?: {
-			id: string;
-			email: string;
-			name?: string | null;
-			role: string;
-			emailVerified: boolean;
-			image?: string | null;
-			createdAt: Date;
-			updatedAt: Date;
-		} | null;
+		user?: App.Locals['user'] | null;
 	}
 
 	let { user = null }: Props = $props();
@@ -47,38 +44,25 @@
 		};
 	});
 
-	// Dynamic nav items based on user role
 	let navItems = $derived(() => {
-		const items = [
-			{ href: '/', label: 'Home' },
-			{ href: '/menu', label: 'Menu' },
-			{ href: '/about', label: 'About' },
-			{ href: '/contact', label: 'Contact' }
-		];
+		const items: NavigationRoute[] = [...getPublicNavigation()];
 
-		// Add role-specific items
 		if (user?.role === 'admin') {
-			items.push(
-				{ href: '/dashboard', label: 'Dashboard' },
-				{ href: '/admin/products', label: 'Products' }
-			);
+			items.push(staffRoutes.dashboard, staffRoutes.products);
 		} else if (user?.role === 'cashier') {
-			items.push(
-				{ href: '/dashboard/transaction', label: 'POS' },
-				{ href: '/dashboard', label: 'Dashboard' }
-			);
+			items.push(staffRoutes.pos, staffRoutes.dashboard);
 		}
 
-		// Add login/logout items
-		if (user) {
-			items.push({ href: '/profile', label: 'Profile' });
-		} else {
-			items.push({ href: '/login', label: 'Login' });
-			items.push({ href: '/register', label: 'Register' });
-		}
+		if (!user) items.push(publicRoutes.login, publicRoutes.register);
 
 		return items;
 	});
+
+	function isActive(href: string): boolean {
+		const [pathname, hash = ''] = href.split('#');
+		if (hash) return $page.url.pathname === pathname && $page.url.hash === `#${hash}`;
+		return $page.url.pathname === pathname;
+	}
 
 	async function handleLogout() {
 		await fetch('/api/auth/sign-out', { method: 'POST' });
@@ -109,6 +93,8 @@
 					: 'bg-white/80 backdrop-blur-sm hover:bg-white/90'} {mobileMenuOpen ? 'rotate-90' : ''}"
 				onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
 				aria-label="Toggle menu"
+				aria-expanded={mobileMenuOpen}
+				aria-controls="public-navigation"
 			>
 				<div class="relative h-6 w-6">
 					{#if mobileMenuOpen}
@@ -153,14 +139,15 @@
 				</div>
 
 				<!-- Menu Items -->
-				<nav class="flex-1 overflow-y-auto">
+				<nav id="public-navigation" class="flex-1 overflow-y-auto" aria-label="Primary">
 					<ul class="py-4">
-						{#each navItems() as item}
+						{#each navItems() as item (item.id)}
 							<li>
 								<a
 									href={item.href}
-									class="block px-6 py-3 text-lg font-medium transition-colors hover:bg-gray-50 {$page
-										.url.pathname === item.href
+									class="block px-6 py-3 text-lg font-medium transition-colors hover:bg-gray-50 {isActive(
+										item.href
+									)
 										? 'bg-red-50 text-[#FF6B6B]'
 										: 'text-gray-900'}"
 									onclick={() => (mobileMenuOpen = false)}

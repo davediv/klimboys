@@ -255,10 +255,7 @@
 							class="mt-1 h-4 w-4 rounded border-gray-300 text-[#FF6B6B] focus:ring-[#FF6B6B]"
 						/>
 						<label for="terms" class="ml-2 block text-sm text-gray-700">
-							I agree to the <a href="/terms" class="text-[#FF6B6B] hover:text-[#FF8E8E]"
-								>Terms of Service</a
-							>
-							and <a href="/privacy" class="text-[#FF6B6B] hover:text-[#FF8E8E]">Privacy Policy</a>
+							I confirm that this account is authorized for Klimboys staff use.
 						</label>
 					</div>
 

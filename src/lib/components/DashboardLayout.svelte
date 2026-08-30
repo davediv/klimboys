@@ -1,39 +1,33 @@
 <script lang="ts">
-	import {
-		LayoutDashboard,
-		ShoppingCart,
-		Package,
-		Users,
-		Bell,
-		Menu,
-		X,
-		Settings,
-		LogOut,
-		FileText,
-		BarChart3
-	} from '@lucide/svelte';
+	import { LayoutDashboard, ShoppingCart, Package, Menu, X, LogOut } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import Logo from '$lib/assets/logo.svg';
-	import { badgeStyles, buttonStyles, cx } from '$lib/styles';
+	import { getStaffNavigation, type StaffRouteId } from '$lib/navigation';
+	import { buttonStyles, cx } from '$lib/styles';
+	import type { Snippet } from 'svelte';
 
 	interface Props {
-		user: any;
-		children?: any;
+		user: App.Locals['user'] | null;
+		children?: Snippet;
 		title?: string;
 	}
 
 	let { user, children, title = 'Dashboard' }: Props = $props();
 	let sidebarOpen = $state(false);
 
-	const sidebarItems = [
-		{ icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
-		{ icon: ShoppingCart, label: 'Transactions', href: '/dashboard/transaction' },
-		{ icon: Package, label: 'Products', href: '/dashboard/products' },
-		{ icon: FileText, label: 'Reports', href: '/dashboard/reports' },
-		{ icon: Users, label: 'Users', href: '/dashboard/users', adminOnly: true },
-		{ icon: Settings, label: 'Settings', href: '/dashboard/settings' }
-	];
+	const routeIcons = {
+		dashboard: LayoutDashboard,
+		pos: ShoppingCart,
+		products: Package
+	} satisfies Record<StaffRouteId, typeof LayoutDashboard>;
+
+	let sidebarItems = $derived(
+		getStaffNavigation(user?.role).map((route) => ({
+			...route,
+			icon: routeIcons[route.id as StaffRouteId]
+		}))
+	);
 
 	async function handleLogout() {
 		const response = await fetch('/api/auth/sign-out', {
@@ -69,19 +63,18 @@
 			</div>
 
 			<!-- Navigation -->
-			<nav class="flex-1 space-y-1 px-3 py-4">
-				{#each sidebarItems as item}
-					{#if !item.adminOnly || user?.role === 'admin'}
-						<a
-							href={item.href}
-							class={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-								isActive(item.href) ? 'bg-[#FF6B6B] text-white' : 'text-gray-700 hover:bg-gray-100'
-							}`}
-						>
-							<svelte:component this={item.icon} class="h-5 w-5" />
-							{item.label}
-						</a>
-					{/if}
+			<nav class="flex-1 space-y-1 px-3 py-4" aria-label="Staff navigation">
+				{#each sidebarItems as item (item.id)}
+					{@const ItemIcon = item.icon}
+					<a
+						href={item.href}
+						class={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+							isActive(item.href) ? 'bg-[#FF6B6B] text-white' : 'text-gray-700 hover:bg-gray-100'
+						}`}
+					>
+						<ItemIcon class="h-5 w-5" />
+						{item.label}
+					</a>
 				{/each}
 			</nav>
 
@@ -126,25 +119,7 @@
 					<h2 class="text-xl font-semibold text-gray-800">{title}</h2>
 				</div>
 
-				<div class="flex items-center gap-4">
-					<!-- Notifications -->
-					<button class={buttonStyles({ variant: 'ghost', size: 'sm', shape: 'circle' })}>
-						<div class="relative inline-flex w-max">
-							<Bell class="h-5 w-5" />
-							<span
-								class={cx(
-									badgeStyles('danger', 'xs'),
-									'absolute top-0 right-0 z-10 translate-x-1/2 -translate-y-1/2 whitespace-nowrap'
-								)}>3</span
-							>
-						</div>
-					</button>
-
-					<!-- Settings -->
-					<button class={buttonStyles({ variant: 'ghost', size: 'sm', shape: 'circle' })}>
-						<Settings class="h-5 w-5" />
-					</button>
-				</div>
+				<div></div>
 			</div>
 		</header>
 

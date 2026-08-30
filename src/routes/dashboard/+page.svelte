@@ -4,20 +4,12 @@
 		ShoppingCart,
 		Package,
 		AlertCircle,
-		ChevronRight,
 		Activity,
 		Coffee,
 		Users
 	} from '@lucide/svelte';
 	import type { PageData } from './$types';
-	import {
-		badgeStyles,
-		buttonStyles,
-		cardBodyStyles,
-		cardStyles,
-		compactTableStyles,
-		cx
-	} from '$lib/styles';
+	import { badgeStyles, cardBodyStyles, cardStyles, compactTableStyles, cx } from '$lib/styles';
 
 	interface Props {
 		data: PageData;
@@ -105,10 +97,7 @@
 		{ name: 'Oreo Blast (S)', stock: 2, minStock: 5 }
 	];
 
-	const quickActions: Record<
-		string,
-		Array<{ icon: any; label: string; href: string; color: string }>
-	> = {
+	const quickActions = {
 		admin: [
 			{
 				icon: ShoppingCart,
@@ -121,18 +110,6 @@
 				label: 'Manage Products',
 				href: '/dashboard/products',
 				color: 'bg-blue-600 text-white'
-			},
-			{
-				icon: Users,
-				label: 'User Management',
-				href: '/dashboard/users',
-				color: 'bg-purple-600 text-white'
-			},
-			{
-				icon: Activity,
-				label: 'View Reports',
-				href: '/dashboard/reports',
-				color: 'bg-green-600 text-white'
 			}
 		],
 		cashier: [
@@ -141,27 +118,13 @@
 				label: 'New Transaction',
 				href: '/dashboard/transaction',
 				color: 'bg-[#FF6B6B] text-white'
-			},
-			{
-				icon: Activity,
-				label: 'Transaction History',
-				href: '/dashboard/transactions',
-				color: 'bg-blue-600 text-white'
-			},
-			{
-				icon: Package,
-				label: 'View Products',
-				href: '/dashboard/products',
-				color: 'bg-purple-600 text-white'
-			},
-			{
-				icon: Activity,
-				label: 'My Shift Report',
-				href: '/dashboard/shift-report',
-				color: 'bg-green-600 text-white'
 			}
 		]
-	};
+	} as const;
+
+	function getQuickActions(role: string | undefined) {
+		return role === 'admin' ? quickActions.admin : quickActions.cashier;
+	}
 
 	function getStatusBadge(status: string) {
 		switch (status) {
@@ -187,7 +150,8 @@
 
 <!-- Stats Grid -->
 <div class="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-	{#each stats as stat}
+	{#each stats as stat (stat.label)}
+		{@const StatIcon = stat.icon}
 		<div class={cx(cardStyles, 'bg-white shadow-sm')}>
 			<div class={cardBodyStyles}>
 				<div class="flex items-center justify-between">
@@ -209,7 +173,7 @@
 						</div>
 					</div>
 					<div class={`rounded-lg p-3 ${stat.color}`}>
-						<svelte:component this={stat.icon} class="h-6 w-6" />
+						<StatIcon class="h-6 w-6" />
 					</div>
 				</div>
 			</div>
@@ -221,13 +185,14 @@
 <div class="mb-6">
 	<h2 class="mb-4 text-lg font-semibold text-gray-900">Quick Actions</h2>
 	<div class="grid grid-cols-2 gap-4 md:grid-cols-4">
-		{#each quickActions[data.user?.role || 'cashier'] || quickActions.cashier as action}
+		{#each getQuickActions(data.user?.role) as action (action.href)}
+			{@const ActionIcon = action.icon}
 			<a
 				href={action.href}
 				class={cx(cardStyles, action.color, 'shadow-sm transition-shadow hover:shadow-md')}
 			>
 				<div class={cx(cardBodyStyles, 'items-center p-4 text-center')}>
-					<svelte:component this={action.icon} class="mb-2 h-8 w-8" />
+					<ActionIcon class="mb-2 h-8 w-8" />
 					<p class="text-sm font-medium">{action.label}</p>
 				</div>
 			</a>
@@ -240,15 +205,8 @@
 	<div class="lg:col-span-2">
 		<div class={cx(cardStyles, 'bg-white shadow-sm')}>
 			<div class={cardBodyStyles}>
-				<div class="mb-4 flex items-center justify-between">
+				<div class="mb-4">
 					<h3 class="text-lg font-semibold text-gray-900">Recent Transactions</h3>
-					<a
-						href="/dashboard/transactions"
-						class={cx(buttonStyles({ variant: 'ghost', size: 'sm' }), 'gap-1')}
-					>
-						View All
-						<ChevronRight class="h-4 w-4" />
-					</a>
 				</div>
 				<div class="overflow-x-auto">
 					<table class={compactTableStyles}>
@@ -262,7 +220,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each recentOrders as order}
+							{#each recentOrders as order (order.id)}
 								<tr class="transition-colors hover:bg-surface-muted">
 									<td class="font-medium">{order.id}</td>
 									<td class="text-gray-600">{order.time}</td>
@@ -292,7 +250,7 @@
 					<span class={badgeStyles('caution', 'sm')}>{lowStockItems.length} items</span>
 				</div>
 				<div class="space-y-3">
-					{#each lowStockItems as item}
+					{#each lowStockItems as item (item.name)}
 						<div class="flex items-center justify-between rounded-lg bg-orange-50 p-3">
 							<div>
 								<p class="text-sm font-medium text-gray-900">{item.name}</p>
@@ -302,12 +260,6 @@
 						</div>
 					{/each}
 				</div>
-				<button
-					class={cx(
-						buttonStyles({ variant: 'outline', tone: 'caution', size: 'sm', block: true }),
-						'mt-4'
-					)}>Manage Inventory</button
-				>
 			</div>
 		</div>
 
