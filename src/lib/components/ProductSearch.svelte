@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { Search, Package } from '@lucide/svelte';
 	import { formatIdr } from '$lib/format';
-	import type { CatalogProduct, CatalogProductVariant, ProductListResponse } from '$lib/product';
+	import type { PosProduct, PosProductListResponse, PosProductVariant } from '$lib/product';
 	import { badgeStyles, buttonStyles, cx, inputStyles, spinnerStyles } from '$lib/styles';
 
 	interface Props {
-		onSelect?: (product: CatalogProduct, variant?: CatalogProductVariant) => void;
+		onSelect?: (product: PosProduct, variant?: PosProductVariant) => void;
 		placeholder?: string;
 		showVariants?: boolean;
 		apiEndpoint?: string;
@@ -20,7 +20,7 @@
 
 	// Search state
 	let searchQuery = $state('');
-	let searchResults = $state<CatalogProduct[]>([]);
+	let searchResults = $state<PosProduct[]>([]);
 	let isSearching = $state(false);
 	let showDropdown = $state(false);
 	let selectedIndex = $state(-1);
@@ -51,7 +51,7 @@
 				throw new Error('Failed to search products');
 			}
 
-			const result = (await response.json()) as ProductListResponse;
+			const result = (await response.json()) as PosProductListResponse;
 			if (controller.signal.aborted) return;
 
 			if (result.success && result.data) {
@@ -123,7 +123,7 @@
 	}
 
 	// Select a product
-	function selectProduct(product: CatalogProduct, variant?: CatalogProductVariant) {
+	function selectProduct(product: PosProduct, variant?: PosProductVariant) {
 		if (onSelect) {
 			onSelect(product, variant);
 		}

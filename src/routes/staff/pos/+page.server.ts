@@ -1,6 +1,6 @@
 import type { PageServerLoad } from './$types';
 import { routeGuard } from '$lib/server/guards';
-import type { CatalogProduct, ProductListResponse } from '$lib/product';
+import type { PosProduct, PosProductListResponse } from '$lib/product';
 
 export const load: PageServerLoad = async (event) => {
 	// Require permission to create a sale.
@@ -9,7 +9,7 @@ export const load: PageServerLoad = async (event) => {
 		requireVerified: true,
 		capability: 'sale:create'
 	});
-	let popularProducts: CatalogProduct[] = [];
+	let popularProducts: PosProduct[] = [];
 
 	try {
 		const response = await event.fetch('/api/products?limit=6&active=true&includeMeta=false');
@@ -17,7 +17,7 @@ export const load: PageServerLoad = async (event) => {
 			throw new Error('Failed to fetch popular products');
 		}
 
-		const result = (await response.json()) as ProductListResponse;
+		const result = (await response.json()) as PosProductListResponse;
 		if (result.success && result.data) {
 			popularProducts = result.data.products || [];
 		}

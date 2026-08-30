@@ -29,12 +29,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 		return auth.handler(event.request);
 	}
 
-	// Product reads are intentionally public and do not consume locals. Skip the
-	// session lookup when an authenticated browser searches or loads the catalog.
-	const isPublicProductRead =
-		event.request.method === 'GET' &&
-		(event.url.pathname === '/api/products' || /^\/api\/products\/[^/]+$/.test(event.url.pathname));
-	if (isPublicProductRead) {
+	// The public catalog has a deliberately minimized response and does not need
+	// session lookup. Staff product contracts continue through authentication.
+	if (event.request.method === 'GET' && event.url.pathname === '/api/catalog') {
 		return resolve(event);
 	}
 

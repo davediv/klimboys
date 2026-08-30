@@ -19,3 +19,9 @@ export interface PublicCatalogResult {
 	products: PublicCatalogProduct[];
 	categories: string[];
 }
+
+export interface PublicCatalogResponse {
+	success: boolean;
+	data?: PublicCatalogResult;
+	error?: string;
+}

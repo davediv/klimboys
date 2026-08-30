@@ -4,7 +4,7 @@
 	import { ShoppingCart, Plus, Minus, Trash2, Package, CreditCard } from '@lucide/svelte';
 	import ProductSearch from '$lib/components/ProductSearch.svelte';
 	import { formatIdr } from '$lib/format';
-	import type { CatalogProduct, CatalogProductVariant } from '$lib/product';
+	import type { PosProduct, PosProductVariant } from '$lib/product';
 	import {
 		transactionChannels,
 		transactionPaymentMethods,
@@ -51,7 +51,7 @@
 	let popularProducts = $derived(data.popularProducts);
 	let total = $derived(cart.reduce((sum, item) => sum + item.price * item.quantity, 0));
 
-	function handleProductSelect(product: CatalogProduct, variant?: CatalogProductVariant) {
+	function handleProductSelect(product: PosProduct, variant?: PosProductVariant) {
 		if (!variant) {
 			checkoutError = `Choose an available size for ${product.name}.`;
 			return;

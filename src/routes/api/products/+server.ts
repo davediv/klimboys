@@ -13,16 +13,20 @@ interface ProductVariantInput {
 	sellingPrice: number;
 }
 
-type ProductVariantOutput = ProductVariantInput & { id: string; stockQuantity: number };
-
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ url, locals }) => {
 	try {
-		// Check if user is authenticated (optional for public product listing)
-		// For now, we'll allow public access to product list
-		// Uncomment if you want to restrict to authenticated users only:
-		// if (!locals.user) {
-		//     return json({ error: 'Unauthorized' }, { status: 401 });
-		// }
+		if (!locals.user) return json({ success: false, error: 'Unauthorized' }, { status: 401 });
+		if (!locals.user.emailVerified) {
+			return json(
+				{ success: false, error: 'Verify your email to access staff products.' },
+				{ status: 403 }
+			);
+		}
+		const canManageCatalog = hasCapability(locals.user.role, 'catalog:manage');
+		const canCreateSale = hasCapability(locals.user.role, 'sale:create');
+		if (!canManageCatalog && !canCreateSale) {
+			return json({ success: false, error: 'Staff product access required.' }, { status: 403 });
+		}
 
 		const db = getDb();
 
@@ -31,7 +35,7 @@ export const GET: RequestHandler = async ({ url }) => {
 		const page = parseInt(url.searchParams.get('page') || '1');
 		const limit = parseInt(url.searchParams.get('limit') || '10');
 		const category = url.searchParams.get('category') || '';
-		const activeOnly = url.searchParams.get('active') !== 'false'; // Default to true
+		const activeOnly = !canManageCatalog || url.searchParams.get('active') !== 'false';
 		const includeMeta = url.searchParams.get('includeMeta') !== 'false';
 
 		// Validate pagination parameters
@@ -133,24 +137,34 @@ export const GET: RequestHandler = async ({ url }) => {
 				if (!acc[variant.productId]) {
 					acc[variant.productId] = [];
 				}
-				acc[variant.productId].push({
-					id: variant.id,
-					size: variant.size,
-					volumeMl: variant.volumeMl,
-					costPrice: variant.costPrice,
-					sellingPrice: variant.sellingPrice,
-					stockQuantity: variant.stockQuantity
-				});
+				acc[variant.productId].push(variant);
 				return acc;
 			},
-			{} as Record<string, ProductVariantOutput[]>
+			{} as Record<string, (typeof variantsData)[number][]>
 		);
 
-		// Combine products with their variants
-		const productsWithVariants = productsData.map((product) => ({
-			...product,
-			variants: variantsByProduct[product.id] || []
-		}));
+		// Catalog managers receive the management contract. Cashiers receive only
+		// fields needed to sell, never cost price or lifecycle metadata.
+		const productsWithVariants = productsData.map((product) => {
+			const variants = (variantsByProduct[product.id] || []).map((variant) => ({
+				id: variant.id,
+				size: variant.size,
+				volumeMl: variant.volumeMl,
+				sellingPrice: variant.sellingPrice,
+				stockQuantity: variant.stockQuantity,
+				...(canManageCatalog ? { costPrice: variant.costPrice } : {})
+			}));
+			return canManageCatalog
+				? { ...product, variants }
+				: {
+						id: product.id,
+						name: product.name,
+						description: product.description,
+						category: product.category,
+						imageUrl: product.imageUrl,
+						variants
+					};
+		});
 
 		const categories = categoriesResult?.map((r) => r.category).filter(Boolean) ?? [];
 
@@ -199,6 +213,9 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		// Keep catalog writes behind the same capability used by staff navigation.
 		if (!locals.user) {
 			return json({ error: 'Unauthorized' }, { status: 401 });
+		}
+		if (!locals.user.emailVerified) {
+			return json({ error: 'Verify your email before managing products.' }, { status: 403 });
 		}
 
 		if (!hasCapability(locals.user.role, 'catalog:manage')) {

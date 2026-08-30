@@ -14,8 +14,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null;
 }
 
-export const GET: RequestHandler = async ({ params }) => {
+export const GET: RequestHandler = async ({ params, locals }) => {
 	try {
+		if (!locals.user) return json({ success: false, error: 'Unauthorized' }, { status: 401 });
+		if (!locals.user.emailVerified) {
+			return json(
+				{ success: false, error: 'Verify your email to access the catalog.' },
+				{ status: 403 }
+			);
+		}
+		if (!hasCapability(locals.user.role, 'catalog:manage')) {
+			return json(
+				{ success: false, error: 'Catalog management access required.' },
+				{ status: 403 }
+			);
+		}
+
 		const db = getDb();
 		const productId = params.id;
 
@@ -77,6 +91,9 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 	try {
 		if (!locals.user) {
 			return json({ error: 'Unauthorized' }, { status: 401 });
+		}
+		if (!locals.user.emailVerified) {
+			return json({ error: 'Verify your email before managing products.' }, { status: 403 });
 		}
 		if (!hasCapability(locals.user.role, 'catalog:manage')) {
 			return json({ error: 'Forbidden: Catalog management access required' }, { status: 403 });
@@ -317,6 +334,9 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 		// Check authentication and catalog-management permission.
 		if (!locals.user) {
 			return json({ error: 'Unauthorized' }, { status: 401 });
+		}
+		if (!locals.user.emailVerified) {
+			return json({ error: 'Verify your email before managing products.' }, { status: 403 });
 		}
 
 		if (!hasCapability(locals.user.role, 'catalog:manage')) {

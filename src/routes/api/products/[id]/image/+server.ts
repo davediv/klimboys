@@ -16,6 +16,9 @@ export const POST: RequestHandler = async ({ params, request, locals, platform }
 		if (!locals.user) {
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
+		if (!locals.user.emailVerified) {
+			return json({ error: 'Verify your email before managing images.' }, { status: 403 });
+		}
 
 		// Check catalog-management permission.
 		if (!hasCapability(locals.user.role, 'catalog:manage')) {
@@ -154,6 +157,9 @@ export const DELETE: RequestHandler = async ({ params, locals, platform }) => {
 		// Check authentication
 		if (!locals.user) {
 			return json({ error: 'Unauthorized' }, { status: 401 });
+		}
+		if (!locals.user.emailVerified) {
+			return json({ error: 'Verify your email before managing images.' }, { status: 403 });
 		}
 
 		// Check catalog-management permission.
