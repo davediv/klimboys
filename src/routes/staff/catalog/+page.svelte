@@ -67,7 +67,6 @@
 			volumeMl: number;
 			costPrice: number;
 			sellingPrice: number;
-			stockQuantity: number;
 		}>
 	});
 
@@ -100,8 +99,7 @@
 					size: availableSize,
 					volumeMl: 250,
 					costPrice: 0,
-					sellingPrice: 0,
-					stockQuantity: 0
+					sellingPrice: 0
 				}
 			];
 		} else {
@@ -136,7 +134,7 @@
 			description: '',
 			category: 'Classic',
 			imageUrl: '',
-			variants: [{ size: 'S', volumeMl: 250, costPrice: 0, sellingPrice: 0, stockQuantity: 0 }]
+			variants: [{ size: 'S', volumeMl: 250, costPrice: 0, sellingPrice: 0 }]
 		};
 		imageFile = null;
 		imagePreview = null;
@@ -155,8 +153,7 @@
 				size: v.size,
 				volumeMl: v.volumeMl,
 				costPrice: v.costPrice / 100, // Convert from cents to currency
-				sellingPrice: v.sellingPrice / 100, // Convert from cents to currency
-				stockQuantity: v.stockQuantity
+				sellingPrice: v.sellingPrice / 100 // Convert from cents to currency
 			}))
 		};
 		imageFile = null;
@@ -203,8 +200,7 @@
 						size: v.size,
 						volumeMl: v.volumeMl,
 						costPrice: v.costPrice * 100, // Convert to cents
-						sellingPrice: v.sellingPrice * 100, // Convert to cents
-						stockQuantity: v.stockQuantity
+						sellingPrice: v.sellingPrice * 100 // Convert to cents
 					}))
 				})
 			});
@@ -297,8 +293,7 @@
 						size: v.size,
 						volumeMl: v.volumeMl,
 						costPrice: v.costPrice * 100, // Convert to cents
-						sellingPrice: v.sellingPrice * 100, // Convert to cents
-						stockQuantity: v.stockQuantity
+						sellingPrice: v.sellingPrice * 100 // Convert to cents
 					}))
 				})
 			});
@@ -503,7 +498,10 @@
 	<div class="mb-6 flex items-center justify-between">
 		<div>
 			<h1 class="text-3xl font-bold">Catalog</h1>
-			<p class="text-ink/70">Manage your product catalog</p>
+			<p class="text-ink/70">
+				Manage product details and pricing. Record quantity changes in
+				<a class="font-medium underline" href="/staff/inventory">Inventory</a>.
+			</p>
 		</div>
 		<button class={buttonStyles({ tone: 'brand' })} onclick={openAddModal} disabled={loading}>
 			<Plus class="h-5 w-5" />
@@ -844,17 +842,6 @@
 								</div>
 								<div>
 									<label class={fieldLabelStyles}>
-										<span class="text-xs">Stock Quantity</span>
-									</label>
-									<input
-										type="number"
-										class={inputStyles({ size: 'sm' })}
-										bind:value={variant.stockQuantity}
-										min="0"
-									/>
-								</div>
-								<div>
-									<label class={fieldLabelStyles}>
 										<span class="text-xs">Cost Price (IDR)</span>
 									</label>
 									<input
@@ -1089,17 +1076,6 @@
 										bind:value={variant.volumeMl}
 										min="50"
 										step="50"
-									/>
-								</div>
-								<div>
-									<label class={fieldLabelStyles}>
-										<span class="text-xs">Stock Quantity</span>
-									</label>
-									<input
-										type="number"
-										class={inputStyles({ size: 'sm' })}
-										bind:value={variant.stockQuantity}
-										min="0"
 									/>
 								</div>
 								<div>

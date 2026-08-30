@@ -186,7 +186,8 @@ export const inventoryLogs = sqliteTable('inventory_logs', {
 	userId: text('user_id')
 		.notNull()
 		.references(() => user.id),
-	type: text('type').notNull(), // 'sale', 'adjustment', 'restock'
+	type: text('type').notNull(), // 'sale', 'restock', 'waste', 'correction'
+	idempotencyKey: text('idempotency_key').unique(),
 	quantityChange: integer('quantity_change').notNull(),
 	quantityAfter: integer('quantity_after').notNull(),
 	reason: text('reason'),

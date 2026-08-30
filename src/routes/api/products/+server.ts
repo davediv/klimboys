@@ -11,10 +11,9 @@ interface ProductVariantInput {
 	volumeMl: number;
 	costPrice: number;
 	sellingPrice: number;
-	stockQuantity: number;
 }
 
-type ProductVariantOutput = ProductVariantInput & { id: string };
+type ProductVariantOutput = ProductVariantInput & { id: string; stockQuantity: number };
 
 export const GET: RequestHandler = async ({ url }) => {
 	try {
@@ -254,13 +253,6 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 					{ status: 400 }
 				);
 			}
-
-			if (typeof candidate.stockQuantity !== 'number' || candidate.stockQuantity < 0) {
-				return json(
-					{ error: 'Variant stock quantity must be a non-negative number' },
-					{ status: 400 }
-				);
-			}
 		}
 
 		const db = getDb();
@@ -296,7 +288,8 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			volumeMl: variant.volumeMl,
 			costPrice: Math.round(variant.costPrice), // Store as integer (cents)
 			sellingPrice: Math.round(variant.sellingPrice), // Store as integer (cents)
-			stockQuantity: variant.stockQuantity,
+			// New variants always start empty. Inventory movements are recorded separately.
+			stockQuantity: 0,
 			createdAt: now,
 			updatedAt: now
 		}));

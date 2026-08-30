@@ -4,7 +4,6 @@ export interface CatalogVariantInput {
 	volumeMl: number;
 	costPrice: number;
 	sellingPrice: number;
-	stockQuantity: number;
 }
 
 export interface ExistingCatalogVariant {

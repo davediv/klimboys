@@ -185,13 +185,6 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 						{ status: 400 }
 					);
 				}
-				if (!Number.isInteger(variant.stockQuantity) || Number(variant.stockQuantity) < 0) {
-					return json(
-						{ error: 'Variant stock quantity must be a non-negative number' },
-						{ status: 400 }
-					);
-				}
-
 				const id = typeof variant.id === 'string' ? variant.id.trim() : undefined;
 				const size = variant.size.trim();
 				if ((id && seenIds.has(id)) || seenSizes.has(size)) {
@@ -204,8 +197,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 					size,
 					volumeMl: Number(variant.volumeMl),
 					costPrice: Math.round(variant.costPrice),
-					sellingPrice: Math.round(variant.sellingPrice),
-					stockQuantity: Number(variant.stockQuantity)
+					sellingPrice: Math.round(variant.sellingPrice)
 				});
 			}
 			normalizedVariants = parsedVariants;
@@ -239,14 +231,13 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 						? database
 								.prepare(
 									`UPDATE product_variants
-									 SET volume_ml = ?, cost_price = ?, selling_price = ?, stock_quantity = ?, is_active = 1, updated_at = unixepoch()
+									 SET volume_ml = ?, cost_price = ?, selling_price = ?, is_active = 1, updated_at = unixepoch()
 									 WHERE id = ? AND product_id = ?`
 								)
 								.bind(
 									variant.volumeMl,
 									variant.costPrice,
 									variant.sellingPrice,
-									variant.stockQuantity,
 									variant.id,
 									productId
 								)
@@ -254,7 +245,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 								.prepare(
 									`INSERT INTO product_variants
 										(id, product_id, size, volume_ml, cost_price, selling_price, stock_quantity, is_active, created_at, updated_at)
-									 VALUES (?, ?, ?, ?, ?, ?, ?, 1, unixepoch(), unixepoch())`
+										 VALUES (?, ?, ?, ?, ?, ?, 0, 1, unixepoch(), unixepoch())`
 								)
 								.bind(
 									variant.id,
@@ -262,8 +253,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 									variant.size,
 									variant.volumeMl,
 									variant.costPrice,
-									variant.sellingPrice,
-									variant.stockQuantity
+									variant.sellingPrice
 								)
 				);
 			}
