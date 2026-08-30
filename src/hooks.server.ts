@@ -1,4 +1,4 @@
-import { type Handle } from '@sveltejs/kit';
+import { json, type Handle } from '@sveltejs/kit';
 import { initializeDb } from '$lib/server/db';
 import { getAuthInstance } from '$lib/server/auth';
 
@@ -6,6 +6,12 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// Initialize database with platform-specific D1 binding
 	if (event.platform?.env?.DB) {
 		initializeDb(event.platform.env.DB);
+	}
+
+	// Staff accounts are provisioned by an administrator. Never expose Better
+	// Auth's generic public sign-up endpoint as a customer registration flow.
+	if (event.url.pathname.startsWith('/api/auth/sign-up')) {
+		return json({ message: 'Staff accounts are created by an administrator.' }, { status: 403 });
 	}
 
 	// Handle Better Auth API routes
@@ -35,9 +41,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 			});
 
 			if (response && response.session) {
+				const sessionUser = response.user as typeof response.user & { role?: string };
 				event.locals.user = {
-					...response.user,
-					role: (response.user as any).role || 'viewer'
+					...sessionUser,
+					role: sessionUser.role || 'viewer'
 				};
 				event.locals.session = response.session;
 			}

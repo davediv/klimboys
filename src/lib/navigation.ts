@@ -40,16 +40,9 @@ export const publicRoutes = {
 	},
 	login: {
 		id: 'login',
-		href: '/login',
+		href: '/staff-login',
 		label: 'Staff Login',
 		title: 'Staff Login',
-		released: true
-	},
-	register: {
-		id: 'register',
-		href: '/register',
-		label: 'Register',
-		title: 'Register',
 		released: true
 	}
 } as const satisfies Record<string, NavigationRoute>;
@@ -113,4 +106,19 @@ export function getStaffPageTitle(pathname: string): string {
 		);
 
 	return route?.title ?? staffRoutes.dashboard.title;
+}
+
+export function getSafeStaffRedirect(
+	value: string | null,
+	fallback = staffRoutes.dashboard.href
+): string {
+	if (!value || !value.startsWith('/') || value.startsWith('//')) return fallback;
+
+	const url = new URL(value, 'https://staff.klimboys.invalid');
+	const isStaffDestination = staffNavigation.some(
+		(route) =>
+			route.released && (url.pathname === route.href || url.pathname.startsWith(`${route.href}/`))
+	);
+
+	return isStaffDestination ? `${url.pathname}${url.search}${url.hash}` : fallback;
 }

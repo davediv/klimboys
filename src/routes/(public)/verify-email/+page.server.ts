@@ -6,7 +6,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	const token = url.searchParams.get('token');
 
 	if (!token) {
-		throw redirect(302, '/login');
+		throw redirect(302, '/staff-login');
 	}
 
 	// Better Auth will handle the verification through its API

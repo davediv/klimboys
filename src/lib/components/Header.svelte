@@ -1,12 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import Logo from '$lib/assets/logo.svg';
-	import {
-		getPublicNavigation,
-		publicRoutes,
-		staffRoutes,
-		type NavigationRoute
-	} from '$lib/navigation';
+	import { getPublicNavigation, publicRoutes, staffRoutes } from '$lib/navigation';
 	import { Menu, X } from '@lucide/svelte';
 	import { fly, fade } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
@@ -44,19 +39,8 @@
 		};
 	});
 
-	let navItems = $derived(() => {
-		const items: NavigationRoute[] = [...getPublicNavigation()];
-
-		if (user?.role === 'admin') {
-			items.push(staffRoutes.dashboard, staffRoutes.products);
-		} else if (user?.role === 'cashier') {
-			items.push(staffRoutes.pos, staffRoutes.dashboard);
-		}
-
-		if (!user) items.push(publicRoutes.login, publicRoutes.register);
-
-		return items;
-	});
+	let navItems = $derived(getPublicNavigation());
+	let hasStaffAccess = $derived(user?.role === 'admin' || user?.role === 'cashier');
 
 	function isActive(href: string): boolean {
 		const [pathname, hash = ''] = href.split('#');
@@ -141,7 +125,7 @@
 				<!-- Menu Items -->
 				<nav id="public-navigation" class="flex-1 overflow-y-auto" aria-label="Primary">
 					<ul class="py-4">
-						{#each navItems() as item (item.id)}
+						{#each navItems as item (item.id)}
 							<li>
 								<a
 									href={item.href}
@@ -156,6 +140,26 @@
 								</a>
 							</li>
 						{/each}
+
+						{#if hasStaffAccess}
+							<li class="mt-4 border-t pt-4">
+								<a
+									href={staffRoutes.dashboard.href}
+									class="block px-6 py-3 text-lg font-semibold text-[#FF6B6B] transition-colors hover:bg-red-50"
+								>
+									Open staff workspace
+								</a>
+							</li>
+						{:else if !user}
+							<li class="mt-4 border-t pt-4">
+								<a
+									href={publicRoutes.login.href}
+									class="block px-6 py-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
+								>
+									Staff sign in
+								</a>
+							</li>
+						{/if}
 
 						{#if user}
 							<li class="mt-4 border-t pt-4">

@@ -22,14 +22,14 @@ export function routeGuard(event: ServerLoadEvent, options: GuardOptions = {}) {
 		requireAuth = true,
 		requireVerified = true,
 		minRole = 'viewer',
-		redirectTo = '/login'
+		redirectTo = '/staff-login'
 	} = options;
 
 	const { locals, url } = event;
 
 	// Check authentication
 	if (requireAuth && !locals.user) {
-		const loginUrl = new URL('/login', url.origin);
+		const loginUrl = new URL(redirectTo, url.origin);
 		loginUrl.searchParams.set('redirectTo', url.pathname);
 		throw redirect(302, loginUrl.toString());
 	}

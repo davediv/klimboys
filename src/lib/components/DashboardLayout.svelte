@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { LayoutDashboard, ShoppingCart, Package, Menu, X, LogOut } from '@lucide/svelte';
+	import { LayoutDashboard, ShoppingCart, Package, Menu, X, LogOut, Store } from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import Logo from '$lib/assets/logo.svg';
@@ -56,8 +56,17 @@
 		<div class="flex h-full flex-col">
 			<!-- Logo -->
 			<div class="flex h-20 items-center justify-between px-6">
-				<img src={Logo} alt="Klimboys" class="h-auto w-full pr-4" />
-				<button onclick={() => (sidebarOpen = false)} class="lg:hidden">
+				<a href="/dashboard" class="min-w-0 pr-4">
+					<img src={Logo} alt="Klimboys staff workspace" class="h-10 w-auto" />
+					<span class="mt-1 block text-xs font-semibold tracking-wide text-gray-500 uppercase">
+						Staff workspace
+					</span>
+				</a>
+				<button
+					onclick={() => (sidebarOpen = false)}
+					class="lg:hidden"
+					aria-label="Close staff navigation"
+				>
 					<X class="h-5 w-5" />
 				</button>
 			</div>
@@ -77,6 +86,14 @@
 					</a>
 				{/each}
 			</nav>
+
+			<a
+				href="/"
+				class="mx-3 mb-3 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100"
+			>
+				<Store class="h-5 w-5" />
+				View public website
+			</a>
 
 			<!-- User section -->
 			<div class="border-t border-gray-200 p-4">
@@ -113,7 +130,11 @@
 		<header class="border-b border-gray-200 bg-white shadow-sm">
 			<div class="flex h-16 items-center justify-between px-6">
 				<div class="flex items-center gap-4">
-					<button onclick={() => (sidebarOpen = !sidebarOpen)} class="lg:hidden">
+					<button
+						onclick={() => (sidebarOpen = !sidebarOpen)}
+						class="lg:hidden"
+						aria-label="Open staff navigation"
+					>
 						<Menu class="h-6 w-6" />
 					</button>
 					<h2 class="text-xl font-semibold text-gray-800">{title}</h2>
@@ -131,7 +152,7 @@
 		<!-- Footer -->
 		<footer class="border-t border-gray-200 bg-white py-4">
 			<div class="text-center text-sm text-gray-600">
-				© {new Date().getFullYear()} Klimboys. All rights reserved.
+				© {new Date().getFullYear()} Klimboys Staff Workspace
 			</div>
 		</footer>
 	</div>

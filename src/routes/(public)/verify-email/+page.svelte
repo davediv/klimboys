@@ -26,7 +26,7 @@
 
 				if (response.ok) {
 					// Redirect to login with success message
-					await goto('/login?verified=true');
+					await goto('/staff-login?verified=true');
 				} else {
 					const result = (await response.json()) as { message?: string };
 					error = result?.message || 'Verification failed';
@@ -83,7 +83,7 @@
 					<div class="ml-3">
 						<h3 class="text-sm font-medium text-red-800">{error}</h3>
 						<div class="mt-4">
-							<a href="/login" class="text-sm font-medium text-red-600 hover:text-red-500">
+							<a href="/staff-login" class="text-sm font-medium text-red-600 hover:text-red-500">
 								Go to login →
 							</a>
 						</div>

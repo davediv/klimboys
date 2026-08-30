@@ -31,7 +31,7 @@
 					class="hover:underline focus-visible:outline-2 focus-visible:outline-offset-2">Contact</a
 				>
 				<a
-					href="/login"
+					href="/staff-login"
 					class="hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
 					>Staff Login</a
 				>
