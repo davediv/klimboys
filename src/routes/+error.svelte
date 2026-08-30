@@ -25,7 +25,7 @@
 		</p>
 		<div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
 			<a href="/" class={buttonStyles({ tone: 'brand' })}>Back to Home</a>
-			<a href="/#menu" class={buttonStyles({ variant: 'outline', tone: 'brand' })}> View Menu </a>
+			<a href="/menu" class={buttonStyles({ variant: 'outline', tone: 'brand' })}> View Menu </a>
 		</div>
 	</div>
 </main>

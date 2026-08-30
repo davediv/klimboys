@@ -19,7 +19,7 @@ export const publicRoutes = {
 	},
 	menu: {
 		id: 'menu',
-		href: '/#menu',
+		href: '/menu',
 		label: 'Menu',
 		title: 'Menu',
 		released: true

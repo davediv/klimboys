@@ -7,9 +7,11 @@
 		Shield,
 		Star,
 		ChevronRight,
-		MessageCircle
+		MessageCircle,
+		Package
 	} from '@lucide/svelte';
 	import Mascot from '$lib/assets/klimboys-maskot.svg';
+	import { formatIdr } from '$lib/format';
 	import {
 		badgeStyles,
 		buttonStyles,
@@ -19,6 +21,9 @@
 		cardTitleStyles,
 		cx
 	} from '$lib/styles';
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
 
 	const features = [
 		{
@@ -40,37 +45,6 @@
 			icon: Shield,
 			title: '100% Fresh',
 			description: 'No preservatives, just pure natural goodness'
-		}
-	];
-
-	const popularItems = [
-		{
-			name: 'Classic Chocolate',
-			price: 'Rp 35.000',
-			image:
-				'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400&h=400&fit=crop&auto=format&q=75',
-			rating: 4.9
-		},
-		{
-			name: 'Strawberry Delight',
-			price: 'Rp 38.000',
-			image:
-				'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=400&h=400&fit=crop&auto=format&q=75',
-			rating: 4.8
-		},
-		{
-			name: 'Vanilla Dream',
-			price: 'Rp 32.000',
-			image:
-				'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400&h=400&fit=crop&auto=format&q=75',
-			rating: 4.7
-		},
-		{
-			name: 'Oreo Blast',
-			price: 'Rp 40.000',
-			image:
-				'https://images.unsplash.com/photo-1541658016709-82535e94bc69?w=400&h=400&fit=crop&auto=format&q=75',
-			rating: 4.9
 		}
 	];
 
@@ -139,7 +113,7 @@
 			</p>
 			<div class="flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
 				<a
-					href="#menu"
+					href="/menu"
 					class={buttonStyles({ size: 'lg' })}
 					style="background-color: #FF6B6B; color: white; border-color: #FF6B6B;"
 				>
@@ -374,7 +348,7 @@
 				<p class="text-gray-600">Customer favorites you'll love</p>
 			</div>
 			<a
-				href="#menu"
+				href="/menu"
 				class={cx(
 					buttonStyles({ variant: 'ghost' }),
 					'gap-2 border-[#FF6B6B]/20 hover:bg-[#FF6B6B]/10'
@@ -385,7 +359,7 @@
 			</a>
 		</div>
 		<div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-			{#each popularItems as item (item.name)}
+			{#each data.popularProducts as product (product.id)}
 				<div
 					class={cx(
 						cardStyles,
@@ -393,38 +367,54 @@
 					)}
 				>
 					<figure class="flex items-center justify-center px-4 pt-4">
-						<img
-							src={item.image}
-							alt={item.name}
-							width="400"
-							height="400"
-							loading="lazy"
-							decoding="async"
-							class="h-48 w-full rounded-xl object-cover"
-						/>
+						{#if product.imageUrl}
+							<img
+								src={product.imageUrl}
+								alt=""
+								width="400"
+								height="400"
+								loading="lazy"
+								decoding="async"
+								class="h-48 w-full rounded-xl object-cover"
+							/>
+						{:else}
+							<div class="grid h-48 w-full place-items-center rounded-xl bg-surface-strong">
+								<Package class="h-12 w-12 text-ink/30" />
+							</div>
+						{/if}
 					</figure>
 					<div class={cardBodyStyles}>
-						<div class="mb-2 flex items-center gap-2">
-							<Star class="h-4 w-4 fill-yellow-400 text-yellow-400" />
-							<span class="text-sm font-medium text-gray-700">{item.rating}</span>
-						</div>
-						<h3 class={cx(cardTitleStyles, 'text-gray-800')}>{item.name}</h3>
+						<h3 class={cx(cardTitleStyles, 'text-gray-800')}>{product.name}</h3>
 						<p
 							class="bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] bg-clip-text text-xl font-bold text-transparent"
 						>
-							{item.price}
+							{#if product.variants.length > 0}
+								From {formatIdr(
+									Math.min(...product.variants.map((variant) => variant.sellingPrice)) / 100
+								)}
+							{:else}
+								Price unavailable
+							{/if}
 						</p>
 						<div class={cx(cardActionsStyles, 'mt-4 justify-end')}>
-							<button
+							<a
+								href={`/menu#product-${product.id}`}
 								class={cx(
 									buttonStyles({ size: 'sm', block: true }),
 									'border-none bg-gradient-to-r from-[#FF6B6B] to-[#FF8E8E] text-white transition-all hover:scale-105 hover:shadow-lg'
-								)}>Add to Cart</button
+								)}>Choose a size</a
 							>
 						</div>
 					</div>
 				</div>
 			{/each}
+			{#if data.popularProducts.length === 0}
+				<div class="col-span-full rounded-lg bg-white p-8 text-center shadow-sm">
+					<Package class="mx-auto h-10 w-10 text-ink/30" />
+					<p class="mt-3 text-ink/70">Browse the full menu or order directly through WhatsApp.</p>
+					<a href="/menu" class={cx(buttonStyles({ tone: 'brand' }), 'mt-4')}>View menu</a>
+				</div>
+			{/if}
 		</div>
 	</div>
 </section>

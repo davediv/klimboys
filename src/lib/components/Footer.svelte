@@ -19,7 +19,7 @@
 			<nav class="grid place-items-start gap-2">
 				<h6 class="mb-2 font-semibold uppercase opacity-60">Quick Links</h6>
 				<a
-					href="/#menu"
+					href="/menu"
 					class="hover:underline focus-visible:outline-2 focus-visible:outline-offset-2">Our Menu</a
 				>
 				<a
