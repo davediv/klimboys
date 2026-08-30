@@ -3,11 +3,11 @@ import { routeGuard } from '$lib/server/guards';
 import type { CatalogProduct, ProductListResponse } from '$lib/product';
 
 export const load: PageServerLoad = async (event) => {
-	// Require authentication, verification, and admin role
+	// Require catalog-management permission.
 	const user = routeGuard(event, {
 		requireAuth: true,
 		requireVerified: true,
-		minRole: 'admin'
+		capability: 'catalog:manage'
 	});
 	let products: CatalogProduct[] = [];
 	let productsError: string | null = null;

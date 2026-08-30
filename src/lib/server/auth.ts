@@ -104,22 +104,3 @@ export async function getAuth(event: RequestEvent) {
 		session: response.session
 	};
 }
-
-// Role check helper
-export function hasRole(
-	userRole: string | undefined,
-	requiredRole: 'admin' | 'cashier' | 'viewer'
-): boolean {
-	const roleHierarchy = {
-		admin: 3,
-		cashier: 2,
-		viewer: 1
-	};
-
-	if (!userRole) return false;
-
-	const userLevel = roleHierarchy[userRole as keyof typeof roleHierarchy] || 0;
-	const requiredLevel = roleHierarchy[requiredRole];
-
-	return userLevel >= requiredLevel;
-}

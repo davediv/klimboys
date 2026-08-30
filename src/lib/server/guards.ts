@@ -1,18 +1,16 @@
 import { redirect } from '@sveltejs/kit';
-import { hasRole } from './auth';
+import { getDefaultStaffPath, hasCapability, type Capability } from '$lib/permissions';
 import type { ServerLoadEvent } from '@sveltejs/kit';
-
-export type UserRole = 'admin' | 'cashier' | 'viewer';
 
 interface GuardOptions {
 	requireAuth?: boolean;
 	requireVerified?: boolean;
-	minRole?: UserRole;
+	capability?: Capability;
 	redirectTo?: string;
 }
 
 /**
- * Route guard to protect pages based on authentication and role requirements
+ * Route guard to protect pages based on authentication and capabilities
  * @param event - SvelteKit server load event
  * @param options - Guard configuration options
  * @returns User data if all checks pass
@@ -21,7 +19,7 @@ export function routeGuard(event: ServerLoadEvent, options: GuardOptions = {}) {
 	const {
 		requireAuth = true,
 		requireVerified = true,
-		minRole = 'viewer',
+		capability,
 		redirectTo = '/staff-login'
 	} = options;
 
@@ -45,22 +43,9 @@ export function routeGuard(event: ServerLoadEvent, options: GuardOptions = {}) {
 		throw redirect(302, `${verificationUrl.pathname}${verificationUrl.search}`);
 	}
 
-	// Check role permissions
-	if (!hasRole(locals.user.role, minRole)) {
-		// Redirect based on user's actual role
-		const roleRedirects: Record<string, string> = {
-			admin: '/dashboard',
-			cashier: '/dashboard/transaction',
-			viewer: '/'
-		};
-
-		const userRole = locals.user.role || 'viewer';
-		const targetPath = roleRedirects[userRole] || '/';
-
-		// Only redirect if they're not already on their allowed path
-		if (url.pathname !== targetPath) {
-			throw redirect(302, targetPath);
-		}
+	// Keep navigation and server authorization on the same capability model.
+	if (capability && !hasCapability(locals.user.role, capability)) {
+		throw redirect(302, getDefaultStaffPath(locals.user.role));
 	}
 
 	return locals.user;
@@ -72,13 +57,5 @@ export function routeGuard(event: ServerLoadEvent, options: GuardOptions = {}) {
  * @returns Default path for the role
  */
 export function getDefaultRedirect(role: string | undefined): string {
-	switch (role) {
-		case 'admin':
-			return '/dashboard';
-		case 'cashier':
-			return '/dashboard/transaction';
-		case 'viewer':
-		default:
-			return '/';
-	}
+	return getDefaultStaffPath(role);
 }

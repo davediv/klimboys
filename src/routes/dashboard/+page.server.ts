@@ -4,16 +4,16 @@ import { getDashboardSummary } from '$lib/server/dashboard';
 import { routeGuard } from '$lib/server/guards';
 
 export const load: PageServerLoad = async (event) => {
-	// Require authentication, verification, and at least cashier role
+	// The overview contains owner-level financial and operational data.
 	const user = routeGuard(event, {
 		requireAuth: true,
-		requireVerified: false, // Allow unverified users to see verification message
-		minRole: 'cashier'
+		requireVerified: true,
+		capability: 'overview:read'
 	});
 	let dashboard: DashboardSummary | null = null;
 	let dashboardError: string | null = null;
 
-	if (user?.emailVerified) {
+	if (user) {
 		try {
 			dashboard = await getDashboardSummary();
 		} catch (error) {
@@ -24,7 +24,6 @@ export const load: PageServerLoad = async (event) => {
 
 	return {
 		user,
-		needsVerification: user && !user.emailVerified,
 		dashboard,
 		dashboardError
 	};

@@ -3,8 +3,17 @@ import type { RequestHandler } from './$types';
 import { getDb } from '$lib/server/db';
 import { products, productVariants } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
-import { hasRole } from '$lib/server/auth';
+import { hasCapability } from '$lib/permissions';
 import { nanoid } from 'nanoid';
+
+interface ProductVariantInput {
+	id?: string;
+	size: string;
+	volumeMl: number;
+	costPrice: number;
+	sellingPrice: number;
+	stockQuantity: number;
+}
 
 export const GET: RequestHandler = async ({ params }) => {
 	try {
@@ -67,13 +76,13 @@ export const GET: RequestHandler = async ({ params }) => {
 
 export const PUT: RequestHandler = async ({ params, request, locals }) => {
 	try {
-		// Check authentication and admin role
+		// Check authentication and catalog-management permission.
 		if (!locals.user) {
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		if (!hasRole(locals.user.role, 'admin')) {
-			return json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+		if (!hasCapability(locals.user.role, 'catalog:manage')) {
+			return json({ error: 'Forbidden: Catalog management access required' }, { status: 403 });
 		}
 
 		const db = getDb();
@@ -90,7 +99,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 		};
 
 		// Prepare update data for product
-		const updateData: any = {
+		const updateData: Partial<typeof products.$inferInsert> = {
 			updatedAt: new Date()
 		};
 
@@ -154,30 +163,34 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 			}
 
 			// Validate each variant
-			for (const variant of body.variants as any[]) {
-				if (!variant.size || typeof variant.size !== 'string') {
+			for (const variant of body.variants) {
+				if (!variant || typeof variant !== 'object') {
+					return json({ error: 'Each variant must be an object' }, { status: 400 });
+				}
+				const candidate = variant as Record<string, unknown>;
+				if (!candidate.size || typeof candidate.size !== 'string') {
 					return json({ error: 'Variant size is required' }, { status: 400 });
 				}
 
-				if (typeof variant.volumeMl !== 'number' || variant.volumeMl <= 0) {
+				if (typeof candidate.volumeMl !== 'number' || candidate.volumeMl <= 0) {
 					return json({ error: 'Variant volume must be a positive number' }, { status: 400 });
 				}
 
-				if (typeof variant.costPrice !== 'number' || variant.costPrice < 0) {
+				if (typeof candidate.costPrice !== 'number' || candidate.costPrice < 0) {
 					return json(
 						{ error: 'Variant cost price must be a non-negative number' },
 						{ status: 400 }
 					);
 				}
 
-				if (typeof variant.sellingPrice !== 'number' || variant.sellingPrice < 0) {
+				if (typeof candidate.sellingPrice !== 'number' || candidate.sellingPrice < 0) {
 					return json(
 						{ error: 'Variant selling price must be a non-negative number' },
 						{ status: 400 }
 					);
 				}
 
-				if (typeof variant.stockQuantity !== 'number' || variant.stockQuantity < 0) {
+				if (typeof candidate.stockQuantity !== 'number' || candidate.stockQuantity < 0) {
 					return json(
 						{ error: 'Variant stock quantity must be a non-negative number' },
 						{ status: 400 }
@@ -186,7 +199,7 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 			}
 
 			const now = new Date();
-			variantRecords = (body.variants as any[]).map((variant: any) => ({
+			variantRecords = (body.variants as ProductVariantInput[]).map((variant) => ({
 				id: variant.id || nanoid(),
 				productId: productId,
 				size: variant.size.trim(),
@@ -296,13 +309,13 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 
 export const DELETE: RequestHandler = async ({ params, locals }) => {
 	try {
-		// Check authentication and admin role
+		// Check authentication and catalog-management permission.
 		if (!locals.user) {
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		if (!hasRole(locals.user.role, 'admin')) {
-			return json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+		if (!hasCapability(locals.user.role, 'catalog:manage')) {
+			return json({ error: 'Forbidden: Catalog management access required' }, { status: 403 });
 		}
 
 		const db = getDb();

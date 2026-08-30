@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { ArrowLeft, ArrowRight, Eye, EyeOff, Lock, Mail, ShieldCheck } from '@lucide/svelte';
 	import Logo from '$lib/assets/logo.svg';
+	import { getAuthorizedStaffRedirect } from '$lib/navigation';
 	import { alertStyles, buttonStyles, cx, inputStyles, spinnerStyles } from '$lib/styles';
 	import type { PageData } from './$types';
 
@@ -49,7 +50,14 @@
 				throw new Error(message);
 			}
 
-			await goto(data.redirectTo);
+			let role: string | undefined;
+			try {
+				const result = (await response.json()) as { user?: { role?: string } };
+				role = result.user?.role;
+			} catch {
+				// The destination route remains server-guarded if the response has no body.
+			}
+			await goto(role ? getAuthorizedStaffRedirect(data.redirectTo, role) : data.redirectTo);
 		} catch (loginError) {
 			error = loginError instanceof Error ? loginError.message : 'Sign-in failed.';
 		} finally {

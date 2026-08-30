@@ -4,6 +4,7 @@
 	import { page } from '$app/stores';
 	import Logo from '$lib/assets/logo.svg';
 	import { getStaffNavigation, type StaffRouteId } from '$lib/navigation';
+	import { getDefaultStaffPath } from '$lib/permissions';
 	import { buttonStyles, cx } from '$lib/styles';
 	import type { Snippet } from 'svelte';
 
@@ -15,6 +16,7 @@
 
 	let { user, children, title = 'Dashboard' }: Props = $props();
 	let sidebarOpen = $state(false);
+	let staffLandingPath = $derived(getDefaultStaffPath(user?.role));
 
 	const routeIcons = {
 		dashboard: LayoutDashboard,
@@ -56,7 +58,7 @@
 		<div class="flex h-full flex-col">
 			<!-- Logo -->
 			<div class="flex h-20 items-center justify-between px-6">
-				<a href="/dashboard" class="min-w-0 pr-4">
+				<a href={staffLandingPath} class="min-w-0 pr-4">
 					<img src={Logo} alt="Klimboys staff workspace" class="h-10 w-auto" />
 					<span class="mt-1 block text-xs font-semibold tracking-wide text-gray-500 uppercase">
 						Staff workspace

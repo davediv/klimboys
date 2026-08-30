@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { hasRole } from '$lib/server/auth';
+import { hasCapability } from '$lib/permissions';
 import { nanoid } from 'nanoid';
 
 // Allowed image types
@@ -14,9 +14,9 @@ export const POST: RequestHandler = async ({ request, locals, platform }) => {
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		// Check admin role
-		if (!hasRole(locals.user.role, 'admin')) {
-			return json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+		// Check catalog-management permission.
+		if (!hasCapability(locals.user.role, 'catalog:manage')) {
+			return json({ error: 'Forbidden: Catalog management access required' }, { status: 403 });
 		}
 
 		// Check if R2 bucket is available
@@ -106,9 +106,9 @@ export const DELETE: RequestHandler = async ({ url, locals, platform }) => {
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		// Check admin role
-		if (!hasRole(locals.user.role, 'admin')) {
-			return json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+		// Check catalog-management permission.
+		if (!hasCapability(locals.user.role, 'catalog:manage')) {
+			return json({ error: 'Forbidden: Catalog management access required' }, { status: 403 });
 		}
 
 		// Check if R2 bucket is available

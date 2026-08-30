@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import Logo from '$lib/assets/logo.svg';
-	import { getPublicNavigation, publicRoutes, staffRoutes } from '$lib/navigation';
+	import { getPublicNavigation, publicRoutes } from '$lib/navigation';
+	import { getDefaultStaffPath, hasStaffWorkspaceAccess } from '$lib/permissions';
 	import { Menu, X } from '@lucide/svelte';
 	import { fly, fade } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
@@ -40,7 +41,8 @@
 	});
 
 	let navItems = $derived(getPublicNavigation());
-	let hasStaffAccess = $derived(user?.role === 'admin' || user?.role === 'cashier');
+	let hasStaffAccess = $derived(hasStaffWorkspaceAccess(user?.role));
+	let staffLandingPath = $derived(getDefaultStaffPath(user?.role));
 
 	function isActive(href: string): boolean {
 		const [pathname, hash = ''] = href.split('#');
@@ -144,7 +146,7 @@
 						{#if hasStaffAccess}
 							<li class="mt-4 border-t pt-4">
 								<a
-									href={staffRoutes.dashboard.href}
+									href={staffLandingPath}
 									class="block px-6 py-3 text-lg font-semibold text-[#FF6B6B] transition-colors hover:bg-red-50"
 								>
 									Open staff workspace

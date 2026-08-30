@@ -3,11 +3,11 @@ import { routeGuard } from '$lib/server/guards';
 import type { CatalogProduct, ProductListResponse } from '$lib/product';
 
 export const load: PageServerLoad = async (event) => {
-	// Require authentication, verification, and at least cashier role
+	// Require permission to create a sale.
 	const user = routeGuard(event, {
 		requireAuth: true,
 		requireVerified: true,
-		minRole: 'cashier'
+		capability: 'sale:create'
 	});
 	let popularProducts: CatalogProduct[] = [];
 

@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { getDb } from '$lib/server/db';
 import { products } from '$lib/server/db/schema';
 import { eq } from 'drizzle-orm';
-import { hasRole } from '$lib/server/auth';
+import { hasCapability } from '$lib/permissions';
 import { nanoid } from 'nanoid';
 
 // Allowed image types
@@ -17,9 +17,9 @@ export const POST: RequestHandler = async ({ params, request, locals, platform }
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		// Check admin role
-		if (!hasRole(locals.user.role, 'admin')) {
-			return json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+		// Check catalog-management permission.
+		if (!hasCapability(locals.user.role, 'catalog:manage')) {
+			return json({ error: 'Forbidden: Catalog management access required' }, { status: 403 });
 		}
 
 		// Check if R2 bucket is available
@@ -156,9 +156,9 @@ export const DELETE: RequestHandler = async ({ params, locals, platform }) => {
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		// Check admin role
-		if (!hasRole(locals.user.role, 'admin')) {
-			return json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+		// Check catalog-management permission.
+		if (!hasCapability(locals.user.role, 'catalog:manage')) {
+			return json({ error: 'Forbidden: Catalog management access required' }, { status: 403 });
 		}
 
 		// Check if R2 bucket is available

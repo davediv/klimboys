@@ -3,10 +3,20 @@ import type { RequestHandler } from './$types';
 import { getDb } from '$lib/server/db';
 import { products, productVariants } from '$lib/server/db/schema';
 import { eq, sql, and, desc } from 'drizzle-orm';
-import { hasRole } from '$lib/server/auth';
+import { hasCapability } from '$lib/permissions';
 import { nanoid } from 'nanoid';
 
-export const GET: RequestHandler = async ({ url, locals }) => {
+interface ProductVariantInput {
+	size: string;
+	volumeMl: number;
+	costPrice: number;
+	sellingPrice: number;
+	stockQuantity: number;
+}
+
+type ProductVariantOutput = ProductVariantInput & { id: string };
+
+export const GET: RequestHandler = async ({ url }) => {
 	try {
 		// Check if user is authenticated (optional for public product listing)
 		// For now, we'll allow public access to product list
@@ -132,7 +142,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 				});
 				return acc;
 			},
-			{} as Record<string, any[]>
+			{} as Record<string, ProductVariantOutput[]>
 		);
 
 		// Combine products with their variants
@@ -185,13 +195,13 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 
 export const POST: RequestHandler = async ({ request, locals }) => {
 	try {
-		// Check authentication and admin role
+		// Keep catalog writes behind the same capability used by staff navigation.
 		if (!locals.user) {
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
 
-		if (!hasRole(locals.user.role, 'admin')) {
-			return json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+		if (!hasCapability(locals.user.role, 'catalog:manage')) {
+			return json({ error: 'Forbidden: Catalog management access required' }, { status: 403 });
 		}
 
 		// Parse request body
@@ -219,27 +229,31 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 		}
 
 		// Validate each variant
-		for (const variant of body.variants as any[]) {
-			if (!variant.size || typeof variant.size !== 'string') {
+		for (const variant of body.variants) {
+			if (!variant || typeof variant !== 'object') {
+				return json({ error: 'Each variant must be an object' }, { status: 400 });
+			}
+			const candidate = variant as Record<string, unknown>;
+			if (!candidate.size || typeof candidate.size !== 'string') {
 				return json({ error: 'Variant size is required' }, { status: 400 });
 			}
 
-			if (typeof variant.volumeMl !== 'number' || variant.volumeMl <= 0) {
+			if (typeof candidate.volumeMl !== 'number' || candidate.volumeMl <= 0) {
 				return json({ error: 'Variant volume must be a positive number' }, { status: 400 });
 			}
 
-			if (typeof variant.costPrice !== 'number' || variant.costPrice < 0) {
+			if (typeof candidate.costPrice !== 'number' || candidate.costPrice < 0) {
 				return json({ error: 'Variant cost price must be a non-negative number' }, { status: 400 });
 			}
 
-			if (typeof variant.sellingPrice !== 'number' || variant.sellingPrice < 0) {
+			if (typeof candidate.sellingPrice !== 'number' || candidate.sellingPrice < 0) {
 				return json(
 					{ error: 'Variant selling price must be a non-negative number' },
 					{ status: 400 }
 				);
 			}
 
-			if (typeof variant.stockQuantity !== 'number' || variant.stockQuantity < 0) {
+			if (typeof candidate.stockQuantity !== 'number' || candidate.stockQuantity < 0) {
 				return json(
 					{ error: 'Variant stock quantity must be a non-negative number' },
 					{ status: 400 }
@@ -260,7 +274,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			typeof body.description === 'string' ? body.description : undefined;
 		const validatedImageUrl = typeof body.imageUrl === 'string' ? body.imageUrl : undefined;
 		const validatedIsActive = body.isActive !== false;
-		const validatedVariants = body.variants as any[];
+		const validatedVariants = body.variants as ProductVariantInput[];
 
 		const productRecord = {
 			id: productId,
@@ -273,7 +287,7 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 			updatedAt: now
 		};
 
-		const variantRecords = validatedVariants.map((variant: any) => ({
+		const variantRecords = validatedVariants.map((variant) => ({
 			id: nanoid(),
 			productId: productId,
 			size: variant.size.trim(),

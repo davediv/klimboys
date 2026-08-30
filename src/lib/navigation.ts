@@ -1,4 +1,6 @@
-export type UserRole = 'admin' | 'cashier' | 'viewer';
+import { getDefaultStaffPath, hasCapability, type Capability } from '$lib/permissions';
+
+export type { UserRole } from '$lib/permissions';
 
 export interface NavigationRoute {
 	id: string;
@@ -6,7 +8,7 @@ export interface NavigationRoute {
 	label: string;
 	title: string;
 	released: boolean;
-	roles?: readonly UserRole[];
+	capability?: Capability;
 }
 
 export const publicRoutes = {
@@ -54,7 +56,7 @@ export const staffRoutes = {
 		label: 'Dashboard',
 		title: 'Dashboard',
 		released: true,
-		roles: ['admin', 'cashier']
+		capability: 'overview:read'
 	},
 	pos: {
 		id: 'pos',
@@ -62,7 +64,7 @@ export const staffRoutes = {
 		label: 'Transactions',
 		title: 'Transactions',
 		released: true,
-		roles: ['admin', 'cashier']
+		capability: 'sale:create'
 	},
 	products: {
 		id: 'products',
@@ -70,7 +72,7 @@ export const staffRoutes = {
 		label: 'Products',
 		title: 'Products',
 		released: true,
-		roles: ['admin']
+		capability: 'catalog:manage'
 	}
 } as const satisfies Record<string, NavigationRoute>;
 
@@ -91,7 +93,7 @@ export function getPublicNavigation(): NavigationRoute[] {
 
 export function getStaffNavigation(role: string | undefined): NavigationRoute[] {
 	return staffNavigation.filter(
-		(route) => route.released && route.roles.some((allowedRole) => allowedRole === role)
+		(route) => route.released && route.capability && hasCapability(role, route.capability)
 	);
 }
 
@@ -110,7 +112,7 @@ export function getStaffPageTitle(pathname: string): string {
 
 export function getSafeStaffRedirect(
 	value: string | null,
-	fallback = staffRoutes.dashboard.href
+	fallback: string = staffRoutes.dashboard.href
 ): string {
 	if (!value || !value.startsWith('/') || value.startsWith('//')) return fallback;
 
@@ -121,4 +123,19 @@ export function getSafeStaffRedirect(
 	);
 
 	return isStaffDestination ? `${url.pathname}${url.search}${url.hash}` : fallback;
+}
+
+export function getAuthorizedStaffRedirect(value: string | null, role: string | undefined): string {
+	const fallback = getDefaultStaffPath(role);
+	const destination = getSafeStaffRedirect(value, fallback);
+	const url = new URL(destination, 'https://staff.klimboys.invalid');
+	const route = staffNavigation
+		.filter((candidate) => candidate.released)
+		.sort((left, right) => right.href.length - left.href.length)
+		.find(
+			(candidate) =>
+				url.pathname === candidate.href || url.pathname.startsWith(`${candidate.href}/`)
+		);
+
+	return route?.capability && hasCapability(role, route.capability) ? destination : fallback;
 }

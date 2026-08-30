@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { hasRole } from '$lib/server/auth';
+import { hasCapability } from '$lib/permissions';
 import {
 	createTransaction,
 	parseTransactionRequest,
@@ -15,11 +15,11 @@ export const POST: RequestHandler = async ({ locals, request }) => {
 		});
 	}
 
-	if (!locals.user.emailVerified || !hasRole(locals.user.role, 'cashier')) {
+	if (!locals.user.emailVerified || !hasCapability(locals.user.role, 'sale:create')) {
 		return json(
 			{
 				success: false,
-				error: 'Verified cashier access is required.'
+				error: 'Permission to create sales is required.'
 			} satisfies CreateTransactionResponse,
 			{ status: 403 }
 		);
