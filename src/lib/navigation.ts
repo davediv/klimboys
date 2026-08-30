@@ -9,6 +9,7 @@ export interface NavigationRoute {
 	title: string;
 	released: boolean;
 	capability?: Capability;
+	section?: 'Operations' | 'Management';
 }
 
 export const publicRoutes = {
@@ -50,29 +51,50 @@ export const publicRoutes = {
 } as const satisfies Record<string, NavigationRoute>;
 
 export const staffRoutes = {
-	dashboard: {
-		id: 'dashboard',
-		href: '/dashboard',
-		label: 'Dashboard',
-		title: 'Dashboard',
+	overview: {
+		id: 'overview',
+		href: '/staff/overview',
+		label: 'Overview',
+		title: 'Overview',
 		released: true,
-		capability: 'overview:read'
+		capability: 'overview:read',
+		section: 'Management'
 	},
 	pos: {
 		id: 'pos',
-		href: '/dashboard/transaction',
-		label: 'Transactions',
-		title: 'Transactions',
+		href: '/staff/pos',
+		label: 'New Sale',
+		title: 'New Sale',
 		released: true,
-		capability: 'sale:create'
+		capability: 'sale:create',
+		section: 'Operations'
 	},
-	products: {
-		id: 'products',
-		href: '/dashboard/products',
-		label: 'Products',
-		title: 'Products',
+	orders: {
+		id: 'orders',
+		href: '/staff/orders',
+		label: 'Orders',
+		title: 'Orders',
 		released: true,
-		capability: 'catalog:manage'
+		capability: 'order:read-own',
+		section: 'Operations'
+	},
+	inventory: {
+		id: 'inventory',
+		href: '/staff/inventory',
+		label: 'Inventory',
+		title: 'Inventory',
+		released: true,
+		capability: 'inventory:read',
+		section: 'Operations'
+	},
+	catalog: {
+		id: 'catalog',
+		href: '/staff/catalog',
+		label: 'Catalog',
+		title: 'Catalog',
+		released: true,
+		capability: 'catalog:manage',
+		section: 'Management'
 	}
 } as const satisfies Record<string, NavigationRoute>;
 
@@ -85,7 +107,13 @@ const publicNavigation = [
 	publicRoutes.contact
 ];
 
-const staffNavigation = [staffRoutes.dashboard, staffRoutes.pos, staffRoutes.products];
+const staffNavigation = [
+	staffRoutes.pos,
+	staffRoutes.orders,
+	staffRoutes.inventory,
+	staffRoutes.overview,
+	staffRoutes.catalog
+];
 
 export function getPublicNavigation(): NavigationRoute[] {
 	return publicNavigation.filter((route) => route.released);
@@ -102,17 +130,17 @@ export function getStaffPageTitle(pathname: string): string {
 		.filter((candidate) => candidate.released)
 		.sort((left, right) => right.href.length - left.href.length)
 		.find((candidate) =>
-			candidate.href === staffRoutes.dashboard.href
+			candidate.href === staffRoutes.overview.href
 				? pathname === candidate.href
 				: pathname.startsWith(candidate.href)
 		);
 
-	return route?.title ?? staffRoutes.dashboard.title;
+	return route?.title ?? 'Staff Workspace';
 }
 
 export function getSafeStaffRedirect(
 	value: string | null,
-	fallback: string = staffRoutes.dashboard.href
+	fallback: string = staffRoutes.overview.href
 ): string {
 	if (!value || !value.startsWith('/') || value.startsWith('//')) return fallback;
 

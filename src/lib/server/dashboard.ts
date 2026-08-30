@@ -2,10 +2,9 @@ import { and, asc, desc, eq, gte, lt, lte, sql } from 'drizzle-orm';
 import type { DashboardPeriodSummary, DashboardSummary } from '$lib/dashboard';
 import { getDb } from '$lib/server/db';
 import { products, productVariants, transactionItems, transactions } from '$lib/server/db/schema';
+import { LOW_STOCK_THRESHOLD } from '$lib/server/inventory';
 
 const JAKARTA_OFFSET_MS = 7 * 60 * 60 * 1000;
-const LOW_STOCK_THRESHOLD = 10;
-
 function jakartaDayStart(date: Date): Date {
 	const parts = new Intl.DateTimeFormat('en-CA', {
 		timeZone: 'Asia/Jakarta',

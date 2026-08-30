@@ -161,7 +161,7 @@
 
 <div class="container mx-auto p-4">
 	<div class="mb-6">
-		<h1 class="text-3xl font-bold">Point of Sale</h1>
+		<h1 class="text-3xl font-bold">New Sale</h1>
 		{#if data.user}
 			<p class="text-ink/70">Welcome back, {data.user.name || data.user.email}</p>
 		{/if}

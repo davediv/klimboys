@@ -17,7 +17,7 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<!-- All dashboard pages use the same layout -->
+<!-- All staff task pages use the same workspace layout. -->
 <DashboardLayout user={data.user} title={pageTitle}>
 	{@render children?.()}
 </DashboardLayout>

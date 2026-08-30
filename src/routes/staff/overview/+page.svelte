@@ -22,21 +22,27 @@
 			{
 				icon: ShoppingCart,
 				label: 'New Transaction',
-				href: '/dashboard/transaction',
+				href: '/staff/pos',
 				color: 'bg-[#FF6B6B] text-white'
 			},
 			{
 				icon: Package,
 				label: 'Manage Products',
-				href: '/dashboard/products',
+				href: '/staff/catalog',
 				color: 'bg-blue-600 text-white'
+			},
+			{
+				icon: AlertCircle,
+				label: 'Review Inventory',
+				href: '/staff/inventory',
+				color: 'bg-orange-600 text-white'
 			}
 		],
 		cashier: [
 			{
 				icon: ShoppingCart,
 				label: 'New Transaction',
-				href: '/dashboard/transaction',
+				href: '/staff/pos',
 				color: 'bg-[#FF6B6B] text-white'
 			}
 		]
@@ -234,6 +240,12 @@
 							</p>
 						{/if}
 					</div>
+					<a
+						href="/staff/inventory?low=true"
+						class="mt-4 inline-flex text-sm font-semibold text-brand hover:underline"
+					>
+						Review low-stock inventory
+					</a>
 				</div>
 			</div>
 

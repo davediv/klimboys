@@ -493,7 +493,7 @@
 	<!-- Header -->
 	<div class="mb-6 flex items-center justify-between">
 		<div>
-			<h1 class="text-3xl font-bold">Product Management</h1>
+			<h1 class="text-3xl font-bold">Catalog</h1>
 			<p class="text-ink/70">Manage your product catalog</p>
 		</div>
 		<button class={buttonStyles({ tone: 'brand' })} onclick={openAddModal} disabled={loading}>

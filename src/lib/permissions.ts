@@ -6,6 +6,7 @@ export const capabilities = [
 	'order:read-own',
 	'order:read-all',
 	'catalog:manage',
+	'inventory:read',
 	'inventory:adjust',
 	'report:read',
 	'team:manage',
@@ -37,7 +38,7 @@ export function hasStaffWorkspaceAccess(role: string | undefined): boolean {
 }
 
 export function getDefaultStaffPath(role: string | undefined): string {
-	if (hasCapability(role, 'overview:read')) return '/dashboard';
-	if (hasCapability(role, 'sale:create')) return '/dashboard/transaction';
+	if (hasCapability(role, 'overview:read')) return '/staff/overview';
+	if (hasCapability(role, 'sale:create')) return '/staff/pos';
 	return '/';
 }

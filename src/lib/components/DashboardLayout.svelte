@@ -1,5 +1,15 @@
 <script lang="ts">
-	import { LayoutDashboard, ShoppingCart, Package, Menu, X, LogOut, Store } from '@lucide/svelte';
+	import {
+		ClipboardList,
+		Boxes,
+		LayoutDashboard,
+		ShoppingCart,
+		Package,
+		Menu,
+		X,
+		LogOut,
+		Store
+	} from '@lucide/svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import Logo from '$lib/assets/logo.svg';
@@ -14,14 +24,16 @@
 		title?: string;
 	}
 
-	let { user, children, title = 'Dashboard' }: Props = $props();
+	let { user, children, title = 'Staff Workspace' }: Props = $props();
 	let sidebarOpen = $state(false);
 	let staffLandingPath = $derived(getDefaultStaffPath(user?.role));
 
 	const routeIcons = {
-		dashboard: LayoutDashboard,
+		overview: LayoutDashboard,
 		pos: ShoppingCart,
-		products: Package
+		orders: ClipboardList,
+		inventory: Boxes,
+		catalog: Package
 	} satisfies Record<StaffRouteId, typeof LayoutDashboard>;
 
 	let sidebarItems = $derived(
@@ -29,6 +41,14 @@
 			...route,
 			icon: routeIcons[route.id as StaffRouteId]
 		}))
+	);
+	let sidebarGroups = $derived(
+		(['Operations', 'Management'] as const)
+			.map((section) => ({
+				section,
+				items: sidebarItems.filter((item) => item.section === section)
+			}))
+			.filter((group) => group.items.length > 0)
 	);
 
 	async function handleLogout() {
@@ -43,9 +63,6 @@
 
 	function isActive(href: string): boolean {
 		const currentPath = $page.url.pathname;
-		if (href === '/dashboard') {
-			return currentPath === '/dashboard';
-		}
 		return currentPath.startsWith(href);
 	}
 </script>
@@ -74,18 +91,29 @@
 			</div>
 
 			<!-- Navigation -->
-			<nav class="flex-1 space-y-1 px-3 py-4" aria-label="Staff navigation">
-				{#each sidebarItems as item (item.id)}
-					{@const ItemIcon = item.icon}
-					<a
-						href={item.href}
-						class={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-							isActive(item.href) ? 'bg-[#FF6B6B] text-white' : 'text-gray-700 hover:bg-gray-100'
-						}`}
-					>
-						<ItemIcon class="h-5 w-5" />
-						{item.label}
-					</a>
+			<nav class="flex-1 overflow-y-auto px-3 py-4" aria-label="Staff navigation">
+				{#each sidebarGroups as group (group.section)}
+					<div class="mb-5">
+						<p class="px-3 pb-2 text-xs font-semibold tracking-wide text-gray-400 uppercase">
+							{group.section}
+						</p>
+						<div class="space-y-1">
+							{#each group.items as item (item.id)}
+								{@const ItemIcon = item.icon}
+								<a
+									href={item.href}
+									class={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+										isActive(item.href)
+											? 'bg-[#FF6B6B] text-white'
+											: 'text-gray-700 hover:bg-gray-100'
+									}`}
+								>
+									<ItemIcon class="h-5 w-5" />
+									{item.label}
+								</a>
+							{/each}
+						</div>
+					</div>
 				{/each}
 			</nav>
 
