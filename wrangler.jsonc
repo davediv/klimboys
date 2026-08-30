@@ -15,6 +15,9 @@
 	"observability": {
 		"enabled": true
 	},
+	// Set AUTH_EMAIL_FROM in the deployed Worker environment to an address on a
+	// domain onboarded in Cloudflare Email Sending.
+	"send_email": [{ "name": "EMAIL" }],
 	"d1_databases": [
 		{
 			"binding": "DB",

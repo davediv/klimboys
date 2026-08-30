@@ -1,12 +1,20 @@
 import { json, type Handle } from '@sveltejs/kit';
 import { initializeDb } from '$lib/server/db';
 import { getAuthInstance } from '$lib/server/auth';
+import { initializeEmailService } from '$lib/server/email';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	// Initialize database with platform-specific D1 binding
 	if (event.platform?.env?.DB) {
 		initializeDb(event.platform.env.DB);
 	}
+
+	const platformVariables = event.platform?.env as unknown as Record<string, unknown> | undefined;
+	const configuredSender = platformVariables?.AUTH_EMAIL_FROM;
+	initializeEmailService(
+		event.platform?.env?.EMAIL,
+		typeof configuredSender === 'string' ? configuredSender : undefined
+	);
 
 	// Staff accounts are provisioned by an administrator. Never expose Better
 	// Auth's generic public sign-up endpoint as a customer registration flow.

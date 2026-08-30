@@ -2,18 +2,8 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { getDb } from './db';
 import * as schema from './db/schema';
+import { sendAuthEmail } from './email';
 import type { RequestEvent } from '@sveltejs/kit';
-
-// Custom email sending function (you'll need to replace with actual email service)
-async function sendVerificationEmail(email: string, url: string) {
-	// In production, integrate with an email service like SendGrid, Resend, etc.
-	console.log(`[EMAIL] Verification email would be sent to ${email}`);
-	console.log(`[EMAIL] Verification URL: ${url}`);
-
-	// For development, we'll log the verification URL
-	// In production, you'd send an actual email here
-	return true;
-}
 
 // Lazy-initialize Better Auth to avoid global scope issues in Cloudflare Workers
 let authInstance: ReturnType<typeof betterAuth> | null = null;
@@ -32,16 +22,33 @@ export function getAuthInstance() {
 			}),
 			emailAndPassword: {
 				enabled: true,
+				disableSignUp: true,
 				requireEmailVerification: true,
-				sendResetPasswordToken: async ({ user, url }: { user: { email: string }; url: string }) => {
-					await sendVerificationEmail(user.email, url);
+				revokeSessionsOnPasswordReset: true,
+				sendResetPassword: async ({ user, url }: { user: { email: string }; url: string }) => {
+					await sendAuthEmail({
+						to: user.email,
+						subject: 'Reset your Klimboys staff password',
+						heading: 'Reset your password',
+						message: 'Use the secure link below to choose a new staff workspace password.',
+						actionLabel: 'Reset password',
+						actionUrl: url
+					});
 				}
 			},
 			emailVerification: {
 				sendVerificationEmail: async ({ user, url }: { user: { email: string }; url: string }) => {
-					await sendVerificationEmail(user.email, url);
+					await sendAuthEmail({
+						to: user.email,
+						subject: 'Verify your Klimboys staff email',
+						heading: 'Verify your email address',
+						message: 'Confirm this email address before accessing the Klimboys staff workspace.',
+						actionLabel: 'Verify email',
+						actionUrl: url
+					});
 				},
-				sendOnSignUp: true
+				sendOnSignUp: false,
+				sendOnSignIn: true
 			},
 			user: {
 				additionalFields: {

@@ -40,10 +40,9 @@ export function routeGuard(event: ServerLoadEvent, options: GuardOptions = {}) {
 
 	// Check email verification
 	if (requireVerified && !locals.user.emailVerified) {
-		// Allow access to verification page
-		if (url.pathname !== '/verify-email') {
-			throw redirect(302, '/verify-email');
-		}
+		const verificationUrl = new URL('/staff-login/verify-email', url.origin);
+		verificationUrl.searchParams.set('email', locals.user.email);
+		throw redirect(302, `${verificationUrl.pathname}${verificationUrl.search}`);
 	}
 
 	// Check role permissions

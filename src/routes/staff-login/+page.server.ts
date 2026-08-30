@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { hasRole } from '$lib/server/auth';
+import { isEmailServiceConfigured } from '$lib/server/email';
 import { getDefaultRedirect } from '$lib/server/guards';
 import { getSafeStaffRedirect } from '$lib/navigation';
 import type { PageServerLoad } from './$types';
@@ -15,6 +16,8 @@ export const load: PageServerLoad = async ({ locals, url }) => {
 	return {
 		redirectTo: requestedRedirect,
 		accountsManaged: url.searchParams.get('notice') === 'staff-accounts-managed',
-		emailVerified: url.searchParams.get('verified') === 'true'
+		emailVerified: url.searchParams.get('verified') === 'true',
+		passwordReset: url.searchParams.get('notice') === 'password-reset',
+		emailRecoveryAvailable: isEmailServiceConfigured()
 	};
 };

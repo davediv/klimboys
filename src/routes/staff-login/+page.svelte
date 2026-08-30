@@ -34,6 +34,11 @@
 			});
 
 			if (!response.ok) {
+				if (response.status === 403) {
+					await goto(`/staff-login/verify-email?email=${encodeURIComponent(email)}`);
+					return;
+				}
+
 				let message = 'The email or password is incorrect.';
 				try {
 					const body = (await response.json()) as { message?: string };
@@ -92,6 +97,11 @@
 					Your email is verified. You can now sign in.
 				</div>
 			{/if}
+			{#if data.passwordReset}
+				<div class={cx(alertStyles('positive'), 'mb-6')} role="status">
+					Your password has been updated. Sign in with the new password.
+				</div>
+			{/if}
 
 			{#if error}
 				<div class={cx(alertStyles('danger'), 'mb-6')} role="alert">{error}</div>
@@ -120,9 +130,19 @@
 				</div>
 
 				<div>
-					<label for="staff-password" class="mb-2 block text-sm font-medium text-gray-700">
-						Password
-					</label>
+					<div class="mb-2 flex items-center justify-between gap-4">
+						<label for="staff-password" class="block text-sm font-medium text-gray-700">
+							Password
+						</label>
+						{#if data.emailRecoveryAvailable}
+							<a
+								href="/staff-login/forgot-password"
+								class="text-sm font-medium text-brand hover:underline"
+							>
+								Forgot password?
+							</a>
+						{/if}
+					</div>
 					<div class="relative">
 						<Lock
 							class="pointer-events-none absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-gray-400"
@@ -151,6 +171,12 @@
 						</button>
 					</div>
 				</div>
+				{#if !data.emailRecoveryAvailable}
+					<p class="text-xs text-gray-500">
+						Password recovery is managed by your administrator until staff email delivery is
+						configured.
+					</p>
+				{/if}
 
 				<button
 					type="submit"
