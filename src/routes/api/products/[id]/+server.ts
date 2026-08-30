@@ -357,7 +357,7 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 			return json({ error: 'Product not found' }, { status: 404 });
 		}
 
-		// Soft delete by setting isActive to false
+		// Archive without deleting historical transaction or inventory relationships.
 		await db
 			.update(products)
 			.set({
@@ -368,14 +368,14 @@ export const DELETE: RequestHandler = async ({ params, locals }) => {
 
 		return json({
 			success: true,
-			message: 'Product deleted successfully'
+			message: 'Product archived successfully'
 		});
 	} catch (error) {
-		console.error('Error deleting product:', error);
+		console.error('Error archiving product:', error);
 		return json(
 			{
 				success: false,
-				error: 'Failed to delete product',
+				error: 'Failed to archive product',
 				message: error instanceof Error ? error.message : 'Unknown error occurred'
 			},
 			{ status: 500 }

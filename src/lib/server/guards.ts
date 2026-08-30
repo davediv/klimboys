@@ -28,7 +28,7 @@ export function routeGuard(event: ServerLoadEvent, options: GuardOptions = {}) {
 	// Check authentication
 	if (requireAuth && !locals.user) {
 		const loginUrl = new URL(redirectTo, url.origin);
-		loginUrl.searchParams.set('redirectTo', url.pathname);
+		loginUrl.searchParams.set('redirectTo', `${url.pathname}${url.search}`);
 		throw redirect(302, loginUrl.toString());
 	}
 

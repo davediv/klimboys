@@ -26,10 +26,27 @@ export interface CatalogProduct extends PosProduct {
 	variants: CatalogProductVariant[];
 }
 
+export type CatalogStatus = 'active' | 'inactive' | 'all';
+
+export interface CatalogPagination {
+	page: number;
+	limit: number;
+	totalItems: number;
+	totalPages: number;
+	hasNext: boolean;
+	hasPrev: boolean;
+}
+
 export interface ProductListResponse {
 	success: boolean;
 	data?: {
 		products?: CatalogProduct[];
+		pagination?: CatalogPagination;
+		filters?: {
+			search: string;
+			category: string | null;
+			status: CatalogStatus;
+		};
 	};
 }
 

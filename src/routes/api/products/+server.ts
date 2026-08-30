@@ -31,16 +31,25 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		const db = getDb();
 
 		// Get query parameters
-		const searchQuery = url.searchParams.get('search') || '';
-		const page = parseInt(url.searchParams.get('page') || '1');
-		const limit = parseInt(url.searchParams.get('limit') || '10');
-		const category = url.searchParams.get('category') || '';
-		const activeOnly = !canManageCatalog || url.searchParams.get('active') !== 'false';
+		const searchQuery = (url.searchParams.get('search') || '').trim().slice(0, 100);
+		const requestedPage = Number.parseInt(url.searchParams.get('page') || '1', 10);
+		const requestedLimit = Number.parseInt(url.searchParams.get('limit') || '10', 10);
+		const category = (url.searchParams.get('category') || '').trim().slice(0, 100);
+		const requestedStatus = url.searchParams.get('status');
+		const status = !canManageCatalog
+			? 'active'
+			: requestedStatus === 'inactive' || requestedStatus === 'all' || requestedStatus === 'active'
+				? requestedStatus
+				: url.searchParams.get('active') === 'false'
+					? 'all'
+					: 'active';
 		const includeMeta = url.searchParams.get('includeMeta') !== 'false';
 
 		// Validate pagination parameters
-		const validPage = Math.max(1, page);
-		const validLimit = Math.min(100, Math.max(1, limit)); // Max 100 items per page
+		const validPage = Number.isFinite(requestedPage) ? Math.max(1, requestedPage) : 1;
+		const validLimit = Number.isFinite(requestedLimit)
+			? Math.min(100, Math.max(1, requestedLimit))
+			: 10;
 		const offset = (validPage - 1) * validLimit;
 
 		// Build where conditions
@@ -49,7 +58,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		// Add search condition (search in name and description)
 		if (searchQuery) {
 			conditions.push(
-				sql`(${products.name} LIKE ${`%${searchQuery}%`} OR ${products.description} LIKE ${`%${searchQuery}%`})`
+				sql`(${products.name} LIKE ${`%${searchQuery}%`} OR ${products.description} LIKE ${`%${searchQuery}%`} OR ${products.category} LIKE ${`%${searchQuery}%`})`
 			);
 		}
 
@@ -59,8 +68,10 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		}
 
 		// Add active filter
-		if (activeOnly) {
+		if (status === 'active') {
 			conditions.push(eq(products.isActive, true));
+		} else if (status === 'inactive') {
+			conditions.push(eq(products.isActive, false));
 		}
 
 		// Combine conditions
@@ -95,7 +106,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 				? db
 						.selectDistinct({ category: products.category })
 						.from(products)
-						.where(activeOnly ? eq(products.isActive, true) : undefined)
+						.where(status === 'all' ? undefined : eq(products.isActive, status === 'active'))
 				: undefined
 		]);
 
@@ -187,7 +198,7 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 								categories,
 								search: searchQuery,
 								category: category || null,
-								activeOnly
+								status
 							}
 						}
 					: {})

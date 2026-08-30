@@ -1,5 +1,19 @@
 <script lang="ts">
-	import { Package, Plus, Edit, Trash2, Search, Save, AlertCircle, X } from '@lucide/svelte';
+	import { invalidateAll } from '$app/navigation';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
+	import {
+		AlertCircle,
+		Archive,
+		ArrowLeft,
+		ArrowRight,
+		Edit,
+		Package,
+		Plus,
+		RotateCcw,
+		Save,
+		Search,
+		X
+	} from '@lucide/svelte';
 	import { formatIdr } from '$lib/format';
 	import type { CatalogProduct } from '$lib/product';
 	import {
@@ -41,10 +55,9 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let searchQuery = $state('');
 	let showAddModal = $state(false);
 	let showEditModal = $state(false);
-	let showDeleteModal = $state(false);
+	let showArchiveModal = $state(false);
 	let selectedProduct = $state<CatalogProduct | null>(null);
 	let loading = $state(false);
 	let error = $state<string | null>(data.productsError);
@@ -70,16 +83,7 @@
 		}>
 	});
 
-	// Product catalog seeded by the server load and reconciled from mutation responses
-	let products = $state<CatalogProduct[]>(data.products);
-
-	let filteredProducts = $derived(
-		products.filter(
-			(p) =>
-				p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				p.category.toLowerCase().includes(searchQuery.toLowerCase())
-		)
-	);
+	let products = $derived(data.products);
 
 	// Categories for dropdown
 	const categories = ['Classic', 'Fruity', 'Special', 'Seasonal'];
@@ -161,9 +165,18 @@
 		showEditModal = true;
 	}
 
-	function openDeleteModal(product: CatalogProduct) {
+	function openArchiveModal(product: CatalogProduct) {
 		selectedProduct = product;
-		showDeleteModal = true;
+		showArchiveModal = true;
+	}
+
+	function pageHref(page: number): string {
+		const params = new SvelteURLSearchParams();
+		if (data.search) params.set('search', data.search);
+		if (data.status !== 'active') params.set('status', data.status);
+		if (page > 1) params.set('page', String(page));
+		const query = params.toString();
+		return query ? `/staff/catalog?${query}` : '/staff/catalog';
 	}
 
 	async function handleAddProduct() {
@@ -212,15 +225,13 @@
 
 			const result = (await response.json()) as ProductMutationResponse;
 			if (result.success && result.data) {
-				let createdProduct = result.data;
-				const productId = createdProduct.id;
+				const productId = result.data.id;
 
 				// Upload image if file selected
 				if (imageFile) {
 					try {
 						const imageUrl = await uploadImage(productId);
 						if (imageUrl) {
-							createdProduct = { ...createdProduct, imageUrl };
 							successMessage = 'Product added with image successfully!';
 						}
 					} catch (imgErr) {
@@ -232,7 +243,7 @@
 					successMessage = 'Product added successfully!';
 				}
 
-				products = [createdProduct, ...products];
+				await invalidateAll();
 				showAddModal = false;
 				setTimeout(() => (successMessage = null), 3000);
 			}
@@ -305,10 +316,7 @@
 
 			const result = (await response.json()) as ProductMutationResponse;
 			if (result.success && result.data) {
-				const updatedProduct = result.data;
-				products = products.map((product) =>
-					product.id === updatedProduct.id ? updatedProduct : product
-				);
+				await invalidateAll();
 				successMessage = imageFile
 					? 'Product and image updated successfully!'
 					: 'Product updated successfully!';
@@ -323,7 +331,7 @@
 		}
 	}
 
-	async function handleDeleteProduct() {
+	async function handleArchiveProduct() {
 		if (!selectedProduct) return;
 		const productId = selectedProduct.id;
 
@@ -336,28 +344,25 @@
 
 			if (!response.ok) {
 				const errorData = (await response.json()) as ApiErrorResponse;
-				throw new Error(errorData.error || 'Failed to delete product');
+				throw new Error(errorData.error || 'Failed to archive product');
 			}
 
 			const result = (await response.json()) as { success: boolean };
 			if (result.success) {
-				products = products.filter((product) => product.id !== productId);
-				successMessage = 'Product deleted successfully!';
-				showDeleteModal = false;
+				await invalidateAll();
+				successMessage = 'Product archived successfully.';
+				showArchiveModal = false;
 				setTimeout(() => (successMessage = null), 3000);
 			}
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to delete product';
-			console.error('Error deleting product:', err);
+			error = err instanceof Error ? err.message : 'Failed to archive product';
+			console.error('Error archiving product:', err);
 		} finally {
 			loading = false;
 		}
 	}
 
-	async function toggleProductStatus(productId: string) {
-		const product = products.find((p) => p.id === productId);
-		if (!product) return;
-
+	async function restoreProduct(productId: string) {
 		loading = true;
 		error = null;
 		try {
@@ -367,25 +372,24 @@
 					'Content-Type': 'application/json'
 				},
 				body: JSON.stringify({
-					isActive: !product.isActive
+					isActive: true
 				})
 			});
 
 			if (!response.ok) {
 				const errorData = (await response.json()) as ApiErrorResponse;
-				throw new Error(errorData.error || 'Failed to toggle product status');
+				throw new Error(errorData.error || 'Failed to restore product');
 			}
 
 			const result = (await response.json()) as ProductMutationResponse;
 			if (result.success && result.data) {
-				const updatedProduct = result.data;
-				products = updatedProduct.isActive
-					? products.map((item) => (item.id === productId ? updatedProduct : item))
-					: products.filter((item) => item.id !== productId);
+				await invalidateAll();
+				successMessage = 'Product restored successfully.';
+				setTimeout(() => (successMessage = null), 3000);
 			}
 		} catch (err) {
-			error = err instanceof Error ? err.message : 'Failed to toggle product status';
-			console.error('Error toggling product status:', err);
+			error = err instanceof Error ? err.message : 'Failed to restore product';
+			console.error('Error restoring product:', err);
 		} finally {
 			loading = false;
 		}
@@ -487,7 +491,7 @@
 		</div>
 	{/if}
 
-	{#if error && !showAddModal && !showEditModal && !showDeleteModal}
+	{#if error && !showAddModal && !showEditModal && !showArchiveModal}
 		<div class={cx(alertStyles('danger'), 'mb-4')}>
 			<AlertCircle class="h-6 w-6" />
 			<span>{error}</span>
@@ -509,28 +513,55 @@
 		</button>
 	</div>
 
-	<!-- Search and Filter -->
-	<div class={cx(cardStyles, 'mb-6 bg-surface shadow-xl')}>
+	<!-- Server-driven search and lifecycle filters -->
+	<form method="GET" class={cx(cardStyles, 'mb-6 bg-surface shadow-xl')}>
 		<div class={cardBodyStyles}>
-			<div>
+			<div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_12rem_auto_auto] sm:items-end">
 				<div>
-					<input
-						type="text"
-						placeholder="Search products by name or category..."
-						class={inputStyles({ full: true })}
-						bind:value={searchQuery}
-					/>
-					<span class={buttonStyles({ shape: 'square' })}>
-						<Search class="h-5 w-5" />
-					</span>
+					<label for="catalog-search" class={fieldLabelStyles}>Search catalog</label>
+					<div class="relative">
+						<Search
+							class="pointer-events-none absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-ink/40"
+						/>
+						<input
+							id="catalog-search"
+							name="search"
+							type="search"
+							placeholder="Search by product or category"
+							class={cx(inputStyles({ full: true }), 'pl-10')}
+							value={data.search}
+						/>
+					</div>
 				</div>
+				<div>
+					<label for="catalog-status" class={fieldLabelStyles}>Status</label>
+					<select
+						id="catalog-status"
+						name="status"
+						class={selectStyles({ full: true })}
+						value={data.status}
+					>
+						<option value="active">Active</option>
+						<option value="inactive">Archived</option>
+						<option value="all">All</option>
+					</select>
+				</div>
+				<button type="submit" class={buttonStyles({ tone: 'brand' })}>Apply filters</button>
+				<a href="/staff/catalog" class={buttonStyles({ variant: 'ghost' })}>Clear</a>
 			</div>
 		</div>
-	</div>
+	</form>
 
 	<!-- Products Table -->
 	<div class={cx(cardStyles, 'bg-surface shadow-xl')}>
 		<div class={cardBodyStyles}>
+			<p class="font-medium text-ink/70">
+				{data.pagination.totalItems}
+				{data.status === 'inactive' ? 'archived' : data.status} product{data.pagination
+					.totalItems === 1
+					? ''
+					: 's'}
+			</p>
 			<div class="overflow-x-auto">
 				<table class={tableStyles}>
 					<thead>
@@ -555,17 +586,26 @@
 							<tr>
 								<td colspan="6" class="py-8 text-center">
 									<Package class="mx-auto mb-2 h-12 w-12 opacity-50" />
-									<p>No products found</p>
-									<button
-										class={cx(buttonStyles({ tone: 'brand', size: 'sm' }), 'mt-2')}
-										onclick={openAddModal}
-									>
-										Add your first product
-									</button>
+									<p>No products match this view</p>
+									{#if data.search || data.status !== 'active'}
+										<a
+											href="/staff/catalog"
+											class={cx(buttonStyles({ variant: 'outline', size: 'sm' }), 'mt-2')}
+										>
+											View active catalog
+										</a>
+									{:else}
+										<button
+											class={cx(buttonStyles({ tone: 'brand', size: 'sm' }), 'mt-2')}
+											onclick={openAddModal}
+										>
+											Add your first product
+										</button>
+									{/if}
 								</td>
 							</tr>
 						{:else}
-							{#each filteredProducts as product (product.id)}
+							{#each products as product (product.id)}
 								<tr>
 									<td>
 										<div class="flex items-center space-x-3">
@@ -628,16 +668,9 @@
 										</div>
 									</td>
 									<td>
-										<button
-											onclick={() => toggleProductStatus(product.id)}
-											class={cx(
-												badgeStyles(product.isActive ? 'positive' : 'danger'),
-												'cursor-pointer disabled:cursor-not-allowed disabled:opacity-50'
-											)}
-											disabled={loading}
-										>
-											{product.isActive ? 'Active' : 'Inactive'}
-										</button>
+										<span class={badgeStyles(product.isActive ? 'positive' : 'danger')}>
+											{product.isActive ? 'Active' : 'Archived'}
+										</span>
 									</td>
 									<td>
 										<div class="flex gap-2">
@@ -645,16 +678,28 @@
 												class={buttonStyles({ variant: 'ghost', size: 'xs' })}
 												onclick={() => openEditModal(product)}
 												disabled={loading}
+												aria-label={`Edit ${product.name}`}
 											>
 												<Edit class="h-4 w-4" />
 											</button>
-											<button
-												class={cx(buttonStyles({ variant: 'ghost', size: 'xs' }), 'text-danger')}
-												onclick={() => openDeleteModal(product)}
-												disabled={loading}
-											>
-												<Trash2 class="h-4 w-4" />
-											</button>
+											{#if product.isActive}
+												<button
+													class={cx(buttonStyles({ variant: 'ghost', size: 'xs' }), 'text-danger')}
+													onclick={() => openArchiveModal(product)}
+													disabled={loading}
+													aria-label={`Archive ${product.name}`}
+												>
+													<Archive class="h-4 w-4" />
+												</button>
+											{:else}
+												<button
+													class={buttonStyles({ variant: 'outline', tone: 'positive', size: 'xs' })}
+													onclick={() => restoreProduct(product.id)}
+													disabled={loading}
+												>
+													<RotateCcw class="h-4 w-4" /> Restore
+												</button>
+											{/if}
 										</div>
 									</td>
 								</tr>
@@ -662,13 +707,31 @@
 						{/if}
 					</tbody>
 				</table>
-
-				{#if filteredProducts.length === 0}
-					<div class="py-8 text-center text-ink/50">No products found</div>
-				{/if}
 			</div>
 		</div>
 	</div>
+
+	{#if data.pagination.totalPages > 1}
+		<nav class="mt-6 flex items-center justify-between" aria-label="Catalog pages">
+			{#if data.pagination.hasPrev}
+				<a href={pageHref(data.pagination.page - 1)} class={buttonStyles({ variant: 'outline' })}>
+					<ArrowLeft class="h-4 w-4" /> Previous
+				</a>
+			{:else}
+				<span></span>
+			{/if}
+			<p class="text-sm text-ink/60">
+				Page {data.pagination.page} of {data.pagination.totalPages}
+			</p>
+			{#if data.pagination.hasNext}
+				<a href={pageHref(data.pagination.page + 1)} class={buttonStyles({ variant: 'outline' })}>
+					Next <ArrowRight class="h-4 w-4" />
+				</a>
+			{:else}
+				<span></span>
+			{/if}
+		</nav>
+	{/if}
 </div>
 
 <!-- Add Product Modal -->
@@ -1147,11 +1210,11 @@
 	</div>
 {/if}
 
-<!-- Delete Confirmation Modal -->
-{#if showDeleteModal}
+<!-- Archive Confirmation Modal -->
+{#if showArchiveModal}
 	<div data-modal-root class={modalRootStyles}>
 		<div class={modalPanelStyles}>
-			<h3 class="mb-4 text-lg font-bold">Delete Product</h3>
+			<h3 class="mb-4 text-lg font-bold">Archive Product</h3>
 
 			{#if error}
 				<div class={cx(alertStyles('danger'), 'mb-4')}>
@@ -1162,12 +1225,13 @@
 
 			<div class={cx(alertStyles('caution'), 'mb-4')}>
 				<AlertCircle class="h-6 w-6" />
-				<span>This will mark the product as inactive. It can be reactivated later if needed.</span>
+				<span>This removes the product from the menu and POS without erasing its history.</span>
 			</div>
 
 			{#if selectedProduct}
 				<p class="mb-4">
-					Are you sure you want to delete <strong>{selectedProduct.name}</strong>?
+					Archive <strong>{selectedProduct.name}</strong>? You can restore it from the Archived
+					view.
 				</p>
 			{/if}
 
@@ -1175,28 +1239,28 @@
 				<button
 					class={buttonStyles({ variant: 'ghost' })}
 					onclick={() => {
-						showDeleteModal = false;
+						showArchiveModal = false;
 						error = null;
 					}}
 					disabled={loading}>Cancel</button
 				>
 				<button
 					class={buttonStyles({ tone: 'danger' })}
-					onclick={handleDeleteProduct}
+					onclick={handleArchiveProduct}
 					disabled={loading}
 				>
 					{#if loading}
 						<span class={spinnerStyles('sm')}></span>
 					{:else}
-						<Trash2 class="h-4 w-4" />
+						<Archive class="h-4 w-4" />
 					{/if}
-					Delete Product
+					Archive Product
 				</button>
 			</div>
 		</div>
 		<button
 			class={modalBackdropStyles}
-			onclick={() => (showDeleteModal = false)}
+			onclick={() => (showArchiveModal = false)}
 			aria-label="Close modal"
 		></button>
 	</div>
