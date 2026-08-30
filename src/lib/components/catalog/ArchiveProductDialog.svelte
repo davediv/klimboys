@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { AlertCircle, Archive, X } from '@lucide/svelte';
+	import { focusTrap } from '$lib/actions/focus-trap';
 	import type { CatalogProduct } from '$lib/product';
 	import { archiveCatalogProduct } from '$lib/catalog-client';
 	import {
@@ -52,6 +53,8 @@
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby="archive-product-title"
+		tabindex="-1"
+		use:focusTrap
 	>
 		<div class="mb-4 flex items-center justify-between gap-4">
 			<h3 id="archive-product-title" class="text-lg font-bold">Archive product</h3>
@@ -79,6 +82,7 @@
 				type="button"
 				class={buttonStyles({ variant: 'ghost' })}
 				onclick={close}
+				data-autofocus
 				disabled={loading}>Cancel</button
 			>
 			<button

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import Logo from '$lib/assets/logo.svg';
+	import { focusTrap } from '$lib/actions/focus-trap';
 	import { getPublicNavigation, publicRoutes } from '$lib/navigation';
 	import { getDefaultStaffPath, hasStaffWorkspaceAccess } from '$lib/permissions';
 	import { Menu, X } from '@lucide/svelte';
@@ -56,6 +57,12 @@
 	}
 </script>
 
+<svelte:window
+	onkeydown={(event) => {
+		if (event.key === 'Escape' && mobileMenuOpen) mobileMenuOpen = false;
+	}}
+/>
+
 <header
 	class="fixed top-0 right-0 left-0 z-50 transition-all duration-300 {scrolled
 		? 'bg-white shadow-md'
@@ -74,11 +81,12 @@
 
 			<!-- Hamburger Menu (Right) -->
 			<button
+				type="button"
 				class="relative z-50 rounded-lg p-2 transition-all duration-300 {scrolled
 					? 'hover:bg-gray-100'
 					: 'bg-white/80 backdrop-blur-sm hover:bg-white/90'} {mobileMenuOpen ? 'rotate-90' : ''}"
 				onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
-				aria-label="Toggle menu"
+				aria-label={mobileMenuOpen ? 'Close primary navigation' : 'Open primary navigation'}
 				aria-expanded={mobileMenuOpen}
 				aria-controls="public-navigation"
 			>
@@ -107,21 +115,38 @@
 	{#if mobileMenuOpen}
 		<!-- Backdrop -->
 		<button
+			type="button"
 			class="fixed inset-0 z-40 bg-black/50"
 			onclick={() => (mobileMenuOpen = false)}
-			aria-label="Close menu"
+			aria-hidden="true"
+			tabindex="-1"
 			transition:fade={{ duration: 300, easing: quintOut }}
 		></button>
 
 		<!-- Menu Panel -->
 		<div
+			data-modal-root
 			class="fixed top-0 right-0 z-40 h-full w-full bg-white shadow-2xl sm:w-96"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="public-navigation-title"
+			tabindex="-1"
+			use:focusTrap
 			transition:fly={{ x: '100%', duration: 300, easing: quintOut }}
 		>
 			<div class="flex h-full flex-col">
 				<!-- Menu Header -->
 				<div class="flex items-center justify-between border-b p-6">
-					<h2 class="text-xl font-bold text-gray-900">Menu</h2>
+					<h2 id="public-navigation-title" class="text-xl font-bold text-gray-900">Menu</h2>
+					<button
+						type="button"
+						class="grid min-h-11 min-w-11 place-items-center rounded-lg hover:bg-gray-100"
+						onclick={() => (mobileMenuOpen = false)}
+						aria-label="Close primary navigation"
+						data-autofocus
+					>
+						<X class="h-6 w-6" />
+					</button>
 				</div>
 
 				<!-- Menu Items -->
@@ -131,6 +156,7 @@
 							<li>
 								<a
 									href={item.href}
+									aria-current={isActive(item.href) ? 'page' : undefined}
 									class="block px-6 py-3 text-lg font-medium transition-colors hover:bg-gray-50 {isActive(
 										item.href
 									)
@@ -147,6 +173,7 @@
 							<li class="mt-4 border-t pt-4">
 								<a
 									href={staffLandingPath}
+									onclick={() => (mobileMenuOpen = false)}
 									class="block px-6 py-3 text-lg font-semibold text-[#FF6B6B] transition-colors hover:bg-red-50"
 								>
 									Open staff workspace
@@ -156,6 +183,7 @@
 							<li class="mt-4 border-t pt-4">
 								<a
 									href={publicRoutes.login.href}
+									onclick={() => (mobileMenuOpen = false)}
 									class="block px-6 py-3 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-50"
 								>
 									Staff sign in

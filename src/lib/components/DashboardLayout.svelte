@@ -13,6 +13,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import Logo from '$lib/assets/logo.svg';
+	import { focusTrap } from '$lib/actions/focus-trap';
 	import { getStaffNavigation, type StaffRouteId } from '$lib/navigation';
 	import { getDefaultStaffPath } from '$lib/permissions';
 	import { buttonStyles, cx } from '$lib/styles';
@@ -26,6 +27,8 @@
 
 	let { user, children, title = 'Staff Workspace' }: Props = $props();
 	let sidebarOpen = $state(false);
+	let isDesktop = $state(false);
+	let viewportReady = $state(false);
 	let staffLandingPath = $derived(getDefaultStaffPath(user?.role));
 
 	const routeIcons = {
@@ -65,12 +68,44 @@
 		const currentPath = $page.url.pathname;
 		return currentPath.startsWith(href);
 	}
+
+	$effect(() => {
+		const media = window.matchMedia('(min-width: 1024px)');
+		const updateViewport = () => {
+			isDesktop = media.matches;
+			viewportReady = true;
+		};
+		updateViewport();
+		media.addEventListener('change', updateViewport);
+		return () => media.removeEventListener('change', updateViewport);
+	});
 </script>
+
+<svelte:window
+	onkeydown={(event) => {
+		if (event.key === 'Escape' && sidebarOpen && !isDesktop) sidebarOpen = false;
+	}}
+/>
+
+<a
+	href="#staff-main-content"
+	class="sr-only z-[1000] rounded bg-white px-4 py-2 text-ink shadow focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+>
+	Skip to main content
+</a>
 
 <div class="flex h-screen bg-surface-muted">
 	<!-- Sidebar -->
 	<aside
+		id="staff-navigation"
 		class={`fixed inset-y-0 left-0 z-50 w-64 transform bg-white shadow-lg transition-transform duration-300 ease-in-out lg:static lg:inset-0 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+		inert={viewportReady && !isDesktop && !sidebarOpen}
+		aria-hidden={viewportReady && !isDesktop && !sidebarOpen ? 'true' : undefined}
+		role={viewportReady && !isDesktop && sidebarOpen ? 'dialog' : undefined}
+		aria-modal={viewportReady && !isDesktop && sidebarOpen ? 'true' : undefined}
+		aria-label={viewportReady && !isDesktop && sidebarOpen ? 'Staff navigation' : undefined}
+		tabindex="-1"
+		use:focusTrap={viewportReady && sidebarOpen && !isDesktop}
 	>
 		<div class="flex h-full flex-col">
 			<!-- Logo -->
@@ -82,9 +117,11 @@
 					</span>
 				</a>
 				<button
+					type="button"
 					onclick={() => (sidebarOpen = false)}
 					class="lg:hidden"
 					aria-label="Close staff navigation"
+					data-autofocus
 				>
 					<X class="h-5 w-5" />
 				</button>
@@ -102,6 +139,8 @@
 								{@const ItemIcon = item.icon}
 								<a
 									href={item.href}
+									aria-current={isActive(item.href) ? 'page' : undefined}
+									onclick={() => (sidebarOpen = false)}
 									class={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
 										isActive(item.href)
 											? 'bg-[#FF6B6B] text-white'
@@ -155,15 +194,21 @@
 	</aside>
 
 	<!-- Main Content -->
-	<div class="flex flex-1 flex-col overflow-hidden">
+	<div
+		class="flex flex-1 flex-col overflow-hidden"
+		inert={viewportReady && !isDesktop && sidebarOpen}
+	>
 		<!-- Header -->
 		<header class="border-b border-gray-200 bg-white shadow-sm">
 			<div class="flex h-16 items-center justify-between px-6">
 				<div class="flex items-center gap-4">
 					<button
+						type="button"
 						onclick={() => (sidebarOpen = !sidebarOpen)}
 						class="lg:hidden"
-						aria-label="Open staff navigation"
+						aria-label={sidebarOpen ? 'Close staff navigation' : 'Open staff navigation'}
+						aria-expanded={sidebarOpen}
+						aria-controls="staff-navigation"
 					>
 						<Menu class="h-6 w-6" />
 					</button>
@@ -175,7 +220,7 @@
 		</header>
 
 		<!-- Main Content Area -->
-		<main class="flex-1 overflow-y-auto bg-gray-50 p-6">
+		<main id="staff-main-content" tabindex="-1" class="flex-1 overflow-y-auto bg-gray-50 p-6">
 			{@render children?.()}
 		</main>
 
@@ -191,8 +236,10 @@
 <!-- Mobile Sidebar Overlay -->
 {#if sidebarOpen}
 	<button
+		type="button"
 		class="bg-opacity-50 fixed inset-0 z-40 bg-black lg:hidden"
 		onclick={() => (sidebarOpen = false)}
-		aria-label="Close sidebar"
+		aria-hidden="true"
+		tabindex="-1"
 	></button>
 {/if}

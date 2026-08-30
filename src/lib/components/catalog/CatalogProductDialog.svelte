@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Save, X } from '@lucide/svelte';
+	import { focusTrap } from '$lib/actions/focus-trap';
 	import type { CatalogProduct } from '$lib/product';
 	import {
 		catalogCategories,
@@ -95,6 +96,8 @@
 		role="dialog"
 		aria-modal="true"
 		aria-labelledby={`${idPrefix}-title`}
+		tabindex="-1"
+		use:focusTrap
 	>
 		<form
 			onsubmit={(event) => {
@@ -124,6 +127,7 @@
 					<label for={`${idPrefix}-name`} class={fieldLabelStyles}>Product name</label>
 					<input
 						id={`${idPrefix}-name`}
+						data-autofocus
 						class={inputStyles({ full: true })}
 						bind:value={formData.name}
 						maxlength="120"
