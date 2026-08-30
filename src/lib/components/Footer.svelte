@@ -1,6 +1,9 @@
 <script lang="ts">
-	import { MapPin, Phone, Mail, Clock } from '@lucide/svelte';
+	import { Clock, ExternalLink, Mail, MapPin, Phone } from '@lucide/svelte';
 	import Logo from '$lib/assets/logo.svg';
+	import { publicMessages, type PublicBusinessConfig } from '$lib/business';
+
+	let { business }: { business: PublicBusinessConfig } = $props();
 </script>
 
 <div id="contact" class="scroll-mt-24 bg-surface-muted">
@@ -8,23 +11,22 @@
 		<footer
 			class="grid w-full grid-cols-1 place-items-start gap-8 p-10 text-sm leading-5 text-ink md:grid-cols-2 lg:grid-cols-4"
 		>
-			<aside class="grid place-items-start gap-2">
+			<div class="grid place-items-start gap-2">
 				<img src={Logo} alt="Klimboys" class="mb-4 h-12 w-auto" />
 				<p class="text-lg font-semibold">Klimboys Milkshake Store</p>
-				<p class="mt-2 max-w-xs">
-					Premium milkshakes crafted with love. Your favorite spot for refreshing treats!
-				</p>
-			</aside>
+				<p class="mt-2 max-w-xs">{business.summary}</p>
+			</div>
 
-			<nav class="grid place-items-start gap-2">
-				<h6 class="mb-2 font-semibold uppercase opacity-60">Quick Links</h6>
+			<nav class="grid place-items-start gap-2" aria-label="Footer navigation">
+				<h2 class="mb-2 font-semibold uppercase opacity-60">Quick links</h2>
 				<a
 					href="/menu"
-					class="hover:underline focus-visible:outline-2 focus-visible:outline-offset-2">Our Menu</a
+					class="hover:underline focus-visible:outline-2 focus-visible:outline-offset-2">Our menu</a
 				>
 				<a
 					href="/#about"
-					class="hover:underline focus-visible:outline-2 focus-visible:outline-offset-2">About Us</a
+					class="hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
+					>About Klimboys</a
 				>
 				<a
 					href="/#contact"
@@ -33,109 +35,89 @@
 				<a
 					href="/staff-login"
 					class="hover:underline focus-visible:outline-2 focus-visible:outline-offset-2"
-					>Staff Login</a
+					>Staff sign in</a
 				>
 			</nav>
 
-			<nav class="grid place-items-start gap-2">
-				<h6 class="mb-2 font-semibold uppercase opacity-60">Store Info</h6>
-				<div class="flex items-start gap-2">
-					<MapPin class="mt-0.5 h-4 w-4 flex-shrink-0" />
-					<span
-						>JL. PEPAYA RAYA NO. 8 BLOK. 13K<br />RT.2/RW.5, JAGAKARSA<br />KOTA ADM JAKARTA SELATAN
-						12620</span
+			<section class="grid place-items-start gap-2" aria-labelledby="store-contact-title">
+				<h2 id="store-contact-title" class="mb-2 font-semibold uppercase opacity-60">
+					Store contact
+				</h2>
+				{#if business.contact.address}
+					<div class="flex items-start gap-2">
+						<MapPin class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+						{#if business.contact.mapsHref}
+							<a class="hover:underline" href={business.contact.mapsHref}>
+								{business.contact.address}
+								<span class="sr-only"> (opens verified map)</span>
+							</a>
+						{:else}
+							<span>{business.contact.address}</span>
+						{/if}
+					</div>
+				{:else if business.contact.mapsHref}
+					<a class="flex items-center gap-2 hover:underline" href={business.contact.mapsHref}>
+						<MapPin class="h-4 w-4 shrink-0" aria-hidden="true" />
+						Open verified map
+					</a>
+				{/if}
+				{#if business.contact.phone && business.contact.phoneHref}
+					<a class="flex items-center gap-2 hover:underline" href={business.contact.phoneHref}>
+						<Phone class="h-4 w-4 shrink-0" aria-hidden="true" />
+						{business.contact.phone}
+					</a>
+				{/if}
+				{#if business.contact.email}
+					<a
+						class="flex items-center gap-2 hover:underline"
+						href={`mailto:${business.contact.email}`}
 					>
-				</div>
-				<div class="flex items-center gap-2">
-					<Phone class="h-4 w-4 flex-shrink-0" />
-					<span>+62 21 1234 5678</span>
-				</div>
-				<div class="flex items-center gap-2">
-					<Mail class="h-4 w-4 flex-shrink-0" />
-					<span>hello@klimboys.com</span>
-				</div>
-			</nav>
+						<Mail class="h-4 w-4 shrink-0" aria-hidden="true" />
+						{business.contact.email}
+					</a>
+				{/if}
+				{#if !business.contact.hasDetails && !business.contact.mapsHref}
+					<p class="text-ink/60">{publicMessages.contactUnavailable}</p>
+				{/if}
+			</section>
 
-			<nav class="grid place-items-start gap-2">
-				<h6 class="mb-2 font-semibold uppercase opacity-60">Opening Hours</h6>
-				<div class="flex items-start gap-2">
-					<Clock class="mt-0.5 h-4 w-4 flex-shrink-0" />
-					<div>
-						<p>Mon - Fri: 10:00 - 22:00</p>
-						<p>Sat - Sun: 09:00 - 23:00</p>
+			<section class="grid place-items-start gap-3" aria-labelledby="hours-social-title">
+				<h2 id="hours-social-title" class="mb-1 font-semibold uppercase opacity-60">
+					Hours and social
+				</h2>
+				{#if business.contact.openingHours.length > 0}
+					<div class="flex items-start gap-2">
+						<Clock class="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+						<div>
+							{#each business.contact.openingHours as hours (hours)}
+								<p>{hours}</p>
+							{/each}
+						</div>
 					</div>
-				</div>
-				<div class="mt-4">
-					<h6 class="mb-2 font-semibold uppercase opacity-60">Follow Us</h6>
-					<div class="flex gap-4">
-						<a href="/go/twitter" aria-label="Twitter" class="transition-colors hover:text-brand">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
+				{/if}
+				{#if business.socialLinks.length > 0}
+					<nav class="flex flex-wrap gap-3" aria-label="Klimboys social profiles">
+						{#each business.socialLinks as social (social.id)}
+							<a
+								class="inline-flex items-center gap-1 font-medium hover:text-brand"
+								href={social.href}
 							>
-								<path
-									d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"
-								/>
-							</svg>
-						</a>
-						<a
-							href="/go/instagram"
-							aria-label="Instagram"
-							class="transition-colors hover:text-brand"
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							>
-								<rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-								<path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-								<line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-							</svg>
-						</a>
-						<a href="/go/facebook" aria-label="Facebook" class="transition-colors hover:text-brand">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								width="24"
-								height="24"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-								stroke-linecap="round"
-								stroke-linejoin="round"
-							>
-								<path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
-							</svg>
-						</a>
-					</div>
-				</div>
-			</nav>
+								{social.label}<ExternalLink class="h-3.5 w-3.5" aria-hidden="true" />
+							</a>
+						{/each}
+					</nav>
+				{:else if business.contact.openingHours.length === 0}
+					<p class="text-ink/60">Verified hours and social profiles are not published yet.</p>
+				{/if}
+			</section>
 		</footer>
 	</div>
 </div>
 
 <div class="bg-surface-strong">
 	<div class="container mx-auto">
-		<div
-			class="grid w-full grid-flow-col-dense place-items-center p-4 text-center text-sm leading-5 text-ink"
-		>
-			<aside class="grid place-items-center gap-2">
-				<p>© {new Date().getFullYear()} Klimboys. All rights reserved.</p>
-			</aside>
+		<div class="grid w-full place-items-center p-4 text-center text-sm leading-5 text-ink">
+			<p>© {new Date().getFullYear()} Klimboys. All rights reserved.</p>
 		</div>
 	</div>
 </div>

@@ -14,6 +14,9 @@
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
+	let whatsappAvailable = $derived(
+		data.business.orderingChannels.some((channel) => channel.id === 'whatsapp')
+	);
 
 	function orderHref(product: string, size: string): string {
 		const query = new URLSearchParams({ product, size });
@@ -35,8 +38,10 @@
 			<p class="text-sm font-semibold tracking-wider text-brand uppercase">Klimboys Menu</p>
 			<h1 class="mt-2 text-4xl font-bold text-ink md:text-5xl">Choose your shake</h1>
 			<p class="mt-4 text-ink/70">
-				Choose a size below and continue your order in WhatsApp, or use your preferred delivery
-				platform.
+				Review current sizes, prices, and availability.
+				{#if data.business.orderingChannels.length > 0}
+					Then continue through one of the verified ordering destinations.
+				{/if}
 			</p>
 		</div>
 
@@ -74,10 +79,12 @@
 		{#if data.catalogError}
 			<div class={cx(alertStyles('caution'), 'mb-8')} role="status">
 				<span>{data.catalogError}</span>
-				<a href="/go/whatsapp" class={buttonStyles({ tone: 'neutral', size: 'sm' })}>
-					<MessageCircle class="h-4 w-4" />
-					Order via WhatsApp
-				</a>
+				{#if whatsappAvailable}
+					<a href="/go/whatsapp" class={buttonStyles({ tone: 'neutral', size: 'sm' })}>
+						<MessageCircle class="h-4 w-4" />
+						Order via WhatsApp
+					</a>
+				{/if}
 			</div>
 		{/if}
 
@@ -112,7 +119,9 @@
 							<div class="flex items-start justify-between gap-4">
 								<div>
 									<h2 class="text-xl font-semibold">{product.name}</h2>
-									<p class="mt-1 text-ink/60">{product.description || 'Freshly made to order.'}</p>
+									<p class="mt-1 text-ink/60">
+										{product.description || 'Description not provided.'}
+									</p>
 								</div>
 								<span class={badgeStyles('ghost', 'sm')}>{product.category}</span>
 							</div>
@@ -128,7 +137,7 @@
 										</div>
 										<div class="flex items-center gap-3">
 											<p class="font-semibold">{formatIdr(variant.sellingPrice / 100)}</p>
-											{#if variant.available}
+											{#if variant.available && whatsappAvailable}
 												<a
 													href={orderHref(product.name, variant.size)}
 													class={buttonStyles({ tone: 'brand', size: 'sm' })}
@@ -136,8 +145,10 @@
 													<MessageCircle class="h-4 w-4" />
 													Order
 												</a>
-											{:else}
+											{:else if !variant.available}
 												<span class={badgeStyles('danger', 'sm')}>Unavailable</span>
+											{:else}
+												<span class={badgeStyles('positive', 'sm')}>Available</span>
 											{/if}
 										</div>
 									</div>
@@ -150,12 +161,21 @@
 		{/if}
 
 		<div class="mt-12 rounded-lg bg-surface p-6 text-center shadow-sm">
-			<h2 class="text-xl font-semibold">Prefer a delivery app?</h2>
-			<div class="mt-4 flex flex-wrap justify-center gap-3">
-				<a href="/go/gofood" class={buttonStyles({ variant: 'outline' })}>GoFood</a>
-				<a href="/go/grabfood" class={buttonStyles({ variant: 'outline' })}>GrabFood</a>
-				<a href="/go/shopeefood" class={buttonStyles({ variant: 'outline' })}>ShopeeFood</a>
-			</div>
+			{#if data.business.orderingChannels.length > 0}
+				<h2 class="text-xl font-semibold">Continue your order</h2>
+				<div class="mt-4 flex flex-wrap justify-center gap-3">
+					{#each data.business.orderingChannels as channel (channel.id)}
+						<a href={channel.href} class={buttonStyles({ variant: 'outline' })}>
+							{channel.label}
+						</a>
+					{/each}
+				</div>
+			{:else}
+				<h2 class="text-xl font-semibold">Ordering destinations are being verified</h2>
+				<p class="mt-2 text-ink/60">
+					Ordering actions will appear here as soon as a verified destination is configured.
+				</p>
+			{/if}
 		</div>
 	</div>
 </section>

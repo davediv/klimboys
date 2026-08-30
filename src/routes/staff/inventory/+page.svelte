@@ -2,6 +2,7 @@
 	import { invalidateAll } from '$app/navigation';
 	import { ArrowLeft, ArrowRight, Search, SlidersHorizontal, X } from '@lucide/svelte';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
+	import { APP_LANGUAGE_TAG, APP_TIME_ZONE } from '$lib/business';
 	import type {
 		InventoryAdjustmentResponse,
 		InventoryAdjustmentType,
@@ -54,10 +55,10 @@
 	}
 
 	function formatDateTime(value: string): string {
-		return new Intl.DateTimeFormat('id-ID', {
+		return new Intl.DateTimeFormat(APP_LANGUAGE_TAG, {
 			dateStyle: 'medium',
 			timeStyle: 'short',
-			timeZone: 'Asia/Jakarta'
+			timeZone: APP_TIME_ZONE
 		}).format(new Date(value));
 	}
 

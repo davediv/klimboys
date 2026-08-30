@@ -70,7 +70,7 @@ export async function sendAuthEmail(message: AuthEmailMessage): Promise<void> {
 		text: `${message.heading}\n\n${message.message}\n\n${message.actionLabel}: ${actionUrl.toString()}\n\nIf you did not request this, you can ignore this email.`,
 		html: `
 			<!doctype html>
-			<html lang="en">
+			<html lang="en-ID">
 				<body style="margin:0;background:#f8fafc;font-family:Arial,sans-serif;color:#111827">
 					<div style="max-width:560px;margin:0 auto;padding:40px 20px">
 						<div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:16px;padding:32px">

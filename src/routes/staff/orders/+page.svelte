@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { ArrowLeft, ArrowRight, Plus } from '@lucide/svelte';
+	import { APP_LANGUAGE_TAG, APP_TIME_ZONE } from '$lib/business';
 	import { formatIdr } from '$lib/format';
 	import {
 		badgeStyles,
@@ -14,8 +15,8 @@
 	let { data }: { data: PageData } = $props();
 
 	function formatDateTime(value: string): string {
-		return new Intl.DateTimeFormat('id-ID', {
-			timeZone: 'Asia/Jakarta',
+		return new Intl.DateTimeFormat(APP_LANGUAGE_TAG, {
+			timeZone: APP_TIME_ZONE,
 			dateStyle: 'medium',
 			timeStyle: 'short'
 		}).format(new Date(value));

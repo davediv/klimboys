@@ -14,3 +14,7 @@ An interactive web-based dashboard for Klimboys milk shake store to manage produ
 - Icons: Lucide Svelte
 - Deployment: Cloudflare Pages
 - Notifications: Telegram Bot API
+
+Public contact details and outbound ordering links are optional, validated configuration. See
+[`docs/public-content-configuration.md`](docs/public-content-configuration.md) before publishing a
+customer-facing deployment.

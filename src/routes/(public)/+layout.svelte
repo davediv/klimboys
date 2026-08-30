@@ -24,5 +24,5 @@
 	<main id="public-main-content" tabindex="-1" class="flex-1">
 		{@render children()}
 	</main>
-	<Footer />
+	<Footer business={data.business} />
 </div>

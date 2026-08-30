@@ -1,6 +1,8 @@
-const idrCurrencyFormatter = new Intl.NumberFormat('id-ID', {
+import { APP_CURRENCY, APP_LANGUAGE_TAG } from '$lib/business';
+
+const idrCurrencyFormatter = new Intl.NumberFormat(APP_LANGUAGE_TAG, {
 	style: 'currency',
-	currency: 'IDR',
+	currency: APP_CURRENCY,
 	minimumFractionDigits: 0
 });
 

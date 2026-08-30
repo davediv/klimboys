@@ -15,7 +15,7 @@ export const load: PageServerLoad = async ({ url }) => {
 			categories: [],
 			category,
 			search,
-			catalogError: 'The menu is temporarily unavailable. You can still order through WhatsApp.'
+			catalogError: 'The menu is temporarily unavailable.'
 		};
 	}
 };

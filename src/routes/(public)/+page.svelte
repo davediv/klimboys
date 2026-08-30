@@ -2,15 +2,14 @@
 	import {
 		ArrowRight,
 		ChevronRight,
-		Clock,
 		MessageCircle,
 		Package,
 		Shield,
 		Sparkles,
-		Star,
 		Truck
 	} from '@lucide/svelte';
 	import Mascot from '$lib/assets/klimboys-maskot.svg';
+	import { publicMessages } from '$lib/business';
 	import { formatIdr } from '$lib/format';
 	import {
 		badgeStyles,
@@ -27,51 +26,28 @@
 
 	const features = [
 		{
+			icon: Package,
+			title: 'Current menu',
+			description: 'Products and selling prices come from the active Klimboys catalog.'
+		},
+		{
 			icon: Sparkles,
-			title: 'Premium Quality',
-			description: 'Made with the finest ingredients and fresh milk daily'
-		},
-		{
-			icon: Truck,
-			title: 'Fast Delivery',
-			description: 'Get your favorite shakes delivered within 30 minutes'
-		},
-		{
-			icon: Clock,
-			title: 'Open Late',
-			description: 'Serving you refreshing treats until late night'
+			title: 'Clear size choices',
+			description: 'Review available sizes before continuing an order.'
 		},
 		{
 			icon: Shield,
-			title: '100% Fresh',
-			description: 'No preservatives, just pure natural goodness'
-		}
-	];
-
-	const testimonials = [
-		{
-			name: 'Sarah Johnson',
-			comment: 'Best milkshakes in town! The chocolate one is my absolute favorite.',
-			rating: 5
-		},
-		{
-			name: 'Mike Chen',
-			comment: 'Amazing quality and super fast delivery. Highly recommend!',
-			rating: 5
-		},
-		{
-			name: 'Lisa Anderson',
-			comment: 'Fresh ingredients and perfect sweetness. Love coming here!',
-			rating: 5
+			title: 'Verified destinations',
+			description: 'Ordering and contact links appear only after their destinations are configured.'
 		}
 	];
 </script>
 
 <svelte:head>
-	<title>Klimboys - Premium Milkshake Store</title>
+	<title>Klimboys - Milkshake Menu and Ordering</title>
 	<meta
 		name="description"
-		content="Experience the best milkshakes in town at Klimboys. Fresh ingredients, premium quality, and fast delivery."
+		content="Browse the current Klimboys milkshake menu, compare sizes and prices, and continue through an available ordering channel."
 	/>
 	<meta name="theme-color" content="#FF6B6B" />
 </svelte:head>
@@ -105,10 +81,7 @@
 			>
 				Shake Up Your Day
 			</h1>
-			<p class="py-6 text-lg text-ink/80 md:text-xl">
-				Browse the live Klimboys menu, choose your size, then order through the channel that works
-				best for you.
-			</p>
+			<p class="py-6 text-lg text-ink/80 md:text-xl">{data.business.summary}</p>
 			<div class="flex flex-col justify-center gap-4 sm:flex-row lg:justify-start">
 				<a
 					href="/menu"
@@ -225,71 +198,65 @@
 				Choose your ordering channel
 			</h2>
 			<p class="mx-auto mt-4 max-w-2xl text-ink/70">
-				Check the menu and size first, then continue through WhatsApp or a delivery platform.
+				Check the menu and size first, then continue through one of the verified destinations below.
 			</p>
 		</div>
 
-		<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-			<a
-				href="/go/whatsapp"
-				class={cx(cardStyles, 'group border-brand/20 bg-brand/5 p-6 hover:border-brand')}
+		{#if data.business.orderingChannels.length > 0}
+			<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+				{#each data.business.orderingChannels as channel (channel.id)}
+					<a
+						href={channel.href}
+						class={cx(
+							cardStyles,
+							'group p-6 hover:border-brand',
+							channel.id === 'whatsapp' && 'border-brand/20 bg-brand/5'
+						)}
+					>
+						{#if channel.id === 'whatsapp'}
+							<MessageCircle class="h-8 w-8 text-brand" />
+						{:else}
+							<Truck class="h-8 w-8 text-brand" />
+						{/if}
+						<h3 class="mt-4 text-lg font-bold">{channel.label}</h3>
+						<p class="mt-1 text-sm text-ink/70">{channel.description}</p>
+						<span class="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-brand">
+							Continue <ArrowRight class="h-4 w-4" />
+						</span>
+					</a>
+				{/each}
+			</div>
+		{:else}
+			<p
+				class="rounded-lg border border-surface-strong bg-surface-muted p-6 text-center text-ink/70"
+				role="status"
 			>
-				<MessageCircle class="h-8 w-8 text-brand" />
-				<h3 class="mt-4 text-lg font-bold">WhatsApp</h3>
-				<p class="mt-1 text-sm text-ink/70">Send your selected shake directly to Klimboys.</p>
-				<span class="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-brand">
-					Continue to WhatsApp <ArrowRight class="h-4 w-4" />
-				</span>
-			</a>
-			<a href="/go/gofood" class={cx(cardStyles, 'group p-6 hover:border-brand')}>
-				<Truck class="h-8 w-8 text-red-600" />
-				<h3 class="mt-4 text-lg font-bold">GoFood</h3>
-				<p class="mt-1 text-sm text-ink/70">Order for delivery through GoFood.</p>
-				<span class="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-brand">
-					Open GoFood <ArrowRight class="h-4 w-4" />
-				</span>
-			</a>
-			<a href="/go/grabfood" class={cx(cardStyles, 'group p-6 hover:border-brand')}>
-				<Truck class="h-8 w-8 text-green-600" />
-				<h3 class="mt-4 text-lg font-bold">GrabFood</h3>
-				<p class="mt-1 text-sm text-ink/70">Order for delivery through GrabFood.</p>
-				<span class="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-brand">
-					Open GrabFood <ArrowRight class="h-4 w-4" />
-				</span>
-			</a>
-			<a href="/go/shopeefood" class={cx(cardStyles, 'group p-6 hover:border-brand')}>
-				<Truck class="h-8 w-8 text-orange-600" />
-				<h3 class="mt-4 text-lg font-bold">ShopeeFood</h3>
-				<p class="mt-1 text-sm text-ink/70">Order for delivery through ShopeeFood.</p>
-				<span class="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-brand">
-					Open ShopeeFood <ArrowRight class="h-4 w-4" />
-				</span>
-			</a>
-		</div>
+				{publicMessages.orderingUnavailable}
+			</p>
+		{/if}
 	</div>
 </section>
 
-<!-- 4. Quality proof. -->
+<!-- 4. Observable ordering details; unsupported marketing claims stay unpublished. -->
 <section id="about" class="scroll-mt-24 bg-surface-muted px-4 py-20" aria-labelledby="about-title">
 	<div class="container mx-auto">
 		<div class="mb-12 text-center">
-			<p class="text-sm font-semibold tracking-wider text-brand uppercase">Why Klimboys</p>
-			<h2 id="about-title" class="mt-2 text-3xl font-bold md:text-4xl">Made for a better shake</h2>
+			<p class="text-sm font-semibold tracking-wider text-brand uppercase">Plan your order</p>
+			<h2 id="about-title" class="mt-2 text-3xl font-bold md:text-4xl">What you can check here</h2>
 			<p class="mx-auto mt-4 max-w-2xl text-ink/70">
-				Quality ingredients and service designed around a fresh milkshake experience.
+				Use current catalog and availability information before leaving for another ordering
+				channel.
 			</p>
 		</div>
-		<div class="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
+		<div class="grid grid-cols-1 gap-8 md:grid-cols-3">
 			{#each features as feature (feature.title)}
 				<article class={cx(cardStyles, 'bg-surface transition-shadow hover:shadow-xl')}>
 					<div class={cx(cardBodyStyles, 'items-center text-center')}>
 						<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-brand/10">
-							{#if feature.icon === Sparkles}
+							{#if feature.icon === Package}
+								<Package class="h-8 w-8 text-brand" />
+							{:else if feature.icon === Sparkles}
 								<Sparkles class="h-8 w-8 text-brand" />
-							{:else if feature.icon === Truck}
-								<Truck class="h-8 w-8 text-brand" />
-							{:else if feature.icon === Clock}
-								<Clock class="h-8 w-8 text-brand" />
 							{:else}
 								<Shield class="h-8 w-8 text-brand" />
 							{/if}
@@ -298,51 +265,6 @@
 						<p class="text-ink/70">{feature.description}</p>
 					</div>
 				</article>
-			{/each}
-		</div>
-	</div>
-</section>
-
-<!-- 5. Reviews, followed by location, hours, and contact in the global footer. -->
-<section
-	class="bg-gradient-to-br from-purple-50 via-pink-50 to-white px-4 py-20"
-	aria-labelledby="reviews-title"
->
-	<div class="container mx-auto">
-		<div class="mb-12 text-center">
-			<h2
-				id="reviews-title"
-				class="mb-4 bg-gradient-to-r from-purple-600 to-[#FF6B6B] bg-clip-text text-3xl font-bold text-transparent md:text-4xl"
-			>
-				What our customers say
-			</h2>
-			<p class="text-gray-600">Reviews from shake lovers.</p>
-		</div>
-		<div class="grid grid-cols-1 gap-8 md:grid-cols-3">
-			{#each testimonials as testimonial (testimonial.name)}
-				<figure
-					class={cx(
-						cardStyles,
-						cardBodyStyles,
-						'border border-purple-100 bg-white shadow-lg transition-shadow hover:shadow-xl'
-					)}
-				>
-					<div
-						class="mb-4 flex justify-center gap-1"
-						aria-label={`${testimonial.rating} out of 5 stars`}
-					>
-						{#each Array(testimonial.rating).keys() as starIndex (starIndex)}
-							<Star class="h-5 w-5 fill-yellow-400 text-yellow-400" aria-hidden="true" />
-						{/each}
-					</div>
-					<blockquote class="mb-6 text-center leading-relaxed text-gray-700">
-						“{testimonial.comment}”
-					</blockquote>
-					<figcaption class="border-t pt-4 text-center">
-						<p class="font-semibold text-gray-800">{testimonial.name}</p>
-						<p class="text-sm text-gray-500">Verified customer</p>
-					</figcaption>
-				</figure>
 			{/each}
 		</div>
 	</div>

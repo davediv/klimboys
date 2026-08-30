@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Activity, AlertCircle, Coffee, DollarSign, Package, ShoppingCart } from '@lucide/svelte';
 	import type { PageData } from './$types';
+	import { APP_LANGUAGE_TAG, APP_TIME_ZONE } from '$lib/business';
 	import { formatIdr } from '$lib/format';
 	import {
 		alertStyles,
@@ -101,8 +102,8 @@
 	}
 
 	function formatDateTime(value: string): string {
-		return new Intl.DateTimeFormat('id-ID', {
-			timeZone: 'Asia/Jakarta',
+		return new Intl.DateTimeFormat(APP_LANGUAGE_TAG, {
+			timeZone: APP_TIME_ZONE,
 			dateStyle: 'short',
 			timeStyle: 'short'
 		}).format(new Date(value));
