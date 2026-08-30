@@ -41,6 +41,24 @@
 		};
 	});
 
+	$effect(() => {
+		const media = window.matchMedia('(min-width: 1024px)');
+		const closeMobileMenu = () => {
+			if (media.matches) mobileMenuOpen = false;
+		};
+		media.addEventListener('change', closeMobileMenu);
+		return () => media.removeEventListener('change', closeMobileMenu);
+	});
+
+	$effect(() => {
+		if (!mobileMenuOpen) return;
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = 'hidden';
+		return () => {
+			document.body.style.overflow = previousOverflow;
+		};
+	});
+
 	let navItems = $derived(getPublicNavigation());
 	let hasStaffAccess = $derived(hasStaffWorkspaceAccess(user?.role));
 	let staffLandingPath = $derived(getDefaultStaffPath(user?.role));
@@ -48,7 +66,7 @@
 	function isActive(href: string): boolean {
 		const [pathname, hash = ''] = href.split('#');
 		if (hash) return $page.url.pathname === pathname && $page.url.hash === `#${hash}`;
-		return $page.url.pathname === pathname;
+		return $page.url.pathname === pathname && (pathname !== '/' || !$page.url.hash);
 	}
 
 	async function handleLogout() {
@@ -69,7 +87,7 @@
 		: 'bg-transparent'}"
 >
 	<div class="container mx-auto px-4">
-		<div class="flex items-center justify-between py-4">
+		<div class="flex items-center justify-between gap-6 py-4">
 			<!-- Logo (Left) -->
 			<a href="/" class="flex items-center">
 				<img
@@ -79,35 +97,68 @@
 				/>
 			</a>
 
-			<!-- Hamburger Menu (Right) -->
-			<button
-				type="button"
-				class="relative z-50 rounded-lg p-2 transition-all duration-300 {scrolled
-					? 'hover:bg-gray-100'
-					: 'bg-white/80 backdrop-blur-sm hover:bg-white/90'} {mobileMenuOpen ? 'rotate-90' : ''}"
-				onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
-				aria-label={mobileMenuOpen ? 'Close primary navigation' : 'Open primary navigation'}
-				aria-expanded={mobileMenuOpen}
-				aria-controls="public-navigation"
-			>
-				<div class="relative h-6 w-6">
-					{#if mobileMenuOpen}
-						<div
-							transition:fade={{ duration: 150 }}
-							class="absolute inset-0 flex items-center justify-center"
+			<div class="flex items-center gap-3">
+				<nav class="hidden items-center gap-1 lg:flex" aria-label="Primary">
+					{#each navItems as item (item.id)}
+						<a
+							href={item.href}
+							aria-current={isActive(item.href) ? 'page' : undefined}
+							class="rounded-lg px-3 py-2 text-sm font-semibold transition-colors hover:bg-white/80 hover:text-brand {isActive(
+								item.href
+							)
+								? 'text-brand'
+								: 'text-gray-800'}"
 						>
-							<X class="h-6 w-6 text-gray-900" />
-						</div>
-					{:else}
-						<div
-							transition:fade={{ duration: 150 }}
-							class="absolute inset-0 flex items-center justify-center"
+							{item.label}
+						</a>
+					{/each}
+					{#if hasStaffAccess}
+						<a
+							href={staffLandingPath}
+							class="ml-2 border-l border-gray-300 pl-4 text-sm font-medium text-gray-600 hover:text-brand"
 						>
-							<Menu class="h-6 w-6 text-gray-900" />
-						</div>
+							Staff workspace
+						</a>
 					{/if}
-				</div>
-			</button>
+				</nav>
+
+				<a
+					href="/menu"
+					class="hidden min-h-11 items-center rounded-lg bg-[#FF6B6B] px-5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#ed5b5b] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#FF6B6B] lg:inline-flex"
+				>
+					Order now
+				</a>
+
+				<!-- Mobile menu trigger -->
+				<button
+					type="button"
+					class="relative z-50 rounded-lg p-2 transition-all duration-300 lg:hidden {scrolled
+						? 'hover:bg-gray-100'
+						: 'bg-white/80 backdrop-blur-sm hover:bg-white/90'} {mobileMenuOpen ? 'rotate-90' : ''}"
+					onclick={() => (mobileMenuOpen = !mobileMenuOpen)}
+					aria-label={mobileMenuOpen ? 'Close primary navigation' : 'Open primary navigation'}
+					aria-expanded={mobileMenuOpen}
+					aria-controls="public-navigation"
+				>
+					<div class="relative h-6 w-6">
+						{#if mobileMenuOpen}
+							<div
+								transition:fade={{ duration: 150 }}
+								class="absolute inset-0 flex items-center justify-center"
+							>
+								<X class="h-6 w-6 text-gray-900" />
+							</div>
+						{:else}
+							<div
+								transition:fade={{ duration: 150 }}
+								class="absolute inset-0 flex items-center justify-center"
+							>
+								<Menu class="h-6 w-6 text-gray-900" />
+							</div>
+						{/if}
+					</div>
+				</button>
+			</div>
 		</div>
 	</div>
 
