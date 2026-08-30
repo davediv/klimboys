@@ -1,11 +1,18 @@
 <script lang="ts">
+	import { invalidateAll } from '$app/navigation';
 	import type { PageData } from './$types';
 	import { ShoppingCart, Plus, Minus, Trash2, Package, CreditCard } from '@lucide/svelte';
 	import ProductSearch from '$lib/components/ProductSearch.svelte';
-	import ProductSizeModal from '$lib/components/ProductSizeModal.svelte';
 	import { formatIdr } from '$lib/format';
-	import type { CatalogProduct } from '$lib/product';
+	import type { CatalogProduct, CatalogProductVariant } from '$lib/product';
 	import {
+		transactionChannels,
+		transactionPaymentMethods,
+		type CreateTransactionResponse,
+		type TransactionReceipt
+	} from '$lib/transaction';
+	import {
+		alertStyles,
 		badgeStyles,
 		buttonStyles,
 		cardBodyStyles,
@@ -19,45 +26,34 @@
 
 	let { data }: { data: PageData } = $props();
 
-	// Transaction state
-	let cart = $state<
-		Array<{
-			id: string;
-			productId: string;
-			name: string;
-			variant: string;
-			variantId: string;
-			price: number;
-			quantity: number;
-			imageUrl?: string | null;
-		}>
-	>([]);
+	interface CartItem {
+		id: string;
+		productId: string;
+		name: string;
+		variant: string;
+		variantId: string;
+		price: number;
+		quantity: number;
+		stockQuantity: number;
+		imageUrl?: string | null;
+	}
 
-	// Transaction metadata
+	let cart = $state<CartItem[]>([]);
+
 	let channel = $state('Store');
 	let paymentMethod = $state('Cash');
 	let orderNotes = $state('');
-
-	// Modal state
-	let showSizeModal = $state(false);
-	let selectedProduct = $state<any>(null);
-
-	// Popular products state
-	let popularProducts = $state<CatalogProduct[]>(data.popularProducts);
-
-	// Calculate total
+	let isProcessing = $state(false);
+	let checkoutError = $state('');
+	let receipt = $state<TransactionReceipt | null>(null);
+	let pendingIdempotencyKey: string | null = null;
+	let pendingFingerprint: string | null = null;
+	let popularProducts = $derived(data.popularProducts);
 	let total = $derived(cart.reduce((sum, item) => sum + item.price * item.quantity, 0));
 
-	// Handle product selection from search - show modal if no variant specified
-	function handleProductSelect(product: any, variant?: any) {
-		if (!variant && product.variants && product.variants.length > 0) {
-			// If no variant selected, show the modal for size selection
-			showProductModal(product);
-			return;
-		}
-
+	function handleProductSelect(product: CatalogProduct, variant?: CatalogProductVariant) {
 		if (!variant) {
-			console.error('No variant available for product:', product.name);
+			checkoutError = `Choose an available size for ${product.name}.`;
 			return;
 		}
 
@@ -65,7 +61,7 @@
 		const existingItem = cart.find((item) => item.id === cartItemId);
 
 		if (existingItem) {
-			existingItem.quantity += 1;
+			existingItem.quantity = Math.min(existingItem.quantity + 1, existingItem.stockQuantity);
 		} else {
 			cart = [
 				...cart,
@@ -77,48 +73,91 @@
 					variantId: variant.id,
 					price: variant.sellingPrice,
 					quantity: 1,
+					stockQuantity: variant.stockQuantity,
 					imageUrl: product.imageUrl
 				}
 			];
 		}
-	}
-
-	// Add product from popular grid - show size selection modal
-	function showProductModal(product: any) {
-		selectedProduct = product;
-		showSizeModal = true;
-	}
-
-	// Handle modal selection
-	function handleModalSelect(product: any, variant: any) {
-		handleProductSelect(product, variant);
+		checkoutError = '';
+		receipt = null;
 	}
 
 	function updateQuantity(itemId: string, delta: number) {
 		const item = cart.find((i) => i.id === itemId);
 		if (item) {
-			item.quantity = Math.max(1, item.quantity + delta);
+			item.quantity = Math.min(item.stockQuantity, Math.max(1, item.quantity + delta));
+			checkoutError = '';
+			receipt = null;
 		}
 	}
 
 	function removeFromCart(itemId: string) {
 		cart = cart.filter((item) => item.id !== itemId);
+		checkoutError = '';
+		receipt = null;
 	}
 
-	function processTransaction() {
-		// TODO: Implement transaction processing
-		console.log('Processing transaction:', {
-			cart,
-			total,
+	async function processTransaction() {
+		if (cart.length === 0 || isProcessing) return;
+
+		const requestWithoutKey = {
 			channel,
 			paymentMethod,
-			orderNotes
-		});
-		alert('Transaction processed successfully!');
-		cart = [];
-		orderNotes = '';
+			notes: orderNotes,
+			items: cart.map((item) => ({ variantId: item.variantId, quantity: item.quantity }))
+		};
+		const fingerprint = JSON.stringify(requestWithoutKey);
+		if (!pendingIdempotencyKey || pendingFingerprint !== fingerprint) {
+			pendingIdempotencyKey = crypto.randomUUID();
+			pendingFingerprint = fingerprint;
+		}
+
+		isProcessing = true;
+		checkoutError = '';
+		receipt = null;
+
+		try {
+			const response = await fetch('/api/transactions', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					...requestWithoutKey,
+					idempotencyKey: pendingIdempotencyKey
+				})
+			});
+			const result = (await response.json()) as CreateTransactionResponse;
+			if (!response.ok || !result.success || !result.data) {
+				throw new Error(result.error || 'The transaction could not be processed.');
+			}
+
+			receipt = result.data;
+			cart = [];
+			orderNotes = '';
+			pendingIdempotencyKey = null;
+			pendingFingerprint = null;
+			try {
+				await invalidateAll();
+			} catch (refreshError) {
+				console.error(
+					'Transaction recorded, but product data could not be refreshed:',
+					refreshError
+				);
+			}
+		} catch (error) {
+			checkoutError =
+				error instanceof Error
+					? error.message
+					: 'The transaction could not be confirmed. Retry to safely check its status.';
+		} finally {
+			isProcessing = false;
+		}
 	}
 </script>
+
+<svelte:head>
+	<title>Point of Sale - Klimboys</title>
+	<meta name="description" content="Create and record an in-store Klimboys sale." />
+</svelte:head>
 
 <div class="container mx-auto p-4">
 	<div class="mb-6">
@@ -127,6 +166,20 @@
 			<p class="text-ink/70">Welcome back, {data.user.name || data.user.email}</p>
 		{/if}
 	</div>
+	{#if checkoutError}
+		<div class={cx(alertStyles('danger'), 'mb-6')} role="alert">{checkoutError}</div>
+	{/if}
+	{#if receipt}
+		<div class={cx(alertStyles('positive'), 'mb-6')} role="status">
+			<div>
+				<p class="font-semibold">Transaction {receipt.transactionCode} recorded</p>
+				<p class="text-sm">
+					{receipt.itemQuantity} items · {formatIdr(receipt.total / 100)}
+					{receipt.alreadyProcessed ? ' · Duplicate submission safely ignored' : ''}
+				</p>
+			</div>
+		</div>
+	{/if}
 
 	<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
 		<!-- Product Selection -->
@@ -148,12 +201,12 @@
 
 				{#if popularProducts.length > 0}
 					<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-						{#each popularProducts as product}
+						{#each popularProducts as product (product.id)}
 							{#if product.variants && product.variants.length > 0}
-								{#each product.variants as variant}
+								{#each product.variants as variant (variant.id)}
 									{#if variant.stockQuantity > 0}
 										<button
-											onclick={() => showProductModal(product)}
+											onclick={() => handleProductSelect(product, variant)}
 											class={cx(
 												buttonStyles({ variant: 'outline', tone: 'brand', block: true }),
 												'!h-auto flex-col gap-1 py-3'
@@ -211,7 +264,7 @@
 					</div>
 				{:else}
 					<div class="max-h-96 space-y-3 overflow-y-auto">
-						{#each cart as item}
+						{#each cart as item (item.id)}
 							<div class={cx(cardStyles, 'bg-surface-muted')}>
 								<div class={cx(cardBodyStyles, 'p-3')}>
 									<div class="flex items-center justify-between">
@@ -239,6 +292,8 @@
 											<button
 												onclick={() => updateQuantity(item.id, -1)}
 												class={buttonStyles({ size: 'sm', shape: 'circle' })}
+												aria-label={`Decrease ${item.name} quantity`}
+												disabled={isProcessing}
 											>
 												<Minus class="h-4 w-4" />
 											</button>
@@ -246,12 +301,16 @@
 											<button
 												onclick={() => updateQuantity(item.id, 1)}
 												class={buttonStyles({ size: 'sm', shape: 'circle' })}
+												aria-label={`Increase ${item.name} quantity`}
+												disabled={isProcessing || item.quantity >= item.stockQuantity}
 											>
 												<Plus class="h-4 w-4" />
 											</button>
 											<button
 												onclick={() => removeFromCart(item.id)}
 												class={buttonStyles({ tone: 'danger', size: 'sm', shape: 'circle' })}
+												aria-label={`Remove ${item.name} from cart`}
+												disabled={isProcessing}
 											>
 												<Trash2 class="h-4 w-4" />
 											</button>
@@ -273,43 +332,51 @@
 					<div class="space-y-3">
 						<!-- Channel Selection -->
 						<div>
-							<label class="text-sm font-medium text-gray-700">Channel</label>
+							<label for="transaction-channel" class="text-sm font-medium text-gray-700">
+								Channel
+							</label>
 							<select
+								id="transaction-channel"
 								bind:value={channel}
 								class={cx(selectStyles({ size: 'sm', full: true }), 'mt-1')}
+								disabled={isProcessing}
 							>
-								<option value="Store">Store</option>
-								<option value="GrabFood">GrabFood</option>
-								<option value="GoFood">GoFood</option>
-								<option value="ShopeeFood">ShopeeFood</option>
-								<option value="UberEats">UberEats</option>
+								{#each transactionChannels as option (option)}
+									<option value={option}>{option}</option>
+								{/each}
 							</select>
 						</div>
 
 						<!-- Payment Method -->
 						<div>
-							<label class="text-sm font-medium text-gray-700">Payment Method</label>
+							<label for="payment-method" class="text-sm font-medium text-gray-700">
+								Payment Method
+							</label>
 							<select
+								id="payment-method"
 								bind:value={paymentMethod}
 								class={cx(selectStyles({ size: 'sm', full: true }), 'mt-1')}
+								disabled={isProcessing}
 							>
-								<option value="Cash">Cash</option>
-								<option value="QRIS">QRIS</option>
-								<option value="Transfer">Bank Transfer</option>
-								<option value="Debit">Debit Card</option>
-								<option value="Credit">Credit Card</option>
-								<option value="E-Wallet">E-Wallet</option>
+								{#each transactionPaymentMethods as option (option)}
+									<option value={option}>{option}</option>
+								{/each}
 							</select>
 						</div>
 
 						<!-- Order Notes -->
 						<div>
-							<label class="text-sm font-medium text-gray-700">Order Notes</label>
+							<label for="order-notes" class="text-sm font-medium text-gray-700">
+								Order Notes
+							</label>
 							<textarea
+								id="order-notes"
 								bind:value={orderNotes}
 								placeholder="Add any special instructions..."
 								class={cx(textareaStyles({ size: 'sm', full: true }), 'mt-1')}
 								rows="2"
+								maxlength="500"
+								disabled={isProcessing}
 							></textarea>
 						</div>
 					</div>
@@ -325,10 +392,10 @@
 						<button
 							onclick={processTransaction}
 							class={buttonStyles({ tone: 'brand', block: true })}
-							disabled={cart.length === 0}
+							disabled={cart.length === 0 || isProcessing}
 						>
 							<CreditCard class="h-5 w-5" />
-							Process Transaction
+							{isProcessing ? 'Recording Transaction…' : 'Process Transaction'}
 						</button>
 					</div>
 				{/if}
@@ -336,14 +403,3 @@
 		</div>
 	</div>
 </div>
-
-<!-- Product Size Selection Modal -->
-<ProductSizeModal
-	product={selectedProduct}
-	show={showSizeModal}
-	onClose={() => {
-		showSizeModal = false;
-		selectedProduct = null;
-	}}
-	onSelect={handleModalSelect}
-/>

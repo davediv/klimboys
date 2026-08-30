@@ -115,45 +115,61 @@ export const productVariants = sqliteTable(
 );
 
 // Transactions table for recording sales
-export const transactions = sqliteTable('transactions', {
-	id: text('id')
-		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
-	transactionCode: text('transaction_code').notNull().unique(), // Format: TRX-YYYYMMDD-XXXX
-	userId: text('user_id')
-		.notNull()
-		.references(() => user.id), // Reference to the cashier/admin who processed
-	channel: text('channel').notNull(), // 'Store', 'GrabFood', 'GoFood', 'ShopeeFood', 'UberEats'
-	paymentMethod: text('payment_method').notNull(), // 'Cash', 'QRIS', 'Transfer', etc.
-	subtotal: integer('subtotal').notNull(), // Store as cents
-	discount: integer('discount').default(0), // Store as cents
-	total: integer('total').notNull(), // Store as cents
-	notes: text('notes'),
-	status: text('status').notNull().default('completed'), // 'pending', 'completed', 'cancelled', 'refunded'
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.default(sql`(unixepoch())`),
-	updatedAt: integer('updated_at', { mode: 'timestamp' })
-		.notNull()
-		.default(sql`(unixepoch())`)
-		.$onUpdate(() => new Date())
-});
+export const transactions = sqliteTable(
+	'transactions',
+	{
+		id: text('id')
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		transactionCode: text('transaction_code').notNull().unique(), // Format: TRX-YYYYMMDD-XXXX
+		idempotencyKey: text('idempotency_key').unique(),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id), // Reference to the cashier/admin who processed
+		channel: text('channel').notNull(), // 'Store', 'GrabFood', 'GoFood', 'ShopeeFood', 'UberEats'
+		paymentMethod: text('payment_method').notNull(), // 'Cash', 'QRIS', 'Transfer', etc.
+		subtotal: integer('subtotal').notNull(), // Store as cents
+		discount: integer('discount').default(0), // Store as cents
+		total: integer('total').notNull(), // Store as cents
+		notes: text('notes'),
+		status: text('status').notNull().default('completed'), // 'pending', 'completed', 'cancelled', 'refunded'
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.default(sql`(unixepoch())`),
+		updatedAt: integer('updated_at', { mode: 'timestamp' })
+			.notNull()
+			.default(sql`(unixepoch())`)
+			.$onUpdate(() => new Date())
+	},
+	(table) => ({
+		statusCreatedAtIdx: index('transactions_status_created_at_idx').on(
+			table.status,
+			table.createdAt
+		)
+	})
+);
 
 // Transaction items table - line items for each transaction
-export const transactionItems = sqliteTable('transaction_items', {
-	id: text('id')
-		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
-	transactionId: text('transaction_id')
-		.notNull()
-		.references(() => transactions.id, { onDelete: 'cascade' }),
-	productVariantId: text('product_variant_id')
-		.notNull()
-		.references(() => productVariants.id),
-	quantity: integer('quantity').notNull(),
-	unitPrice: integer('unit_price').notNull(), // Store as cents
-	totalPrice: integer('total_price').notNull() // Store as cents
-});
+export const transactionItems = sqliteTable(
+	'transaction_items',
+	{
+		id: text('id')
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		transactionId: text('transaction_id')
+			.notNull()
+			.references(() => transactions.id, { onDelete: 'cascade' }),
+		productVariantId: text('product_variant_id')
+			.notNull()
+			.references(() => productVariants.id),
+		quantity: integer('quantity').notNull(),
+		unitPrice: integer('unit_price').notNull(), // Store as cents
+		totalPrice: integer('total_price').notNull() // Store as cents
+	},
+	(table) => ({
+		transactionIdx: index('transaction_items_transaction_id_idx').on(table.transactionId)
+	})
+);
 
 // Inventory logs table - track all inventory changes
 export const inventoryLogs = sqliteTable('inventory_logs', {

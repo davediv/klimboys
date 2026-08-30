@@ -1,26 +1,11 @@
 <script lang="ts">
 	import { Search, Package } from '@lucide/svelte';
 	import { formatIdr } from '$lib/format';
+	import type { CatalogProduct, CatalogProductVariant, ProductListResponse } from '$lib/product';
 	import { badgeStyles, buttonStyles, cx, inputStyles, spinnerStyles } from '$lib/styles';
 
-	type ProductVariant = {
-		id: string;
-		size: string;
-		sellingPrice: number;
-		stockQuantity: number;
-	};
-
-	interface Product {
-		id: string;
-		name: string;
-		description?: string;
-		category?: string;
-		imageUrl?: string | null;
-		variants?: ProductVariant[];
-	}
-
 	interface Props {
-		onSelect?: (product: Product, variant?: ProductVariant) => void;
+		onSelect?: (product: CatalogProduct, variant?: CatalogProductVariant) => void;
 		placeholder?: string;
 		showVariants?: boolean;
 		apiEndpoint?: string;
@@ -35,7 +20,7 @@
 
 	// Search state
 	let searchQuery = $state('');
-	let searchResults = $state<Product[]>([]);
+	let searchResults = $state<CatalogProduct[]>([]);
 	let isSearching = $state(false);
 	let showDropdown = $state(false);
 	let selectedIndex = $state(-1);
@@ -66,7 +51,7 @@
 				throw new Error('Failed to search products');
 			}
 
-			const result = (await response.json()) as any;
+			const result = (await response.json()) as ProductListResponse;
 			if (controller.signal.aborted) return;
 
 			if (result.success && result.data) {
@@ -138,7 +123,7 @@
 	}
 
 	// Select a product
-	function selectProduct(product: Product, variant?: ProductVariant) {
+	function selectProduct(product: CatalogProduct, variant?: CatalogProductVariant) {
 		if (onSelect) {
 			onSelect(product, variant);
 		}
@@ -208,7 +193,7 @@
 		<div
 			class="absolute top-full right-0 left-0 z-50 mt-1 max-h-96 overflow-y-auto rounded-lg border border-surface-strong bg-surface shadow-xl"
 		>
-			{#each searchResults as product, index}
+			{#each searchResults as product, index (product.id)}
 				<div
 					class="cursor-pointer border-b border-surface-muted p-3 last:border-b-0 hover:bg-surface-muted {index ===
 					selectedIndex
@@ -250,7 +235,7 @@
 							<!-- Variants -->
 							{#if showVariants && product.variants && product.variants.length > 0}
 								<div class="mt-2 flex flex-wrap gap-2">
-									{#each product.variants as variant}
+									{#each product.variants as variant (variant.id)}
 										{#if variant.stockQuantity > 0}
 											<button
 												class={buttonStyles({ variant: 'outline', size: 'xs' })}
@@ -298,6 +283,7 @@
 
 	.line-clamp-1 {
 		display: -webkit-box;
+		line-clamp: 1;
 		-webkit-line-clamp: 1;
 		-webkit-box-orient: vertical;
 		overflow: hidden;

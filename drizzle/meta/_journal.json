@@ -22,6 +22,13 @@
       "when": 1788008657862,
       "tag": "0002_red_miek",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1788076414172,
+      "tag": "0003_famous_infant_terrible",
+      "breakpoints": true
     }
   ]
 }
