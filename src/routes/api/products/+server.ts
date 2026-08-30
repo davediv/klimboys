@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getDb } from '$lib/server/db';
 import { products, productVariants } from '$lib/server/db/schema';
-import { eq, sql, and, desc } from 'drizzle-orm';
+import { eq, sql, and, desc, inArray } from 'drizzle-orm';
 import { hasCapability } from '$lib/permissions';
 import { nanoid } from 'nanoid';
 
@@ -123,7 +123,9 @@ export const GET: RequestHandler = async ({ url }) => {
 					stockQuantity: productVariants.stockQuantity
 				})
 				.from(productVariants)
-				.where(sql`${productVariants.productId} IN ${productIds}`);
+				.where(
+					and(inArray(productVariants.productId, productIds), eq(productVariants.isActive, true))
+				);
 		}
 
 		// Group variants by product

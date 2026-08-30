@@ -1,18 +1,17 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
-import { getDb } from '$lib/server/db';
+import { getD1Database, getDb } from '$lib/server/db';
 import { products, productVariants } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { hasCapability } from '$lib/permissions';
-import { nanoid } from 'nanoid';
+import {
+	reconcileVariantIdentities,
+	VariantIdentityError,
+	type CatalogVariantInput
+} from '$lib/catalog-variants';
 
-interface ProductVariantInput {
-	id?: string;
-	size: string;
-	volumeMl: number;
-	costPrice: number;
-	sellingPrice: number;
-	stockQuantity: number;
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === 'object' && value !== null;
 }
 
 export const GET: RequestHandler = async ({ params }) => {
@@ -51,7 +50,7 @@ export const GET: RequestHandler = async ({ params }) => {
 				stockQuantity: productVariants.stockQuantity
 			})
 			.from(productVariants)
-			.where(eq(productVariants.productId, productId));
+			.where(and(eq(productVariants.productId, productId), eq(productVariants.isActive, true)));
 
 		// Return product with variants
 		return json({
@@ -76,19 +75,15 @@ export const GET: RequestHandler = async ({ params }) => {
 
 export const PUT: RequestHandler = async ({ params, request, locals }) => {
 	try {
-		// Check authentication and catalog-management permission.
 		if (!locals.user) {
 			return json({ error: 'Unauthorized' }, { status: 401 });
 		}
-
 		if (!hasCapability(locals.user.role, 'catalog:manage')) {
 			return json({ error: 'Forbidden: Catalog management access required' }, { status: 403 });
 		}
 
 		const db = getDb();
 		const productId = params.id;
-
-		// Parse request body
 		const body = (await request.json()) as {
 			name?: unknown;
 			description?: unknown;
@@ -98,195 +93,215 @@ export const PUT: RequestHandler = async ({ params, request, locals }) => {
 			variants?: unknown;
 		};
 
-		// Prepare update data for product
-		const updateData: Partial<typeof products.$inferInsert> = {
-			updatedAt: new Date()
-		};
+		const [existingProduct, existingVariants] = await Promise.all([
+			db
+				.select()
+				.from(products)
+				.where(eq(products.id, productId))
+				.limit(1)
+				.then((rows) => rows[0]),
+			db.select().from(productVariants).where(eq(productVariants.productId, productId))
+		]);
+		if (!existingProduct) return json({ error: 'Product not found' }, { status: 404 });
 
-		// Validate and add fields if provided
+		let name = existingProduct.name;
+		let description = existingProduct.description;
+		let category = existingProduct.category;
+		let imageUrl = existingProduct.imageUrl;
+		let isActive = existingProduct.isActive;
 		if (body.name !== undefined) {
 			if (typeof body.name !== 'string' || body.name.trim().length === 0) {
 				return json({ error: 'Product name must be a non-empty string' }, { status: 400 });
 			}
-			updateData.name = body.name.trim();
+			name = body.name.trim();
 		}
-
 		if (body.description !== undefined) {
 			if (body.description !== null && typeof body.description !== 'string') {
 				return json({ error: 'Product description must be a string or null' }, { status: 400 });
 			}
-			updateData.description = body.description ? body.description.trim() : null;
+			description = body.description ? body.description.trim() : null;
 		}
-
 		if (body.category !== undefined) {
 			if (typeof body.category !== 'string' || body.category.trim().length === 0) {
 				return json({ error: 'Product category must be a non-empty string' }, { status: 400 });
 			}
-			updateData.category = body.category.trim();
+			category = body.category.trim();
 		}
-
 		if (body.imageUrl !== undefined) {
 			if (body.imageUrl !== null && typeof body.imageUrl !== 'string') {
 				return json({ error: 'Product image URL must be a string or null' }, { status: 400 });
 			}
-			updateData.imageUrl = body.imageUrl ? body.imageUrl.trim() : null;
+			imageUrl = body.imageUrl ? body.imageUrl.trim() : null;
 		}
-
 		if (body.isActive !== undefined) {
 			if (typeof body.isActive !== 'boolean') {
 				return json({ error: 'Product isActive must be a boolean' }, { status: 400 });
 			}
-			updateData.isActive = body.isActive;
+			isActive = body.isActive;
 		}
 
-		let variantRecords:
-			| Array<{
-					id: string;
-					productId: string;
-					size: string;
-					volumeMl: number;
-					costPrice: number;
-					sellingPrice: number;
-					stockQuantity: number;
-					createdAt: Date;
-					updatedAt: Date;
-			  }>
-			| undefined;
-
+		let normalizedVariants: CatalogVariantInput[] | undefined;
 		if (body.variants !== undefined) {
-			if (!Array.isArray(body.variants)) {
-				return json({ error: 'Variants must be an array' }, { status: 400 });
-			}
-
-			if (body.variants.length === 0) {
+			if (!Array.isArray(body.variants) || body.variants.length === 0) {
 				return json({ error: 'At least one variant is required' }, { status: 400 });
 			}
+			if (body.variants.length > 20) {
+				return json({ error: 'A product cannot contain more than 20 variants' }, { status: 400 });
+			}
 
-			// Validate each variant
+			const parsedVariants: CatalogVariantInput[] = [];
+			const seenIds = new Set<string>();
+			const seenSizes = new Set<string>();
 			for (const variant of body.variants) {
-				if (!variant || typeof variant !== 'object') {
+				if (!isRecord(variant)) {
 					return json({ error: 'Each variant must be an object' }, { status: 400 });
 				}
-				const candidate = variant as Record<string, unknown>;
-				if (!candidate.size || typeof candidate.size !== 'string') {
+				if (variant.id !== undefined && (typeof variant.id !== 'string' || !variant.id.trim())) {
+					return json({ error: 'Variant ID must be a non-empty string' }, { status: 400 });
+				}
+				if (typeof variant.size !== 'string' || !variant.size.trim()) {
 					return json({ error: 'Variant size is required' }, { status: 400 });
 				}
-
-				if (typeof candidate.volumeMl !== 'number' || candidate.volumeMl <= 0) {
+				if (!Number.isInteger(variant.volumeMl) || Number(variant.volumeMl) <= 0) {
 					return json({ error: 'Variant volume must be a positive number' }, { status: 400 });
 				}
-
-				if (typeof candidate.costPrice !== 'number' || candidate.costPrice < 0) {
+				if (
+					typeof variant.costPrice !== 'number' ||
+					!Number.isFinite(variant.costPrice) ||
+					variant.costPrice < 0
+				) {
 					return json(
 						{ error: 'Variant cost price must be a non-negative number' },
 						{ status: 400 }
 					);
 				}
-
-				if (typeof candidate.sellingPrice !== 'number' || candidate.sellingPrice < 0) {
+				if (
+					typeof variant.sellingPrice !== 'number' ||
+					!Number.isFinite(variant.sellingPrice) ||
+					variant.sellingPrice < 0
+				) {
 					return json(
 						{ error: 'Variant selling price must be a non-negative number' },
 						{ status: 400 }
 					);
 				}
-
-				if (typeof candidate.stockQuantity !== 'number' || candidate.stockQuantity < 0) {
+				if (!Number.isInteger(variant.stockQuantity) || Number(variant.stockQuantity) < 0) {
 					return json(
 						{ error: 'Variant stock quantity must be a non-negative number' },
 						{ status: 400 }
 					);
 				}
-			}
 
-			const now = new Date();
-			variantRecords = (body.variants as ProductVariantInput[]).map((variant) => ({
-				id: variant.id || nanoid(),
-				productId: productId,
-				size: variant.size.trim(),
-				volumeMl: variant.volumeMl,
-				costPrice: Math.round(variant.costPrice), // Store as integer (cents)
-				sellingPrice: Math.round(variant.sellingPrice), // Store as integer (cents)
-				stockQuantity: variant.stockQuantity,
-				createdAt: now,
-				updatedAt: now
-			}));
-		}
-
-		const updateProduct = db
-			.update(products)
-			.set(updateData)
-			.where(eq(products.id, productId))
-			.returning({
-				id: products.id,
-				name: products.name,
-				description: products.description,
-				category: products.category,
-				imageUrl: products.imageUrl,
-				isActive: products.isActive,
-				createdAt: products.createdAt,
-				updatedAt: products.updatedAt
-			});
-
-		let updatedProduct;
-		let updatedVariants;
-
-		if (variantRecords) {
-			// Preserve the 404 contract before the write-only batch. D1 then applies
-			// the product update and complete variant replacement in one round trip.
-			const existingProduct = await db
-				.select({ id: products.id })
-				.from(products)
-				.where(eq(products.id, productId))
-				.limit(1);
-
-			if (existingProduct.length === 0) {
-				return json({ error: 'Product not found' }, { status: 404 });
-			}
-
-			const [updatedProducts] = await db.batch([
-				updateProduct,
-				db.delete(productVariants).where(eq(productVariants.productId, productId)),
-				db.insert(productVariants).values(variantRecords)
-			]);
-
-			updatedProduct = updatedProducts[0];
-			updatedVariants = variantRecords.map(
-				({ id, size, volumeMl, costPrice, sellingPrice, stockQuantity }) => ({
+				const id = typeof variant.id === 'string' ? variant.id.trim() : undefined;
+				const size = variant.size.trim();
+				if ((id && seenIds.has(id)) || seenSizes.has(size)) {
+					return json({ error: 'Variant IDs and sizes must be unique' }, { status: 400 });
+				}
+				if (id) seenIds.add(id);
+				seenSizes.add(size);
+				parsedVariants.push({
 					id,
 					size,
-					volumeMl,
-					costPrice,
-					sellingPrice,
-					stockQuantity
-				})
-			);
-		} else {
-			// Status-only edits can return the updated row and existing variants from
-			// a single D1 batch instead of four sequential database requests.
-			const [updatedProducts, existingVariants] = await db.batch([
-				updateProduct,
-				db
-					.select({
-						id: productVariants.id,
-						size: productVariants.size,
-						volumeMl: productVariants.volumeMl,
-						costPrice: productVariants.costPrice,
-						sellingPrice: productVariants.sellingPrice,
-						stockQuantity: productVariants.stockQuantity
-					})
-					.from(productVariants)
-					.where(eq(productVariants.productId, productId))
-			]);
-
-			if (updatedProducts.length === 0) {
-				return json({ error: 'Product not found' }, { status: 404 });
+					volumeMl: Number(variant.volumeMl),
+					costPrice: Math.round(variant.costPrice),
+					sellingPrice: Math.round(variant.sellingPrice),
+					stockQuantity: Number(variant.stockQuantity)
+				});
 			}
-
-			updatedProduct = updatedProducts[0];
-			updatedVariants = existingVariants;
+			normalizedVariants = parsedVariants;
 		}
 
-		// Return updated product with variants
+		const database = getD1Database();
+		const statements: D1PreparedStatement[] = [
+			database
+				.prepare(
+					`UPDATE products
+					 SET name = ?, description = ?, category = ?, image_url = ?, is_active = ?, updated_at = unixepoch()
+					 WHERE id = ?`
+				)
+				.bind(name, description, category, imageUrl, isActive ? 1 : 0, productId)
+		];
+
+		if (normalizedVariants) {
+			let plan;
+			try {
+				plan = reconcileVariantIdentities(existingVariants, normalizedVariants);
+			} catch (error) {
+				if (error instanceof VariantIdentityError) {
+					return json({ error: error.message }, { status: 409 });
+				}
+				throw error;
+			}
+
+			for (const variant of plan.variants) {
+				statements.push(
+					variant.operation === 'update'
+						? database
+								.prepare(
+									`UPDATE product_variants
+									 SET volume_ml = ?, cost_price = ?, selling_price = ?, stock_quantity = ?, is_active = 1, updated_at = unixepoch()
+									 WHERE id = ? AND product_id = ?`
+								)
+								.bind(
+									variant.volumeMl,
+									variant.costPrice,
+									variant.sellingPrice,
+									variant.stockQuantity,
+									variant.id,
+									productId
+								)
+						: database
+								.prepare(
+									`INSERT INTO product_variants
+										(id, product_id, size, volume_ml, cost_price, selling_price, stock_quantity, is_active, created_at, updated_at)
+									 VALUES (?, ?, ?, ?, ?, ?, ?, 1, unixepoch(), unixepoch())`
+								)
+								.bind(
+									variant.id,
+									productId,
+									variant.size,
+									variant.volumeMl,
+									variant.costPrice,
+									variant.sellingPrice,
+									variant.stockQuantity
+								)
+				);
+			}
+
+			for (const variantId of plan.retireIds) {
+				statements.push(
+					database
+						.prepare(
+							`UPDATE product_variants
+							 SET is_active = 0, updated_at = unixepoch()
+							 WHERE id = ? AND product_id = ?`
+						)
+						.bind(variantId, productId)
+				);
+			}
+		}
+
+		await database.batch(statements);
+		const [updatedProduct, updatedVariants] = await Promise.all([
+			db
+				.select()
+				.from(products)
+				.where(eq(products.id, productId))
+				.limit(1)
+				.then((rows) => rows[0]),
+			db
+				.select({
+					id: productVariants.id,
+					size: productVariants.size,
+					volumeMl: productVariants.volumeMl,
+					costPrice: productVariants.costPrice,
+					sellingPrice: productVariants.sellingPrice,
+					stockQuantity: productVariants.stockQuantity
+				})
+				.from(productVariants)
+				.where(and(eq(productVariants.productId, productId), eq(productVariants.isActive, true)))
+		]);
+
 		return json({
 			success: true,
 			data: {

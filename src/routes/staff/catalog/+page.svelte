@@ -1,16 +1,5 @@
 <script lang="ts">
-	import {
-		Package,
-		Plus,
-		Edit,
-		Trash2,
-		Search,
-		Save,
-		AlertCircle,
-		Upload,
-		Image,
-		X
-	} from '@lucide/svelte';
+	import { Package, Plus, Edit, Trash2, Search, Save, AlertCircle, X } from '@lucide/svelte';
 	import { formatIdr } from '$lib/format';
 	import type { CatalogProduct } from '$lib/product';
 	import {
@@ -36,13 +25,27 @@
 	} from '$lib/styles';
 	import type { PageData } from './$types';
 
+	interface ApiErrorResponse {
+		error?: string;
+	}
+
+	interface ProductMutationResponse {
+		success: boolean;
+		data?: CatalogProduct;
+	}
+
+	interface ImageMutationResponse {
+		success: boolean;
+		data?: { url?: string; image?: { url?: string } };
+	}
+
 	let { data }: { data: PageData } = $props();
 
 	let searchQuery = $state('');
 	let showAddModal = $state(false);
 	let showEditModal = $state(false);
 	let showDeleteModal = $state(false);
-	let selectedProduct = $state<any>(null);
+	let selectedProduct = $state<CatalogProduct | null>(null);
 	let loading = $state(false);
 	let error = $state<string | null>(data.productsError);
 	let successMessage = $state<string | null>(null);
@@ -59,6 +62,7 @@
 		category: '',
 		imageUrl: '',
 		variants: [] as Array<{
+			id?: string;
 			size: string;
 			volumeMl: number;
 			costPrice: number;
@@ -139,14 +143,15 @@
 		showAddModal = true;
 	}
 
-	function openEditModal(product: any) {
+	function openEditModal(product: CatalogProduct) {
 		selectedProduct = product;
 		formData = {
 			name: product.name,
-			description: product.description,
+			description: product.description ?? '',
 			category: product.category,
 			imageUrl: product.imageUrl || '',
-			variants: product.variants.map((v: any) => ({
+			variants: product.variants.map((v) => ({
+				id: v.id,
 				size: v.size,
 				volumeMl: v.volumeMl,
 				costPrice: v.costPrice / 100, // Convert from cents to currency
@@ -159,7 +164,7 @@
 		showEditModal = true;
 	}
 
-	function openDeleteModal(product: any) {
+	function openDeleteModal(product: CatalogProduct) {
 		selectedProduct = product;
 		showDeleteModal = true;
 	}
@@ -205,11 +210,11 @@
 			});
 
 			if (!response.ok) {
-				const errorData = (await response.json()) as any;
+				const errorData = (await response.json()) as ApiErrorResponse;
 				throw new Error(errorData.error || 'Failed to add product');
 			}
 
-			const result = (await response.json()) as any;
+			const result = (await response.json()) as ProductMutationResponse;
 			if (result.success && result.data) {
 				let createdProduct = result.data;
 				const productId = createdProduct.id;
@@ -288,6 +293,7 @@
 					category: formData.category,
 					imageUrl: newImageUrl || null,
 					variants: formData.variants.map((v) => ({
+						id: v.id,
 						size: v.size,
 						volumeMl: v.volumeMl,
 						costPrice: v.costPrice * 100, // Convert to cents
@@ -298,14 +304,15 @@
 			});
 
 			if (!response.ok) {
-				const errorData = (await response.json()) as any;
+				const errorData = (await response.json()) as ApiErrorResponse;
 				throw new Error(errorData.error || 'Failed to update product');
 			}
 
-			const result = (await response.json()) as any;
+			const result = (await response.json()) as ProductMutationResponse;
 			if (result.success && result.data) {
+				const updatedProduct = result.data;
 				products = products.map((product) =>
-					product.id === result.data.id ? result.data : product
+					product.id === updatedProduct.id ? updatedProduct : product
 				);
 				successMessage = imageFile
 					? 'Product and image updated successfully!'
@@ -323,22 +330,23 @@
 
 	async function handleDeleteProduct() {
 		if (!selectedProduct) return;
+		const productId = selectedProduct.id;
 
 		loading = true;
 		error = null;
 		try {
-			const response = await fetch(`/api/products/${selectedProduct.id}`, {
+			const response = await fetch(`/api/products/${productId}`, {
 				method: 'DELETE'
 			});
 
 			if (!response.ok) {
-				const errorData = (await response.json()) as any;
+				const errorData = (await response.json()) as ApiErrorResponse;
 				throw new Error(errorData.error || 'Failed to delete product');
 			}
 
-			const result = (await response.json()) as any;
+			const result = (await response.json()) as { success: boolean };
 			if (result.success) {
-				products = products.filter((product) => product.id !== selectedProduct.id);
+				products = products.filter((product) => product.id !== productId);
 				successMessage = 'Product deleted successfully!';
 				showDeleteModal = false;
 				setTimeout(() => (successMessage = null), 3000);
@@ -369,14 +377,15 @@
 			});
 
 			if (!response.ok) {
-				const errorData = (await response.json()) as any;
+				const errorData = (await response.json()) as ApiErrorResponse;
 				throw new Error(errorData.error || 'Failed to toggle product status');
 			}
 
-			const result = (await response.json()) as any;
+			const result = (await response.json()) as ProductMutationResponse;
 			if (result.success && result.data) {
-				products = result.data.isActive
-					? products.map((item) => (item.id === productId ? result.data : item))
+				const updatedProduct = result.data;
+				products = updatedProduct.isActive
+					? products.map((item) => (item.id === productId ? updatedProduct : item))
 					: products.filter((item) => item.id !== productId);
 			}
 		} catch (err) {
@@ -434,11 +443,11 @@
 			});
 
 			if (!response.ok) {
-				const errorData = (await response.json()) as any;
+				const errorData = (await response.json()) as ApiErrorResponse;
 				throw new Error(errorData.error || 'Failed to upload image');
 			}
 
-			const result = (await response.json()) as any;
+			const result = (await response.json()) as ImageMutationResponse;
 			if (result.success && result.data) {
 				if (productId) {
 					return result.data.image?.url || null;
@@ -558,7 +567,7 @@
 								</td>
 							</tr>
 						{:else}
-							{#each filteredProducts as product}
+							{#each filteredProducts as product (product.id)}
 								<tr>
 									<td>
 										<div class="flex items-center space-x-3">
@@ -590,7 +599,7 @@
 									<td>{product.category}</td>
 									<td>
 										<div class="space-y-1 text-sm">
-											{#each product.variants as variant}
+											{#each product.variants as variant (variant.id)}
 												<div>
 													<span class="font-medium">{variant.size}</span>
 													<span class="text-xs opacity-70">({variant.volumeMl}ml)</span>:
@@ -601,7 +610,7 @@
 									</td>
 									<td>
 										<div class="space-y-1 text-sm">
-											{#each product.variants as variant}
+											{#each product.variants as variant (variant.id)}
 												<div class="flex items-center gap-2">
 													<span class="font-medium">{variant.size}:</span>
 													<span
@@ -707,7 +716,7 @@
 						<span>Category</span>
 					</label>
 					<select class={selectStyles()} bind:value={formData.category}>
-						{#each categories as category}
+						{#each categories as category (category)}
 							<option value={category}>{category}</option>
 						{/each}
 					</select>
@@ -789,7 +798,7 @@
 					</div>
 				{/if}
 
-				{#each formData.variants as variant, i}
+				{#each formData.variants as variant, i (variant.id ?? i)}
 					<div class={cx(cardStyles, 'bg-surface-muted')}>
 						<div class={cx(cardBodyStyles, 'p-4')}>
 							<div class="mb-2 flex items-center justify-between">
@@ -797,9 +806,10 @@
 									<select
 										class={selectStyles({ size: 'sm' })}
 										value={variant.size}
+										disabled={Boolean(variant.id)}
 										onchange={(e) => updateVariantSize(i, (e.target as HTMLSelectElement).value)}
 									>
-										{#each availableSizes as size}
+										{#each availableSizes as size (size)}
 											<option
 												value={size}
 												disabled={formData.variants.some((v, idx) => idx !== i && v.size === size)}
@@ -955,7 +965,7 @@
 						<span>Category</span>
 					</label>
 					<select class={selectStyles()} bind:value={formData.category}>
-						{#each categories as category}
+						{#each categories as category (category)}
 							<option value={category}>{category}</option>
 						{/each}
 					</select>
@@ -1037,7 +1047,7 @@
 					</div>
 				{/if}
 
-				{#each formData.variants as variant, i}
+				{#each formData.variants as variant, i (variant.id ?? i)}
 					<div class={cx(cardStyles, 'bg-surface-muted')}>
 						<div class={cx(cardBodyStyles, 'p-4')}>
 							<div class="mb-2 flex items-center justify-between">
@@ -1045,9 +1055,10 @@
 									<select
 										class={selectStyles({ size: 'sm' })}
 										value={variant.size}
+										disabled={Boolean(variant.id)}
 										onchange={(e) => updateVariantSize(i, (e.target as HTMLSelectElement).value)}
 									>
-										{#each availableSizes as size}
+										{#each availableSizes as size (size)}
 											<option
 												value={size}
 												disabled={formData.variants.some((v, idx) => idx !== i && v.size === size)}

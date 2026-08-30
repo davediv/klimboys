@@ -62,7 +62,9 @@ export async function getPublicCatalog({
 						stockQuantity: productVariants.stockQuantity
 					})
 					.from(productVariants)
-					.where(inArray(productVariants.productId, productIds))
+					.where(
+						and(inArray(productVariants.productId, productIds), eq(productVariants.isActive, true))
+					)
 					.orderBy(asc(productVariants.volumeMl));
 
 	return {

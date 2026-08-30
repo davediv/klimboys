@@ -71,7 +71,11 @@ export async function getDashboardSummary(now = new Date()): Promise<DashboardSu
 			.from(productVariants)
 			.innerJoin(products, eq(products.id, productVariants.productId))
 			.where(
-				and(eq(products.isActive, true), lte(productVariants.stockQuantity, LOW_STOCK_THRESHOLD))
+				and(
+					eq(products.isActive, true),
+					eq(productVariants.isActive, true),
+					lte(productVariants.stockQuantity, LOW_STOCK_THRESHOLD)
+				)
 			),
 		db
 			.select({
@@ -83,7 +87,11 @@ export async function getDashboardSummary(now = new Date()): Promise<DashboardSu
 			.from(productVariants)
 			.innerJoin(products, eq(products.id, productVariants.productId))
 			.where(
-				and(eq(products.isActive, true), lte(productVariants.stockQuantity, LOW_STOCK_THRESHOLD))
+				and(
+					eq(products.isActive, true),
+					eq(productVariants.isActive, true),
+					lte(productVariants.stockQuantity, LOW_STOCK_THRESHOLD)
+				)
 			)
 			.orderBy(asc(productVariants.stockQuantity), asc(products.name))
 			.limit(5),

@@ -29,6 +29,13 @@
       "when": 1788076414172,
       "tag": "0003_famous_infant_terrible",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1788079332932,
+      "tag": "0004_classy_sage",
+      "breakpoints": true
     }
   ]
 }

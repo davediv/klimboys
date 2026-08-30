@@ -100,6 +100,7 @@ export const productVariants = sqliteTable(
 		costPrice: integer('cost_price').notNull(), // Store as cents to avoid decimal issues
 		sellingPrice: integer('selling_price').notNull(), // Store as cents
 		stockQuantity: integer('stock_quantity').notNull().default(0),
+		isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
 		createdAt: integer('created_at', { mode: 'timestamp' })
 			.notNull()
 			.default(sql`(unixepoch())`),
@@ -162,6 +163,9 @@ export const transactionItems = sqliteTable(
 		productVariantId: text('product_variant_id')
 			.notNull()
 			.references(() => productVariants.id),
+		productName: text('product_name').notNull().default(''),
+		variantSize: text('variant_size').notNull().default(''),
+		variantVolumeMl: integer('variant_volume_ml').notNull().default(0),
 		quantity: integer('quantity').notNull(),
 		unitPrice: integer('unit_price').notNull(), // Store as cents
 		totalPrice: integer('total_price').notNull() // Store as cents

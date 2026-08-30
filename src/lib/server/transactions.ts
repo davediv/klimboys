@@ -179,12 +179,19 @@ export async function createTransaction(
 			id: productVariants.id,
 			productName: products.name,
 			size: productVariants.size,
+			volumeMl: productVariants.volumeMl,
 			sellingPrice: productVariants.sellingPrice,
 			stockQuantity: productVariants.stockQuantity
 		})
 		.from(productVariants)
 		.innerJoin(products, eq(products.id, productVariants.productId))
-		.where(and(inArray(productVariants.id, variantIds), eq(products.isActive, true)));
+		.where(
+			and(
+				inArray(productVariants.id, variantIds),
+				eq(products.isActive, true),
+				eq(productVariants.isActive, true)
+			)
+		);
 
 	const variantsById = new Map(variantRows.map((variant) => [variant.id, variant]));
 	const lineItems = request.items.map((item) => {
@@ -207,6 +214,9 @@ export async function createTransaction(
 		return {
 			id: crypto.randomUUID(),
 			variantId: variant.id,
+			productName: variant.productName,
+			variantSize: variant.size,
+			variantVolumeMl: variant.volumeMl,
 			quantity: item.quantity,
 			unitPrice: variant.sellingPrice,
 			totalPrice: variant.sellingPrice * item.quantity
@@ -240,13 +250,16 @@ export async function createTransaction(
 			database
 				.prepare(
 					`INSERT INTO transaction_items
-						(id, transaction_id, product_variant_id, quantity, unit_price, total_price)
-					 VALUES (?, ?, ?, ?, ?, ?)`
+						(id, transaction_id, product_variant_id, product_name, variant_size, variant_volume_ml, quantity, unit_price, total_price)
+					 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
 				)
 				.bind(
 					item.id,
 					transactionId,
 					item.variantId,
+					item.productName,
+					item.variantSize,
+					item.variantVolumeMl,
 					item.quantity,
 					item.unitPrice,
 					item.totalPrice

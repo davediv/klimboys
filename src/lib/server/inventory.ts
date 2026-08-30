@@ -21,7 +21,7 @@ export async function listInventory({
 	const db = getDb();
 	const validPage = Math.max(1, page);
 	const normalizedSearch = search.trim().slice(0, 100);
-	const conditions = [eq(products.isActive, true)];
+	const conditions = [eq(products.isActive, true), eq(productVariants.isActive, true)];
 
 	if (normalizedSearch) {
 		const pattern = `%${normalizedSearch}%`;
