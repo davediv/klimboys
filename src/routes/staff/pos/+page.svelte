@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { invalidateAll } from '$app/navigation';
+	import { beforeNavigate, invalidateAll } from '$app/navigation';
+	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 	import { ShoppingCart, Plus, Minus, Trash2, Package, CreditCard } from '@lucide/svelte';
 	import ProductSearch from '$lib/components/ProductSearch.svelte';
@@ -38,6 +39,19 @@
 		imageUrl?: string | null;
 	}
 
+	interface SavedPosDraft {
+		version: 1;
+		cart: CartItem[];
+		channel: string;
+		paymentMethod: string;
+		orderNotes: string;
+		pendingIdempotencyKey: string | null;
+		pendingFingerprint: string | null;
+	}
+
+	const POS_DRAFT_KEY = 'klimboys:pos-draft:v1';
+	const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 	let cart = $state<CartItem[]>([]);
 
 	let channel = $state('Store');
@@ -48,12 +62,130 @@
 	let receipt = $state<TransactionReceipt | null>(null);
 	let pendingIdempotencyKey: string | null = null;
 	let pendingFingerprint: string | null = null;
+	let draftReady = $state(false);
+	let draftRestored = $state(false);
 	let popularProducts = $derived(data.popularProducts);
 	let total = $derived(cart.reduce((sum, item) => sum + item.price * item.quantity, 0));
+
+	function isRecord(value: unknown): value is Record<string, unknown> {
+		return typeof value === 'object' && value !== null;
+	}
+
+	function isCartItem(value: unknown): value is CartItem {
+		if (!isRecord(value)) return false;
+		return (
+			typeof value.id === 'string' &&
+			typeof value.productId === 'string' &&
+			typeof value.name === 'string' &&
+			typeof value.variant === 'string' &&
+			typeof value.variantId === 'string' &&
+			Number.isInteger(value.price) &&
+			Number(value.price) >= 0 &&
+			Number.isInteger(value.quantity) &&
+			Number(value.quantity) > 0 &&
+			Number.isInteger(value.stockQuantity) &&
+			Number(value.stockQuantity) > 0 &&
+			(value.imageUrl === undefined ||
+				value.imageUrl === null ||
+				typeof value.imageUrl === 'string')
+		);
+	}
+
+	function restoreDraft(value: unknown) {
+		if (!isRecord(value) || value.version !== 1 || !Array.isArray(value.cart)) return;
+		const restoredCart = value.cart
+			.filter(isCartItem)
+			.map((item) => ({ ...item, quantity: Math.min(item.quantity, item.stockQuantity) }));
+		if (restoredCart.length === 0) return;
+
+		cart = restoredCart;
+		if (
+			typeof value.channel === 'string' &&
+			transactionChannels.some((option) => option === value.channel)
+		) {
+			channel = value.channel;
+		}
+		if (
+			typeof value.paymentMethod === 'string' &&
+			transactionPaymentMethods.some((option) => option === value.paymentMethod)
+		) {
+			paymentMethod = value.paymentMethod;
+		}
+		if (typeof value.orderNotes === 'string') orderNotes = value.orderNotes.slice(0, 500);
+		pendingIdempotencyKey =
+			typeof value.pendingIdempotencyKey === 'string' &&
+			UUID_PATTERN.test(value.pendingIdempotencyKey)
+				? value.pendingIdempotencyKey
+				: null;
+		pendingFingerprint =
+			typeof value.pendingFingerprint === 'string' ? value.pendingFingerprint : null;
+		draftRestored = true;
+	}
+
+	onMount(() => {
+		try {
+			const savedDraft = localStorage.getItem(POS_DRAFT_KEY);
+			if (savedDraft) restoreDraft(JSON.parse(savedDraft) as unknown);
+		} catch {
+			try {
+				localStorage.removeItem(POS_DRAFT_KEY);
+			} catch {
+				// Storage may be disabled; the POS remains usable without draft recovery.
+			}
+		} finally {
+			draftReady = true;
+		}
+
+		const handleKeyboardShortcut = (event: KeyboardEvent) => {
+			if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && cart.length > 0) {
+				event.preventDefault();
+				void processTransaction();
+			}
+		};
+		window.addEventListener('keydown', handleKeyboardShortcut);
+		return () => window.removeEventListener('keydown', handleKeyboardShortcut);
+	});
+
+	$effect(() => {
+		if (!draftReady) return;
+		try {
+			if (cart.length === 0) {
+				localStorage.removeItem(POS_DRAFT_KEY);
+				return;
+			}
+			const draft: SavedPosDraft = {
+				version: 1,
+				cart,
+				channel,
+				paymentMethod,
+				orderNotes,
+				pendingIdempotencyKey,
+				pendingFingerprint
+			};
+			localStorage.setItem(POS_DRAFT_KEY, JSON.stringify(draft));
+		} catch {
+			// Storage can be unavailable in private browsing; checkout remains usable.
+		}
+	});
+
+	beforeNavigate((navigation) => {
+		if (cart.length === 0 || isProcessing) return;
+		if (navigation.willUnload) {
+			navigation.cancel();
+			return;
+		}
+		if (!window.confirm('Leave this sale? Your draft is saved on this device.')) {
+			navigation.cancel();
+		}
+	});
 
 	function handleProductSelect(product: PosProduct, variant?: PosProductVariant) {
 		if (!variant) {
 			checkoutError = `Choose an available size for ${product.name}.`;
+			return;
+		}
+		if (variant.stockQuantity < 1) {
+			checkoutError = `${product.name} (${variant.size}) is out of stock.`;
 			return;
 		}
 
@@ -61,7 +193,11 @@
 		const existingItem = cart.find((item) => item.id === cartItemId);
 
 		if (existingItem) {
-			existingItem.quantity = Math.min(existingItem.quantity + 1, existingItem.stockQuantity);
+			if (existingItem.quantity >= existingItem.stockQuantity) {
+				checkoutError = `Only ${existingItem.stockQuantity} units of ${product.name} (${variant.size}) are available.`;
+				return;
+			}
+			existingItem.quantity += 1;
 		} else {
 			cart = [
 				...cart,
@@ -169,6 +305,16 @@
 	{#if checkoutError}
 		<div class={cx(alertStyles('danger'), 'mb-6')} role="alert">{checkoutError}</div>
 	{/if}
+	{#if draftRestored}
+		<div class={cx(alertStyles('caution'), 'mb-6')} role="status">
+			A saved sale was restored. Prices and stock will be checked again at checkout.
+			<button
+				type="button"
+				class={buttonStyles({ tone: 'neutral', size: 'sm' })}
+				onclick={() => (draftRestored = false)}>Dismiss</button
+			>
+		</div>
+	{/if}
 	{#if receipt}
 		<div class={cx(alertStyles('positive'), 'mb-6')} role="status">
 			<div>
@@ -181,7 +327,7 @@
 		</div>
 	{/if}
 
-	<div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+	<div class="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,3fr)_minmax(20rem,2fr)]">
 		<!-- Product Selection -->
 		<div class={cx(cardStyles, 'bg-surface shadow-xl')}>
 			<div class={cardBodyStyles}>
@@ -200,7 +346,7 @@
 				<div class={dividerStyles}>Popular Products</div>
 
 				{#if popularProducts.length > 0}
-					<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+					<div class="grid grid-cols-2 gap-3 xl:grid-cols-3">
 						{#each popularProducts as product (product.id)}
 							{#if product.variants && product.variants.length > 0}
 								{#each product.variants as variant (variant.id)}
@@ -249,7 +395,7 @@
 		</div>
 
 		<!-- Shopping Cart -->
-		<div class={cx(cardStyles, 'bg-surface shadow-xl')}>
+		<div class={cx(cardStyles, 'bg-surface shadow-xl md:sticky md:top-4 md:self-start')}>
 			<div class={cardBodyStyles}>
 				<h2 class={cx(cardTitleStyles, 'mb-4')}>
 					<ShoppingCart class="h-5 w-5" />
@@ -393,10 +539,14 @@
 							onclick={processTransaction}
 							class={buttonStyles({ tone: 'brand', block: true })}
 							disabled={cart.length === 0 || isProcessing}
+							aria-keyshortcuts="Control+Enter Meta+Enter"
 						>
 							<CreditCard class="h-5 w-5" />
 							{isProcessing ? 'Recording Transaction…' : 'Process Transaction'}
 						</button>
+						<p class="text-center text-xs text-ink/50">
+							Keyboard shortcut: <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>Enter</kbd>
+						</p>
 					</div>
 				{/if}
 			</div>
