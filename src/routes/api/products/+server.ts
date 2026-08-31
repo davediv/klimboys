@@ -2,7 +2,7 @@ import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { getDb } from '$lib/server/db';
 import { products, productVariants } from '$lib/server/db/schema';
-import { eq, sql, and, desc, inArray } from 'drizzle-orm';
+import { eq, sql, and, asc, desc } from 'drizzle-orm';
 import { hasCapability } from '$lib/permissions';
 import { nanoid } from 'nanoid';
 
@@ -11,6 +11,25 @@ interface ProductVariantInput {
 	volumeMl: number;
 	costPrice: number;
 	sellingPrice: number;
+}
+
+interface ListedProduct {
+	id: string;
+	name: string;
+	description: string | null;
+	category: string;
+	imageUrl: string | null;
+	isActive: boolean;
+	createdAt: Date;
+	updatedAt: Date;
+	variants: Array<{
+		id: string;
+		size: string;
+		volumeMl: number;
+		costPrice: number;
+		sellingPrice: number;
+		stockQuantity: number;
+	}>;
 }
 
 export const GET: RequestHandler = async ({ url, locals }) => {
@@ -77,25 +96,54 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		// Combine conditions
 		const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-		// These reads are independent, so send them to D1 concurrently instead of
-		// paying for three sequential network round trips.
-		const [productsData, countResult, categoriesResult] = await Promise.all([
+		const selectedProducts = db
+			.select({
+				id: products.id,
+				name: products.name,
+				description: products.description,
+				category: products.category,
+				imageUrl: products.imageUrl,
+				isActive: products.isActive,
+				createdAt: products.createdAt,
+				updatedAt: products.updatedAt
+			})
+			.from(products)
+			.where(whereClause)
+			.orderBy(desc(products.createdAt))
+			.limit(validLimit)
+			.offset(offset)
+			.as('selected_products');
+
+		// Product rows, counts, and filter metadata are independent. Fetch the
+		// selected products and their active variants in one D1 statement so POS
+		// search does not wait for a dependent second round trip.
+		const [productRows, countResult, categoriesResult] = await Promise.all([
 			db
 				.select({
-					id: products.id,
-					name: products.name,
-					description: products.description,
-					category: products.category,
-					imageUrl: products.imageUrl,
-					isActive: products.isActive,
-					createdAt: products.createdAt,
-					updatedAt: products.updatedAt
+					id: selectedProducts.id,
+					name: selectedProducts.name,
+					description: selectedProducts.description,
+					category: selectedProducts.category,
+					imageUrl: selectedProducts.imageUrl,
+					isActive: selectedProducts.isActive,
+					createdAt: selectedProducts.createdAt,
+					updatedAt: selectedProducts.updatedAt,
+					variantId: productVariants.id,
+					variantSize: productVariants.size,
+					variantVolumeMl: productVariants.volumeMl,
+					variantCostPrice: productVariants.costPrice,
+					variantSellingPrice: productVariants.sellingPrice,
+					variantStockQuantity: productVariants.stockQuantity
 				})
-				.from(products)
-				.where(whereClause)
-				.orderBy(desc(products.createdAt))
-				.limit(validLimit)
-				.offset(offset),
+				.from(selectedProducts)
+				.leftJoin(
+					productVariants,
+					and(
+						eq(productVariants.productId, selectedProducts.id),
+						eq(productVariants.isActive, true)
+					)
+				)
+				.orderBy(desc(selectedProducts.createdAt), asc(productVariants.volumeMl)),
 			includeMeta
 				? db
 						.select({ count: sql<number>`count(*)` })
@@ -113,69 +161,62 @@ export const GET: RequestHandler = async ({ url, locals }) => {
 		const totalItems = countResult?.[0]?.count || 0;
 		const totalPages = Math.ceil(totalItems / validLimit);
 
-		// Get variants for all products
-		const productIds = productsData.map((p) => p.id);
+		const productsById = new Map<string, ListedProduct>();
+		for (const row of productRows) {
+			let product = productsById.get(row.id);
+			if (!product) {
+				product = {
+					id: row.id,
+					name: row.name,
+					description: row.description,
+					category: row.category,
+					imageUrl: row.imageUrl,
+					isActive: row.isActive,
+					createdAt: row.createdAt,
+					updatedAt: row.updatedAt,
+					variants: []
+				};
+				productsById.set(row.id, product);
+			}
 
-		let variantsData: Array<{
-			id: string;
-			productId: string;
-			size: string;
-			volumeMl: number;
-			costPrice: number;
-			sellingPrice: number;
-			stockQuantity: number;
-		}> = [];
-		if (productIds.length > 0) {
-			variantsData = await db
-				.select({
-					id: productVariants.id,
-					productId: productVariants.productId,
-					size: productVariants.size,
-					volumeMl: productVariants.volumeMl,
-					costPrice: productVariants.costPrice,
-					sellingPrice: productVariants.sellingPrice,
-					stockQuantity: productVariants.stockQuantity
-				})
-				.from(productVariants)
-				.where(
-					and(inArray(productVariants.productId, productIds), eq(productVariants.isActive, true))
-				);
+			if (
+				row.variantId !== null &&
+				row.variantSize !== null &&
+				row.variantVolumeMl !== null &&
+				row.variantCostPrice !== null &&
+				row.variantSellingPrice !== null &&
+				row.variantStockQuantity !== null
+			) {
+				product.variants.push({
+					id: row.variantId,
+					size: row.variantSize,
+					volumeMl: row.variantVolumeMl,
+					costPrice: row.variantCostPrice,
+					sellingPrice: row.variantSellingPrice,
+					stockQuantity: row.variantStockQuantity
+				});
+			}
 		}
-
-		// Group variants by product
-		const variantsByProduct = variantsData.reduce(
-			(acc, variant) => {
-				if (!acc[variant.productId]) {
-					acc[variant.productId] = [];
-				}
-				acc[variant.productId].push(variant);
-				return acc;
-			},
-			{} as Record<string, (typeof variantsData)[number][]>
-		);
 
 		// Catalog managers receive the management contract. Cashiers receive only
 		// fields needed to sell, never cost price or lifecycle metadata.
-		const productsWithVariants = productsData.map((product) => {
-			const variants = (variantsByProduct[product.id] || []).map((variant) => ({
-				id: variant.id,
-				size: variant.size,
-				volumeMl: variant.volumeMl,
-				sellingPrice: variant.sellingPrice,
-				stockQuantity: variant.stockQuantity,
-				...(canManageCatalog ? { costPrice: variant.costPrice } : {})
-			}));
-			return canManageCatalog
-				? { ...product, variants }
-				: {
-						id: product.id,
-						name: product.name,
-						description: product.description,
-						category: product.category,
-						imageUrl: product.imageUrl,
-						variants
-					};
-		});
+		const listedProducts = Array.from(productsById.values());
+		const productsWithVariants = canManageCatalog
+			? listedProducts
+			: listedProducts.map((product) => ({
+					id: product.id,
+					name: product.name,
+					description: product.description,
+					category: product.category,
+					imageUrl: product.imageUrl,
+					variants: product.variants.map((variant) => ({
+						id: variant.id,
+						size: variant.size,
+						volumeMl: variant.volumeMl,
+						sellingPrice: variant.sellingPrice,
+						stockQuantity: variant.stockQuantity
+					}))
+				}));
 
 		const categories = categoriesResult?.map((r) => r.category).filter(Boolean) ?? [];
 
