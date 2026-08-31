@@ -178,22 +178,30 @@ export const transactionItems = sqliteTable(
 );
 
 // Inventory logs table - track all inventory changes
-export const inventoryLogs = sqliteTable('inventory_logs', {
-	id: text('id')
-		.primaryKey()
-		.$defaultFn(() => crypto.randomUUID()),
-	productVariantId: text('product_variant_id')
-		.notNull()
-		.references(() => productVariants.id),
-	userId: text('user_id')
-		.notNull()
-		.references(() => user.id),
-	type: text('type').notNull(), // 'sale', 'restock', 'waste', 'correction'
-	idempotencyKey: text('idempotency_key').unique(),
-	quantityChange: integer('quantity_change').notNull(),
-	quantityAfter: integer('quantity_after').notNull(),
-	reason: text('reason'),
-	createdAt: integer('created_at', { mode: 'timestamp' })
-		.notNull()
-		.default(sql`(unixepoch())`)
-});
+export const inventoryLogs = sqliteTable(
+	'inventory_logs',
+	{
+		id: text('id')
+			.primaryKey()
+			.$defaultFn(() => crypto.randomUUID()),
+		productVariantId: text('product_variant_id')
+			.notNull()
+			.references(() => productVariants.id),
+		userId: text('user_id')
+			.notNull()
+			.references(() => user.id),
+		type: text('type').notNull(), // 'sale', 'restock', 'waste', 'correction'
+		idempotencyKey: text('idempotency_key').unique(),
+		quantityChange: integer('quantity_change').notNull(),
+		quantityAfter: integer('quantity_after').notNull(),
+		reason: text('reason'),
+		createdAt: integer('created_at', { mode: 'timestamp' })
+			.notNull()
+			.default(sql`(unixepoch())`)
+	},
+	(table) => ({
+		manualCreatedAtIdx: index('inventory_logs_manual_created_at_idx')
+			.on(table.createdAt)
+			.where(sql`${table.type} <> 'sale'`)
+	})
+);
