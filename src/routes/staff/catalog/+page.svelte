@@ -40,9 +40,10 @@
 	let loading = $state(false);
 	let error = $state<string | null>(data.productsError);
 	let successMessage = $state<string | null>(null);
-	let products = $derived(data.products);
+	let products = $state<CatalogProduct[]>(data.products);
 
 	$effect(() => {
+		products = data.products;
 		if (data.productsError) error = data.productsError;
 	});
 
@@ -56,15 +57,25 @@
 		showProductDialog = true;
 	}
 
-	async function showSuccess(message: string) {
-		await invalidateAll();
+	function showSuccess(message: string) {
 		successMessage = message;
 		error = null;
 		setTimeout(() => (successMessage = null), 3000);
+		void invalidateAll().catch((refreshError) => {
+			console.error('Catalog changed, but the refreshed list could not be loaded:', refreshError);
+		});
 	}
 
-	async function handleArchived() {
-		await showSuccess('Product archived successfully.');
+	function handleArchived() {
+		if (productToArchive) {
+			products =
+				data.status === 'all'
+					? products.map((product) =>
+							product.id === productToArchive?.id ? { ...product, isActive: false } : product
+						)
+					: products.filter((product) => product.id !== productToArchive?.id);
+		}
+		showSuccess('Product archived successfully.');
 	}
 
 	async function restoreProduct(product: CatalogProduct) {
@@ -72,8 +83,14 @@
 		loading = true;
 		error = null;
 		try {
-			await restoreCatalogProduct(product.id);
-			await showSuccess('Product restored successfully.');
+			const restoredProduct = await restoreCatalogProduct(product.id);
+			products =
+				data.status === 'all'
+					? products.map((candidate) =>
+							candidate.id === restoredProduct.id ? restoredProduct : candidate
+						)
+					: products.filter((candidate) => candidate.id !== restoredProduct.id);
+			showSuccess('Product restored successfully.');
 		} catch (restoreError) {
 			error =
 				restoreError instanceof Error ? restoreError.message : 'The product could not be restored.';
