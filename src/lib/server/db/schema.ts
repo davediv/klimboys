@@ -146,7 +146,9 @@ export const transactions = sqliteTable(
 		statusCreatedAtIdx: index('transactions_status_created_at_idx').on(
 			table.status,
 			table.createdAt
-		)
+		),
+		createdAtIdx: index('transactions_created_at_idx').on(table.createdAt),
+		userCreatedAtIdx: index('transactions_user_created_at_idx').on(table.userId, table.createdAt)
 	})
 );
 

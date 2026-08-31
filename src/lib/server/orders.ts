@@ -20,6 +20,11 @@ export async function listOrders({
 	const validPage = Math.max(1, page);
 	const whereClause = readAll ? undefined : eq(transactions.userId, userId);
 	const offset = (validPage - 1) * limit;
+	const itemQuantity = sql<number>`coalesce((
+		select sum(${transactionItems.quantity})
+		from ${transactionItems}
+		where ${transactionItems.transactionId} = ${transactions.id}
+	), 0)`;
 
 	const [rows, countRows] = await Promise.all([
 		db
@@ -29,16 +34,14 @@ export async function listOrders({
 				createdAt: transactions.createdAt,
 				channel: transactions.channel,
 				paymentMethod: transactions.paymentMethod,
-				itemQuantity: sql<number>`coalesce(sum(${transactionItems.quantity}), 0)`,
+				itemQuantity,
 				total: transactions.total,
 				status: transactions.status,
 				cashierName: sql<string>`coalesce(${user.name}, ${user.email})`
 			})
 			.from(transactions)
 			.innerJoin(user, eq(user.id, transactions.userId))
-			.leftJoin(transactionItems, eq(transactionItems.transactionId, transactions.id))
 			.where(whereClause)
-			.groupBy(transactions.id)
 			.orderBy(desc(transactions.createdAt))
 			.limit(limit)
 			.offset(offset),

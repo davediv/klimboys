@@ -31,6 +31,11 @@ export async function getDashboardSummary(now = new Date()): Promise<DashboardSu
 	const tomorrowStart = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
 	const yesterdayStart = new Date(todayStart.getTime() - 24 * 60 * 60 * 1000);
 	const soldQuantity = sql<number>`sum(${transactionItems.quantity})`;
+	const transactionItemQuantity = sql<number>`coalesce((
+		select sum(${transactionItems.quantity})
+		from ${transactionItems}
+		where ${transactionItems.transactionId} = ${transactions.id}
+	), 0)`;
 
 	const completedBetween = (start: Date, end: Date) =>
 		and(
@@ -99,13 +104,11 @@ export async function getDashboardSummary(now = new Date()): Promise<DashboardSu
 			.select({
 				transactionCode: transactions.transactionCode,
 				createdAt: transactions.createdAt,
-				itemQuantity: sql<number>`coalesce(sum(${transactionItems.quantity}), 0)`,
+				itemQuantity: transactionItemQuantity,
 				total: transactions.total,
 				status: transactions.status
 			})
 			.from(transactions)
-			.leftJoin(transactionItems, eq(transactionItems.transactionId, transactions.id))
-			.groupBy(transactions.id)
 			.orderBy(desc(transactions.createdAt))
 			.limit(5),
 		db
