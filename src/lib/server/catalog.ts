@@ -59,10 +59,7 @@ export async function getPublicCatalog({
 			.from(selectedProducts)
 			.leftJoin(
 				productVariants,
-				and(
-					eq(productVariants.productId, selectedProducts.id),
-					eq(productVariants.isActive, true)
-				)
+				and(eq(productVariants.productId, selectedProducts.id), eq(productVariants.isActive, true))
 			)
 			.orderBy(asc(selectedProducts.name), asc(productVariants.volumeMl)),
 		db

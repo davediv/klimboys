@@ -97,7 +97,7 @@
 			</div>
 		{:else}
 			<div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-					{#each data.products as product, index (product.id)}
+				{#each data.products as product, index (product.id)}
 					<article
 						id={`product-${product.id}`}
 						class={cx(cardStyles, 'scroll-mt-28 bg-surface shadow-sm')}
@@ -105,13 +105,13 @@
 						{#if product.imageUrl}
 							<img
 								src={product.imageUrl}
-									alt=""
-									width="640"
-									height="360"
-									loading={index < 3 ? 'eager' : 'lazy'}
-									fetchpriority={index === 0 ? 'high' : index < 3 ? 'auto' : 'low'}
-									decoding="async"
-									class="aspect-video w-full rounded-t-lg object-cover"
+								alt=""
+								width="640"
+								height="360"
+								loading={index < 3 ? 'eager' : 'lazy'}
+								fetchpriority={index === 0 ? 'high' : index < 3 ? 'auto' : 'low'}
+								decoding="async"
+								class="aspect-video w-full rounded-t-lg object-cover"
 							/>
 						{:else}
 							<div class="grid aspect-video place-items-center rounded-t-lg bg-surface-strong">
