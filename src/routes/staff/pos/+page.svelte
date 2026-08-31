@@ -50,6 +50,7 @@
 	}
 
 	const POS_DRAFT_KEY = 'klimboys:pos-draft:v1';
+	const POS_DRAFT_SAVE_DELAY_MS = 150;
 	const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 	let cart = $state<CartItem[]>([]);
@@ -62,6 +63,7 @@
 	let receipt = $state<TransactionReceipt | null>(null);
 	let pendingIdempotencyKey: string | null = null;
 	let pendingFingerprint: string | null = null;
+	let draftSaveTimer: ReturnType<typeof setTimeout> | undefined;
 	let draftReady = $state(false);
 	let draftRestored = $state(false);
 	let popularProducts = $derived(data.popularProducts);
@@ -122,6 +124,39 @@
 		draftRestored = true;
 	}
 
+	function serializeDraft() {
+		if (cart.length === 0) return null;
+		const draft: SavedPosDraft = {
+			version: 1,
+			cart,
+			channel,
+			paymentMethod,
+			orderNotes,
+			pendingIdempotencyKey,
+			pendingFingerprint
+		};
+		return JSON.stringify(draft);
+	}
+
+	function persistDraft(serializedDraft = serializeDraft()) {
+		clearTimeout(draftSaveTimer);
+		draftSaveTimer = undefined;
+		try {
+			if (serializedDraft === null) {
+				localStorage.removeItem(POS_DRAFT_KEY);
+			} else {
+				localStorage.setItem(POS_DRAFT_KEY, serializedDraft);
+			}
+		} catch {
+			// Storage can be unavailable in private browsing; checkout remains usable.
+		}
+	}
+
+	function scheduleDraftSave(serializedDraft: string | null) {
+		clearTimeout(draftSaveTimer);
+		draftSaveTimer = setTimeout(() => persistDraft(serializedDraft), POS_DRAFT_SAVE_DELAY_MS);
+	}
+
 	onMount(() => {
 		try {
 			const savedDraft = localStorage.getItem(POS_DRAFT_KEY);
@@ -142,33 +177,23 @@
 				void processTransaction();
 			}
 		};
+		const handlePageHide = () => persistDraft();
 		window.addEventListener('keydown', handleKeyboardShortcut);
-		return () => window.removeEventListener('keydown', handleKeyboardShortcut);
+		window.addEventListener('pagehide', handlePageHide);
+		return () => {
+			window.removeEventListener('keydown', handleKeyboardShortcut);
+			window.removeEventListener('pagehide', handlePageHide);
+			clearTimeout(draftSaveTimer);
+		};
 	});
 
 	$effect(() => {
 		if (!draftReady) return;
-		try {
-			if (cart.length === 0) {
-				localStorage.removeItem(POS_DRAFT_KEY);
-				return;
-			}
-			const draft: SavedPosDraft = {
-				version: 1,
-				cart,
-				channel,
-				paymentMethod,
-				orderNotes,
-				pendingIdempotencyKey,
-				pendingFingerprint
-			};
-			localStorage.setItem(POS_DRAFT_KEY, JSON.stringify(draft));
-		} catch {
-			// Storage can be unavailable in private browsing; checkout remains usable.
-		}
+		scheduleDraftSave(serializeDraft());
 	});
 
 	beforeNavigate((navigation) => {
+		if (draftReady) persistDraft();
 		if (cart.length === 0 || isProcessing) return;
 		if (navigation.willUnload) {
 			navigation.cancel();
@@ -247,6 +272,7 @@
 			pendingIdempotencyKey = crypto.randomUUID();
 			pendingFingerprint = fingerprint;
 		}
+		persistDraft();
 
 		isProcessing = true;
 		checkoutError = '';
